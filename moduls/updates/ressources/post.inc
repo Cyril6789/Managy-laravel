@@ -1,0 +1,5 @@
+<?php
+ //GESTION DES POSTS
+
+
+?>

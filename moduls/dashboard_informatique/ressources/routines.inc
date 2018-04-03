@@ -1,0 +1,1 @@
+<?php session_start();define(OPEN_SIDEBAR, 'dash');define(SIDEBAR_CLOSED, 'false');?>

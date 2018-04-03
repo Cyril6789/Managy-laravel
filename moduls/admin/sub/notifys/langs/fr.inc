@@ -1,0 +1,1 @@
+<?phpdefine(ADMIN_NOTIFYS__TITLE, "Réglage des notifications mail");$page_title = ADMIN_NOTIFYS__TITLE;?>

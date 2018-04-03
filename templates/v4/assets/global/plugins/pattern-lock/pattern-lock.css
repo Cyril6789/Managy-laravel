@@ -1,0 +1,152 @@
+/*** spacings ***/
+/*** font size css **/
+/*flexible width*/
+/*flexible height*/
+/*setting font size line height and color together*/
+.patt-holder {
+    background: #3382c0;
+    background-size: auto 100%;
+    -ms-touch-action: none;
+    position: relative;
+}
+.patt-overlay {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    top: 0;
+    left: 0;
+    z-index: 20;
+}
+.patt-wrap {
+    position: relative;
+    cursor: pointer;
+}
+.patt-wrap ul,
+.patt-wrap li {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+.patt-circ {
+    position: relative;
+    float: left;
+    box-sizing: border-box;
+    -moz-box-sizing: border-box;
+}
+.patt-circ.hovered {
+    border: 3px solid #009900;
+}
+.patt-error .patt-circ.hovered {
+    border: 3px solid #BA1B26;
+}
+.patt-hidden .patt-circ.hovered {
+    border: 0;
+}
+.patt-dots {
+    background: #FFF;
+    width: 10px;
+    height: 10px;
+    border-radius: 5px;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    margin-top: -5px;
+    margin-left: -5px;
+}
+.patt-lines {
+    border-radius: 5px;
+    height: 10px;
+    background: rgba(255, 255, 255, 0.7);
+    position: absolute;
+    transform-origin: 5px 5px;
+    -ms-transform-origin: 5px 5px;
+    /* IE 9 */
+    -webkit-transform-origin: 5px 5px;
+}
+.patt-hidden .patt-lines {
+    display: none;
+}
+#patternUI,
+#patternCaptcha {
+    float: left;
+    margin: 0 20px;
+}
+#actionButton {
+    clear: both;
+}
+#refreshCaptcha,
+#submitCaptcha {
+    padding: 8px 20px;
+    margin: 10px 20px;
+}
+.direction .patt-wrap {
+    z-index: 10;
+}
+.direction .patt-circ.hovered {
+    background-color: #cde2f2;
+    border: none;
+}
+.direction .patt-circ.hovered .patt-dots {
+    display: none;
+}
+.direction .patt-circ.dir {
+    background-image: url('../img/icon-arrow.png');
+    background-position: center;
+    background-repeat: no-repeat;
+}
+.direction .patt-circ.e {
+    -webkit-transform: rotate(0);
+    -moz-transform: rotate(0);
+    -ms-transform: rotate(0);
+    -o-transform: rotate(0);
+    transform: rotate(0);
+}
+.direction .patt-circ.s-e {
+    -webkit-transform: rotate(45deg);
+    -moz-transform: rotate(45deg);
+    -ms-transform: rotate(45deg);
+    -o-transform: rotate(45deg);
+    transform: rotate(45deg);
+}
+.direction .patt-circ.s {
+    -webkit-transform: rotate(90deg);
+    -moz-transform: rotate(90deg);
+    -ms-transform: rotate(90deg);
+    -o-transform: rotate(90deg);
+    transform: rotate(90deg);
+}
+.direction .patt-circ.s-w {
+    -webkit-transform: rotate(135deg);
+    -moz-transform: rotate(135deg);
+    -ms-transform: rotate(135deg);
+    -o-transform: rotate(135deg);
+    transform: rotate(135deg);
+}
+.direction .patt-circ.w {
+    -webkit-transform: rotate(180deg);
+    -moz-transform: rotate(180deg);
+    -ms-transform: rotate(180deg);
+    -o-transform: rotate(180deg);
+    transform: rotate(180deg);
+}
+.direction .patt-circ.n-w {
+    -webkit-transform: rotate(225deg);
+    -moz-transform: rotate(225deg);
+    -ms-transform: rotate(225deg);
+    -o-transform: rotate(225deg);
+    transform: rotate(225deg);
+}
+.direction.patt-circ.n {
+    -webkit-transform: rotate(270deg);
+    -moz-transform: rotate(270deg);
+    -ms-transform: rotate(270deg);
+    -o-transform: rotate(270deg);
+    transform: rotate(270deg);
+}
+.direction .patt-circ.n-e {
+    -webkit-transform: rotate(315deg);
+    -moz-transform: rotate(315deg);
+    -ms-transform: rotate(315deg);
+    -o-transform: rotate(315deg);
+    transform: rotate(315deg);
+}

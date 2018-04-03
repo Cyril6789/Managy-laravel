@@ -1,0 +1,1 @@
+<?phpdefine(ADMIN_NOTIFY_MAIL_TITLE, "Liste des notifications mail");define(ADMIN_NOTIFS_MAIL_SB_SEE, 'Liste des notifications mail');$page_title = ADMIN_NOTIFY_MAIL_TITLE;?>

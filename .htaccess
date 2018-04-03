@@ -1,0 +1,67 @@
+Options -Indexes
+<FilesMatch "\.inc$">
+	Deny From all
+</FilesMatch>
+rewriteEngine on
+RewriteBase /
+
+
+RewriteCond %{HTTP_HOST} !^www\.[^.]+\.[^.]+$
+RewriteRule ^(.*) https://www\.%{HTTP_HOST}/$1       [QSA,L,R=301]
+RewriteCond %{HTTPS} off
+RewriteRule (.*) https://%{HTTP_HOST}/$1 [QSA,L,R=301]
+
+
+
+RewriteRule ^fiche-of-peinture-n-([0-9]+).pdf$  ./pdf_of.php?id_inter=$1  [L,QSA]
+RewriteRule ^fiche-of-peinture-a-solder.pdf$  ./pdf_of.php?a_solder=true  [L,QSA]
+RewriteRule ^protechphone$  ./referer.php?r=protechphone [L,QSA]
+RewriteRule ^PROTECHPHONE$  ./referer.php?r=protechphone [L,QSA]
+RewriteRule ^gm([0-9]+)$  ./google_map.php?id=$1 [L,QSA]
+RewriteRule ^imprimer-([0-9]+)-e$  ./print/imprimer.php?id_inter=$1&type=entree [L,QSA]
+RewriteRule ^inter-site-([0-9]+)$  ./print/inter_site.php?id_inter=$1 [L,QSA]
+RewriteRule ^inter-site2-([0-9]+)$  ./print/inter_site2.php?id_inter=$1 [L,QSA]
+RewriteRule ^fiche-(.*)$  ./print/fiche_client.php?id=$1 [L,QSA]
+RewriteRule ^ticket-([0-9]+)$  ./print/imprimer_tickets.php?id_inter=$1 [L,QSA]
+RewriteRule ^scotch-([0-9]+)$  ./print/imprimer_tickets_scotch.php?id_inter=$1 [L,QSA]
+RewriteRule ^etagere-([0-9]+)$  ./print/imprimer_tickets_etagere.php?id_inter=$1 [L,QSA]
+RewriteRule ^etagere-([0-9]+)-h$  ./print/imprimer_tickets_etagere.php?id_inter=$1&arrow=h [L,QSA]
+RewriteRule ^etagere-([0-9]+)-b$  ./print/imprimer_tickets_etagere.php?id_inter=$1&arrow=b [L,QSA]
+RewriteRule ^imprimer-([0-9]+)-s$  ./print/imprimer.php?id_inter=$1&type=sortie [L,QSA]
+RewriteRule ^bl-edit-([0-9]+)$  ./index.php?content=bl&scontent=edit&id_bl=$1  [L,QSA]
+RewriteRule ^bl-genere_bl-([0-9]+)$  ./index.php?content=bl&scontent=genere_bl&id_customer=$1  [L,QSA]
+RewriteRule ^bl-inter-([0-9]+)$  ./index.php?content=bl&scontent=inter&id_customer=$1  [L,QSA]
+RewriteRule ^intervention-new-customer-([0-9]+)$  ./index.php?content=intervention&scontent=new&id_customer=$1  [L,QSA]
+RewriteRule ^intervention-change-customer-([0-9]+)$  ./index.php?content=intervention&scontent=change_customer&id_inter=$1  [L,QSA]
+RewriteRule ^intervention-change-customer-([0-9]+)-([0-9]+)$  ./index.php?content=intervention&scontent=change_customer&id_inter=$1&id_customer=$2  [L,QSA]
+RewriteRule ^affaire-new-customer-([0-9]+)$  ./index.php?content=affaire&scontent=new&id_customer=$1  [L,QSA]
+RewriteRule ^rdv-new-customer-([0-9]+)$  ./index.php?content=rdv&scontent=new&id_customer=$1  [L,QSA]
+RewriteRule ^customers-addcontact-([0-9]+)-([0-9]+)$  ./index.php?content=customers&scontent=customer&id_customer=$1&id_contact=$2&action=add  [L,QSA]
+RewriteRule ^customers-addcontactoncreateinter-([0-9]+)-([0-9]+)$  ./index.php?content=customers&scontent=addcontactoncreateinter&id_customer=$1&id_contact=$2&action=add  [L,QSA]
+RewriteRule ^customers-suppcontact-([0-9]+)-([0-9]+)$  ./index.php?content=customers&scontent=customer&id_customer=$1&id_contact=$2&action=supp  [L,QSA]
+RewriteRule ^intervention-multi-([0-9-]+)$  ./index.php?content=intervention&scontent=multi&ids_inters=$1  [L,QSA]
+RewriteRule ^i([0-9]+)$  ./index.php?content=intervention&id_inter=$1  [L,QSA]
+RewriteRule ^intervention-([0-9]+)$  ./index.php?content=intervention&id_inter=$1  [L,QSA]
+RewriteRule ^affaire-([0-9]+)$  ./index.php?content=affaire&id_inter=$1  [L,QSA]
+RewriteRule ^intervention_test-([0-9]+)$  ./index.php?content=intervention_test&id_inter=$1  [L,QSA]
+RewriteRule ^bl-([0-9]+).pdf$  ./pdf_bl.php?id_bl=$1  [L,QSA]
+RewriteRule ^bl.pdf$  ./pdf_bl.php  [L,QSA]
+RewriteRule ^staffs-rights-([0-9]+)$  ./index.php?content=staffs&scontent=rights&id_staff=$1  [L,QSA]
+RewriteRule ^staffs-staff-([0-9]+)$  ./index.php?content=staffs&scontent=staff&id_staff=$1  [L,QSA]
+RewriteRule ^c([0-9]+)$  ./index.php?content=customers&scontent=customer&id_customer=$1  [L,QSA]
+RewriteRule ^s([0-9]+)$  ./index.php?content=staffs&scontent=staff&id_staff=$1  [L,QSA]
+RewriteRule ^customers-customer-([0-9]+)$  ./index.php?content=customers&scontent=customer&id_customer=$1  [L,QSA]
+RewriteRule ^customers-addcontact-([0-9]+)$  ./index.php?content=customers&scontent=addcontact&id_customer=$1  [L,QSA]
+RewriteRule ^customers-addcontactoncreateinter-([0-9]+)$  ./index.php?content=customers&scontent=addcontactoncreateinter&id_customer=$1  [L,QSA]
+RewriteRule ^cdv-([0-9]+)$  ./moduls/customers/dl/cdv.php?id_customer=$1  [L,QSA]
+RewriteRule ^([a-zA-Z0-9_]+)$  ./index.php?content=$1  [L,QSA]
+RewriteRule ^([a-zA-Z0-9_]+)-([a-zA-Z0-9_-]+)$  ./index.php?content=$1&scontent=$2  [L,QSA]
+RewriteRule ^login.html$  ./login.php  [L,QSA]
+RewriteRule ^forgot.html$  ./forgot.php  [L,QSA]
+RewriteRule ^new_password.html$  ./new_password.php  [L,QSA]
+RewriteRule ^maintenance.html$  ./maintenance.php  [L,QSA]
+RewriteRule ^landing.html$  ./landing.php  [L,QSA]
+RewriteRule ^cgu.html$  ./cgu.php  [L,QSA]
+RewriteRule ^forgot.html$  ./forgot.php  [L,QSA]
+
+#ErrorDocument 404 http://managy.fr/404

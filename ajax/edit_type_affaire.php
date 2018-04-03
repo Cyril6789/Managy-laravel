@@ -1,0 +1,1 @@
+<?php session_start();require('../classes/mysql.class.php');$db = new MySQL();$type_affaire = $db->SQLfix($_GET['type_affaire']);$id = $db->SQLfix($_GET['id']);$db->Query('UPDATE types_affaires SET nom = "'.$type_affaire.'" WHERE id ="'.$id.'" AND compte_principal="'.$_SESSION['compte_principal'].'" ');echo $id;?>

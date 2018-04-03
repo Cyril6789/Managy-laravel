@@ -1,0 +1,1 @@
+<?php session_start();//GESTION DES GETSif(isset($_GET['action']) AND $_GET['action'] == "deco"){    $dropbox = new Dropbox();    $dropbox->deconnexion();}?>

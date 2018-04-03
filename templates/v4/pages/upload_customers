@@ -1,0 +1,97 @@
+<?php
+$monfichier = fopen('idinfo.csv', 'r');
+
+$i=0;
+while (!feof($monfichier))
+{ //on parcourt toutes les lignes
+$ligne = fgets($monfichier, 4096);
+$fixe = '';
+$portable = '';
+$code_postal = '';
+
+if($i>0) {
+
+$tab = explode(';', $ligne);
+//$ancien_id = $db->SQLFix(utf8_encode($tab[0]));
+$nom = $db->SQLFix(utf8_encode($tab[3]));
+$prenom = $db->SQLFix(utf8_decode($tab[4]));
+$adresse1 = $db->SQLFix(utf8_encode($tab[20]));
+$adresse2 = $db->SQLFix(utf8_encode($tab[21] . ' ' . $tab[22]));
+
+$ville = $db->SQLFix(utf8_encode($tab[24]));
+
+$tel1_temp = $db->SQLFix(utf8_encode(trim(str_replace(' ', '', $tab[12]))));
+$tel2_temp = $db->SQLFix(utf8_encode(trim(str_replace(' ', '', $tab[14]))));
+
+if (strlen($tel1_temp) == 9)
+$tel1_temp = '0'.$tel1_temp;
+if (strlen($tel2_temp) == 9)
+$tel2_temp = '0'.$tel2_temp;
+
+
+$titre = $db->SQLFix(utf8_encode($tab[2]));
+if($titre == 'Madame')
+$titre = 'Mme';
+else
+$titre = 'M';
+
+
+if (strlen($tel1_temp) == 10) //premier numéro complet
+{
+if (strlen($tel2_temp) == 10) //deuxieme aussi
+{
+if ($tel1_temp[1] == 6 OR $tel1_temp[1] == 7) //portable
+{
+if ($tel2_temp[1] == 6 OR $tel2_temp[1] == 7)  //portable aussi
+{
+$fixe = $tel1_temp;
+$portable = $tel2_temp;
+} else {
+$portable = $tel1_temp;
+$fixe = $tel2_temp;
+}
+} else {
+$fixe = $tel1_temp;
+$portable = $tel2_temp;
+}
+} else {
+if ($tel1_temp[1] == 6 OR $tel1_temp[1] == 7)
+$portable = $tel1_temp;
+else
+$fixe = $tel1_temp;
+}
+} else //deuxieme numéro complet
+{
+if (strlen($tel2_temp) == 10) {
+if ($tel2_temp[1] == 6 OR $tel2_temp[1] == 7)
+$portable = $tel2_temp;
+else
+$fixe = $tel2_temp;
+}
+}
+
+if ($fixe)
+$fixe = '+33 (0)' . $fixe[1] . ' ' . $fixe[2] . $fixe[3] . ' ' . $fixe[4] . $fixe[5] . ' ' . $fixe['6'] . $fixe['7'] . ' ' . $fixe[8] . $fixe['9'];
+if ($portable)
+$portable = '+33 (0)' . $portable[1] . ' ' . $portable[2] . $portable[3] . ' ' . $portable[4] . $portable[5] . ' ' . $portable['6'] . $portable['7'] . ' ' . $portable[8] . $portable['9'];
+
+
+$mail = $db->SQLFix(trim($tab['10']));
+$code_postal = $db->SQLFix(str_replace(' ', '', $tab[23]));
+
+if ($nom) {
+$sql = 'INSERT INTO clients (titre, nom, prenom, pro_part, mail, adresse, adresse_suite, cp, ville, fixe, portable, compte_principal, ancien_id) VALUES ("'.$titre.'", "' . $nom . '", "'.$prenom.'", "2", "' . $mail . '", "' . $adresse1 . '", "' . $adresse2 . '", "' . $code_postal . '", "' . $ville . '", "' . $fixe . '", "' . $portable . '", "41", "' . $ancien_id . '") ';
+
+echo $i . ' ' . $sql . ' <br />';
+//$db->Query($sql);
+}
+
+
+}
+
+$i++;
+
+
+}
+
+fclose($monfichier);

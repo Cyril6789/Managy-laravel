@@ -1,0 +1,3 @@
+<?php
+//GESTION DES GETS
+?> 

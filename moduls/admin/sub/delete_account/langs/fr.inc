@@ -1,0 +1,1 @@
+<?phpdefine(ADMIN_DELETE_ACCOUNT, "Suppression de compte");$page_title = ADMIN_DELETE_ACCOUNT;?>

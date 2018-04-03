@@ -1,0 +1,738 @@
+/**********************
+
+Responsive.css
+=============
+
+Author:  Gino Aliaj
+Template: Cloudify - One Page Web Hosting HTML Template
+Version: 1.1
+
+Author URI: gnodesign.com
+***************************/
+
+
+/*------------------------------------------
+  Responsive Grid Media Queries
+--------------------------------------------*/
+
+
+/* ---- Start of max-width 992px CSS ---- */
+
+@media (max-width: 992px) {
+    /**************** 
+		MAIN MENU
+	****************/
+    .navbar-default .navbar-toggle .icon-bar {
+        background: #f6f6f6;
+    }
+    .navbar-header {
+        float: right !important;
+    }
+    .navbar-toggle {
+        display: block !important;
+        float: right !important;
+    }
+    .navbar-toggle:focus,
+    .navbar-toggle:hover {
+        background: none !important;
+    }
+    .navbar-collapse {
+        display: none;
+    }
+    div#main-nav {
+        max-height: 100% !important;
+        border: 0;
+    }
+    div#main-nav ul.nav.navbar-nav {
+        height: 100vh;
+        padding-top: 30px;
+        margin: 0;
+        width: 100%;
+    }
+    div#main-nav ul li {
+        width: 100%;
+        text-align: center;
+    }
+    div#main-nav ul li a {
+        padding: 10px 0;
+    }
+    div#main-nav ul li a.cart {
+        display: none;
+    }
+    /**************** 
+		PUSH MENU
+	****************/
+    .collapse {
+        display: block !important;
+    }
+    /* General styles for all menus */
+    .cbp-spmenu {
+        background: #0c112a;
+        position: fixed;
+        padding: 0;
+        margin: 0 !important;
+        overflow-x: hidden;
+        overflow-y: visible;
+        display: block;
+        visibility: visible !important;
+    }
+    /* Orientation-dependent styles for the content of the menu */
+    .cbp-spmenu-vertical {
+        width: 260px;
+        height: 100%;
+        top: 0;
+        z-index: 1000;
+    }
+    .cbp-spmenu-horizontal {
+        width: 100%;
+        height: 150px;
+        left: 0;
+        z-index: 1000;
+        overflow: hidden;
+    }
+    .cbp-spmenu-horizontal h3 {
+        height: 100%;
+        width: 20%;
+        float: left;
+    }
+    .cbp-spmenu-horizontal a {
+        float: left;
+        width: 20%;
+        padding: 0.8em;
+        border-left: 1px solid #258ecd;
+    }
+    /* Vertical menu that slides from the left or right */
+    .cbp-spmenu-left {
+        left: -260px;
+    }
+    .cbp-spmenu-right {
+        right: -260px;
+    }
+    .cbp-spmenu-left.cbp-spmenu-open {
+        left: 0px;
+    }
+    .cbp-spmenu-right.cbp-spmenu-open {
+        right: 0px;
+    }
+    /* Horizontal menu that slides from the top or bottom */
+    .cbp-spmenu-top {
+        top: -150px;
+    }
+    .cbp-spmenu-bottom {
+        bottom: -150px;
+    }
+    .cbp-spmenu-top.cbp-spmenu-open {
+        top: 0px;
+    }
+    .cbp-spmenu-bottom.cbp-spmenu-open {
+        bottom: 0px;
+    }
+    /* Push classes applied to the body */
+    .cbp-spmenu-push {
+        overflow-x: hidden;
+        position: relative;
+        left: 0;
+    }
+    .cbp-spmenu-push-toright {
+        left: 260px;
+    }
+    .cbp-spmenu-push-toleft {
+        left: -260px;
+    }
+    /* Transitions */
+    .cbp-spmenu,
+    .cbp-spmenu-push {
+        -webkit-transition: all 0.3s ease;
+        -moz-transition: all 0.3s ease;
+        transition: all 0.3s ease;
+    }
+    /**************** 
+		PUSH MENU
+	****************/
+    .demo1 {
+        height: 80vh;
+    }
+    /**************** 
+		CLOUDS
+	****************/
+    #about .about-image {
+        padding-top: 50px;
+    }
+    .clouds img.cloud1 {
+        top: -450px;
+        width: 120px;
+        animation: cloud1 35s linear 1s infinite;
+        opacity: 0;
+    }
+    .clouds img.cloud2 {
+        top: -350px;
+        width: 80px;
+        -webkit-animation: cloud2 15s linear 7s infinite;
+        animation: cloud2 15s linear 7s infinite;
+        opacity: 0;
+    }
+    .clouds img.cloud3 {
+        top: -250px;
+        width: 95px;
+        -webkit-animation: cloud3 30s linear 14s infinite;
+        animation: cloud3 35s linear 14s infinite;
+        opacity: 0;
+    }
+    .clouds img.cloud4 {
+        top: -50px;
+        width: 90px;
+        -webkit-animation: cloud4 55s linear 16s infinite;
+        animation: cloud4 40s linear 16s infinite;
+        opacity: 0;
+    }
+    .clouds img.cloud5 {
+        top: 0;
+        width: 130px;
+        -webkit-animation: cloud5 25s linear 17s infinite;
+        animation: cloud5 55s linear 17s infinite;
+        opacity: 0;
+    }
+    /**************** 
+		SERVICE
+	****************/
+    .info .info-text {
+        margin-bottom: 70px;
+        text-align: center;
+    }
+    #secondary.info .info-text {
+        margin: 0;
+    }
+    .info-image:before {
+        width: 50%;
+        margin: 0 auto;
+    }
+    #secondary.info .info-image {
+        padding-bottom: 70px;
+    }
+    /**************** 
+		SUBSCRIBE
+	****************/
+    .subscribe-form h2 {
+        text-align: center;
+        padding-bottom: 30px;
+    }
+    .subscribe-form .form-inline .form-group .input-group .form-control {
+        width: calc(100% - 100px);
+    }
+    section#subscribe .clouds img.cloud2 {
+        top: -140px;
+    }
+    /**************** 
+		TEAM
+	****************/
+    .member {
+        width: 100%;
+    }
+    .member img {
+        height: 320px;
+    }
+    /**************** 
+		TESTIMONIALS
+	****************/
+    .testimonial .owl-item .item .review img {
+        display: block;
+        width: 70%;
+        visibility: hidden;
+    }
+    .testimonial .owl-item .item .review p {
+        position: absolute;
+        top: 50%;
+        padding-top: 30px;
+        width: 75%;
+        margin: 0 auto;
+        left: 0;
+        right: 0;
+    }
+    .testimonial .owl-item .item .review p:before {
+        top: -100px;
+    }
+    /**************** 
+		BLOG
+	****************/
+    .news-content .col-md-4 {
+        margin-bottom: 50px;
+    }
+    .news-content .col-md-4:last-child {
+        margin-bottom: 0;
+    }
+    /**************** 
+		FOOTER
+	****************/
+    .top-footer .footer-links li i {
+        margin: 0;
+    }
+    /**************** 
+		DOMAIN PAGE
+	****************/
+    aside .domain-sidebar {
+        margin-top: 40px;
+    }
+    aside .banner img {
+        margin: 0 auto;
+    }
+    /**************** 
+		CART PAGE
+	****************/
+    .subtotal-content .coupon input[type="text"] {
+        width: 100%;
+    }
+    .cart-page .col-md-4.col-xs-12 {
+        margin-top: 30px;
+    }
+}
+
+
+/* ---- End of max-width 992px CSS ---- */
+
+
+/* ---- Start of min-width 480px and max-width 768px CSS ---- */
+
+@media all and (min-width: 480px) and (max-width: 768px) {
+    .section-title p {
+        width: 80%;
+    }
+    /**************** 
+		TOP HEADER
+	****************/
+    .social {
+        margin: 0 auto;
+        padding: 0;
+    }
+    .social li {
+        padding: 10px;
+    }
+    .top-button {
+        float: none;
+        text-align: center;
+        padding: 0 0 10px 0;
+    }
+    /**************** 
+		DOMAIN
+	****************/
+    .domain .form-group .form-control {
+        width: calc(100% - 130px) !important;
+        padding-left: 20px;
+    }
+    .domain-check ul li {
+        margin-right: 5px;
+    }
+    /**************** 
+		SERVICES
+	****************/
+    #services .service p {
+        padding: 20px 30px 0;
+    }
+    #services .row:last-child {
+        padding: 0;
+    }
+    /**************** 
+		PRICING
+	****************/
+    #pricing-table .table-responsive {
+        border: none;
+    }
+    .pricing-plan {
+        width: 80%;
+        margin: 0 auto !important;
+        border-radius: 30px !important;
+        float: none;
+    }
+    .pricing-plan .price {
+        border-radius: 30px 30px 0 0 !important;
+    }
+    #basic.pricing-plan,
+    #agency.pricing-plan,
+    #enterprise.pricing-plan {
+        margin-top: 50px !important;
+    }
+    /**************** 
+		FOOTER
+	****************/
+    .top-footer .footer-info {
+        text-align: center;
+    }
+    .top-footer .footer-info > div {
+        margin-top: 30px;
+    }
+    .top-footer h4 {
+        padding-bottom: 10px;
+    }
+    .top-footer .footer-links {
+        text-align: center;
+    }
+}
+
+
+/* ---- End of min-width 480px and max-width 768px CSS ---- */
+
+
+/* ---- Start of max-width 767px CSS ---- */
+
+@media all and (max-width: 767px) {
+    /**************** 
+		TEAM
+	****************/
+    .member {
+        width: 70% !important;
+        margin-bottom: 50px !important;
+    }
+    /**************** 
+		COUNTUP
+	****************/
+    #countup > div > div {
+        margin-bottom: 50px;
+    }
+}
+
+
+/* ---- End of max-width 767px CSS ---- */
+
+
+/* ---- Start of max-width 580px CSS ---- */
+
+@media all and (max-width: 580px) {
+    #about .clouds img.cloud1 {
+        display: none;
+    }
+}
+
+
+/* ---- End of max-width 580px CSS ---- */
+
+
+/* ---- Start of max-width 480px CSS ---- */
+
+@media all and (max-width: 480px) {
+    .section-title p {
+        width: 80%;
+    }
+    /**************** 
+		TOP HEADER
+	****************/
+    .social {
+        margin: 0 auto;
+        padding: 0;
+    }
+    .social li {
+        padding: 10px;
+    }
+    .top-button {
+        float: none;
+        text-align: center;
+        padding: 0 0 10px 0;
+    }
+    /**************** 
+		LOGIN POP UP
+	****************/
+    .cd-user-modal.is-visible .cd-user-modal-container {
+        -webkit-transform: translateY(40%);
+        -moz-transform: translateY(40%);
+        -ms-transform: translateY(40%);
+        -o-transform: translateY(40%);
+        transform: translateY(40%);
+    }
+    /**************** 
+		SLIDER - HOME SECTION
+	****************/
+    .demo1 .slider-content {
+        top: 20%;
+    }
+    .demo2 .demo-content {
+        top: 20%;
+    }
+    .demo1 .slider-content h2 {
+        font-size: 36px;
+    }
+    .demo2 .demo-content h2 {
+        font-size: 36px;
+    }
+    /**************** 
+		DOMAIN
+	****************/
+    .domain h2 {
+        font-size: 24px;
+    }
+    .domain .form-group .form-control {
+        width: 100% !important;
+    }
+    .domain .form-group button {
+        margin: 20px 0 10px 0;
+        width: 100%;
+    }
+    .domain-check span {
+        margin-right: 5px;
+    }
+    .domain-check ul li {
+        margin: 0 0 10px 0;
+        width: 49%;
+    }
+    /**************** 
+		SERVICES
+	****************/
+    #services .service p {
+        padding: 20px 30px 0;
+    }
+    #services .row {
+        margin: 0;
+    }
+    #services .row:last-child {
+        padding: 0;
+    }
+    .info-image img {
+        width: 25%;
+    }
+    /**************** 
+		SUBSCRIBE
+	****************/
+    .subscribe-form .form-inline .form-group .input-group {
+        width: 100%;
+    }
+    .subscribe-form .form-inline .form-group .input-group .form-control {
+        width: 100%;
+    }
+    .subscribe-form .form-inline .form-group .input-group button {
+        width: 100%;
+        margin: 20px 0 0 0;
+    }
+    /**************** 
+		TEAM
+	****************/
+    .member {
+        width: 70% !important;
+        margin-bottom: 50px !important;
+    }
+    /**************** 
+		PRICING
+	****************/
+    #pricing-table .table-responsive {
+        border: none;
+    }
+    .pricing-plan {
+        width: 80%;
+        margin: 0 auto !important;
+        border-radius: 30px !important;
+        float: none;
+    }
+    .pricing-plan .price {
+        border-radius: 30px 30px 0 0 !important;
+    }
+    #basic.pricing-plan,
+    #agency.pricing-plan,
+    #enterprise.pricing-plan {
+        margin-top: 50px !important;
+    }
+    /**************** 
+		COUNTUP
+	****************/
+    #countup > div > div {
+        margin-bottom: 50px;
+    }
+    /**************** 
+		TESTIMONIAL
+	****************/
+    .testimonial .owl-item .item .review p {
+        top: 40%;
+    }
+    .testimonial .owl-item .item .review p:before {
+        top: -50px;
+    }
+    /**************** 
+		FOOTER
+	****************/
+    .top-footer .footer-info {
+        text-align: center;
+    }
+    .top-footer .footer-info > div {
+        margin-top: 30px;
+    }
+    .top-footer h4 {
+        padding-bottom: 10px;
+    }
+    .top-footer .footer-links {
+        text-align: center;
+    }
+    /**************** 
+		404 PAGE
+	****************/
+    .page-not-found {
+        min-height: 100%;
+        height: 100vh;
+    }
+    .page-not-found .item-title {
+        position: relative;
+        top: 30%;
+        -webkit-transform: translateY(0);
+        -moz-transform: translateY(0);
+        -ms-transform: translateY(0);
+        -o-transform: translateY(0);
+        transform: translateY(0);
+    }
+    .page-not-found .item-title #message {
+        min-height: 240px;
+    }
+    .page-not-found .item-title #message p:first-child {
+        font-size: 50px;
+        font-weight: 700;
+    }
+    /**************** 
+		LIVE CHAT
+	****************/
+    .live-chat {
+        left: 0;
+        right: 0;
+        margin: 0 auto;
+        width: 80%;
+    }
+    .live-chat.collapsed {
+        transform: translateY(350px);
+    }
+    .live-chat input[type="text"] {
+        width: 100%;
+    }
+    .chat-message-content {
+        margin-left: 45px;
+    }
+    .chat-feedback {
+        text-align: center;
+        margin: 0;
+    }
+    /**************** 
+		COMING SOON
+	****************/
+    .coming-main .logo img {
+        width: 250px;
+    }
+    .countdown {
+        margin-top: 30px;
+    }
+    /**************** 
+		DOMAIN PAGE
+	****************/
+    .domain-results ul li > div {
+        display: block;
+    }
+    .domain-results ul li .domain-type {
+        text-align: center;
+    }
+    .domain-results ul li .price-action {
+        float: none;
+        text-align: center;
+        padding-top: 20px;
+    }
+    .domain-results ul li .price-action > * {
+        float: none;
+    }
+    /**************** 
+		CART PAGE
+	****************/
+    .subtotal-content .coupon .col-md-6.col-xs-8 {
+        width: 100%;
+    }
+    .subtotal-content .coupon .col-md-6.col-xs-4 {
+        width: 100%;
+        padding-top: 20px;
+        text-align: center;
+    }
+    .subtotal-content .support {
+        text-align: center;
+    }
+}
+
+
+/* ---- End of max-width 480px CSS ---- */
+
+
+/* ---- Start of max-width 420px CSS ---- */
+
+@media all and (max-width: 420px) {
+    #about .clouds img.cloud2 {
+        display: none;
+    }
+    #about .clouds img.cloud3 {
+        -webkit-animation: cloud3 15s linear 14s infinite;
+        animation: cloud3 15s linear 14s infinite;
+    }
+}
+
+
+/* ---- End of max-width 420px CSS ---- */
+
+
+/* ---- Start of max-width 380px CSS ---- */
+
+@media all and (max-width: 380px) {
+    /**************** 
+		SLIDER - HOME SECTION
+	****************/
+    .demo1 .slider-content a {
+        margin-top: 10px;
+    }
+    .demo2 .demo-content a {
+        margin-top: 10px;
+    }
+    /**************** 
+		TESTIMONIAL
+	****************/
+    .testimonial .owl-item .item .review p {
+        top: 30%;
+    }
+    .testimonial .owl-item .item .review p:before {
+        top: -20px;
+    }
+}
+
+
+/* ---- End of max-width 380px CSS ---- */
+
+
+/* ---- Start of max-width 320px CSS ---- */
+
+@media all and (max-width: 320px) {
+    .demo1 {
+        height: 550px;
+    }
+    .live-chat {
+        display: none;
+    }
+    .top-button {
+        display: none;
+    }
+    .clouds {
+        opacity: .5;
+    }
+}
+
+
+/* ---- End of max-width 320px CSS ---- */
+
+
+/* ---- Start of max-height 420px CSS ---- */
+
+@media screen and (max-height: 420px) {
+    .demo1 {
+        height: 500px;
+    }
+    .demo-content {
+        top: 25%;
+    }
+    .demo-content h2 {
+        font-size: 36px;
+    }
+    .slider-content h2 {
+        font-size: 36px;
+    }
+    .live-chat {
+        display: none;
+    }
+    .top-button {
+        display: none;
+    }
+    .member img {
+        max-height: 320px;
+    }
+}

@@ -1,0 +1,1 @@
+<?php   $rights['calendar']['1'] = CALENDAR_RIGHTS_SEE_CALENDAR;   $rights['calendar']['2'] = CALENDAR_RIGHTS_ADD_MEETING;    ?>

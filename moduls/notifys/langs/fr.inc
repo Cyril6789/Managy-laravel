@@ -1,0 +1,1 @@
+<?phpdefine(NOTIFY_TITLE, 'Liste des notifications');define(NOTIFY_SB_SEE, 'Liste des notifications');$page_title = NOTIFY_TITLE;?>

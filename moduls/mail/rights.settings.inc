@@ -1,0 +1,1 @@
+<?php   $rights['mail']['1'] = MAIL_RIGHTS_DISPLAY_PAGE;   $rights['mail']['2'] = MAIL_RIGHTS_SEND_MAIL;    ?>
