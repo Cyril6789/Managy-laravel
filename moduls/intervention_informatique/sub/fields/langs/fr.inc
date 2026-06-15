@@ -1,1 +1,0 @@
-<?phpdefine(INTERVENTION_FIELDS_TITLE, "Liste des champs personnalisés");$page_title = INTERVENTION_FIELDS_TITLE;?>

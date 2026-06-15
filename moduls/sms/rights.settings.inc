@@ -1,1 +1,0 @@
-<?php$rights['sms']['1'] = SMS_RIGHTS_DISPLAY_PAGE;$rights['sms']['2'] = SMS_RIGHTS_ORDER_SMS;$rights['sms']['3'] = SMS_RIGHTS_SEND_SMS;?>

@@ -1,1 +1,0 @@
-<?php session_start();//Titre     $nums = $_GET['ids_inters'];     $page_title = str_replace('%num%', $nums, $page_title);?>

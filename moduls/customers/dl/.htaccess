@@ -1,4 +1,0 @@
-Allow from all
-<FilesMatch "\.inc$">
-	Allow From all
-</FilesMatch>

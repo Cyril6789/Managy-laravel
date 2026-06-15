@@ -1,1 +1,0 @@
-<?phpdefine(ADMIN_CGU, "CGU");define(ADMIN_CGU_SB_SEE, 'CGU');$page_title = ADMIN_CGU;?>

@@ -1,1 +1,0 @@
-<?php session_start();    if(!is_array($sidebar['calendar']))        $sidebar['calendar'] = Array();    $sidebar['calendar']['first'] = 'calendar|'.CAL_SB_CALENDAR;    $sidebar['calendar'][] = 'calendar|1|'.CAL_SB_SEE_CALENDAR.'|rdv';    $sidebar['calendar'][] = 'calendar|2|'.CAL_SB_ADD_MEETING.'|rdv-new';    ?>

@@ -1,1 +1,0 @@
-<?php$rights['dropbox']['1'] = DROPBOX_RIGHTS_SETTINGS;    ?>

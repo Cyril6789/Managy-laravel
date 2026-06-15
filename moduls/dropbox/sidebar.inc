@@ -1,1 +1,0 @@
-<?php session_start();if(!is_array($sidebar['admin']))    $sidebar['admin'] = Array();$sidebar['admin'][] = 'dropbox|1|'.DROPBOX_SB_SETTINGS.'|dropbox';?>
