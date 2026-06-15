@@ -1,58 +1,150 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Managy — Gestion d'interventions informatiques
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Application métier pour techniciens informatiques : gestion des **interventions**,
+des **clients**, du **matériel**, de l'**agenda**, des **tâches**, du **pack
+maintenance** et de la **satisfaction client**, avec suivi en direct côté client.
 
-## About Laravel
+Réécriture complète en **Laravel 13** (PHP 8.3+) d'une ancienne application PHP,
+avec interface **Tailwind CSS v4 + Alpine.js** et **mode clair / sombre**.
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+> ℹ️ Cette version est **mono-entreprise** : chaque société télécharge et installe
+> sa propre instance. Toute la logique SaaS de l'application d'origine (multi-comptes
+> `compte_principal`, inscription, paiement/Paypal, landing page, super-administration,
+> activation de modules payants) a été **supprimée**. Toutes les fonctionnalités
+> métier — y compris celles qui étaient des modules optionnels — sont désormais
+> **natives et activées par défaut**.
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+---
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+## Stack technique
 
-## Learning Laravel
+| Composant       | Version / outil                          |
+|-----------------|------------------------------------------|
+| Framework       | Laravel 13                               |
+| PHP             | 8.3+                                      |
+| Front           | Tailwind CSS v4 (Vite), Alpine.js        |
+| Base de données | MySQL 8 / MariaDB (SQLite en dev)        |
+| Auth            | Sessions Laravel, droits par Gates       |
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+---
 
-In addition, [Laracasts](https://laracasts.com) contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
-
-You can also watch bite-sized lessons with real-world projects on [Laravel Learn](https://laravel.com/learn), where you will be guided through building a Laravel application from scratch while learning PHP fundamentals.
-
-## Agentic Development
-
-Laravel's predictable structure and conventions make it ideal for AI coding agents like Claude Code, Cursor, and GitHub Copilot. Install [Laravel Boost](https://laravel.com/docs/ai) to supercharge your AI workflow:
+## Installation
 
 ```bash
-composer require laravel/boost --dev
+# 1. Dépendances
+composer install
+npm install
 
-php artisan boost:install
+# 2. Environnement
+cp .env.example .env
+php artisan key:generate
+
+# 3. Base de données — éditez le .env puis :
+php artisan migrate --seed
+
+# 4. Assets front
+npm run build      # ou `npm run dev` en développement
+
+# 5. Lancer
+php artisan serve
 ```
 
-Boost provides your agent 15+ tools and skills that help agents build Laravel applications while following best practices.
+### Configuration de la base de données
 
-## Contributing
+Par défaut le projet utilise **SQLite** (idéal pour tester). Pour une mise en
+production, configurez MySQL dans le `.env` :
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+```dotenv
+DB_CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=managy
+DB_USERNAME=managy
+DB_PASSWORD=secret
+```
 
-## Code of Conduct
+Le schéma part **d'une base vierge et normalisée** : aucune reprise de l'ancienne
+base n'est nécessaire. `php artisan migrate` crée toutes les tables.
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+### Compte par défaut
 
-## Security Vulnerabilities
+Après `migrate --seed`, un administrateur est créé :
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+- **Identifiant :** `admin`
+- **Mot de passe :** `password`
 
-## License
+> Pensez à changer ce mot de passe immédiatement (Mon profil → Mot de passe).
+> Les données de démonstration (clients/interventions) ne sont insérées qu'en
+> environnement `local`.
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+---
+
+## Fonctionnalités
+
+### Métier
+- **Interventions** : création, planification (RDV atelier/domicile), statuts
+  configurables, prise en charge multi-techniciens, prestations, commandes
+  fournisseurs, sous-traitance, tchat interne, journal d'activité, restitution/
+  clôture, déclôture, suivi de facturation.
+- **Clients** : professionnels & particuliers, contacts rattachés à une société,
+  archivage, historique des interventions.
+- **Suivi client en direct** : chaque intervention dispose d'un **lien sécurisé**
+  (jeton non devinable) permettant au client de suivre l'avancement et la
+  répartition de son matériel, sans compte ni connexion.
+- **Pack maintenance** : solde d'heures par client, crédits / consommations.
+- **Agenda** : vue mensuelle regroupant rendez-vous et interventions planifiées.
+- **Tâches** : à faire / en cours / terminées, échéances, suivi des heures.
+- **Satisfaction** : enquête envoyée au client (note + commentaire) et tableau de
+  bord des retours.
+
+### Communication
+- **SMS** aux clients via un fournisseur configurable (`log` pour test, SMSMode,
+  SMSFactor).
+- **E-mails** transactionnels (notifications, mot de passe oublié, messages client).
+- **Automatismes** : envoi automatique de SMS / e-mail sur événement (création,
+  changement de statut, changement de RDV, réception de commande, retour de
+  sous-traitance, restitution).
+
+### Administration
+- **Techniciens** et **droits granulaires** (les administrateurs/« gérants »
+  disposent de tous les droits).
+- **Paramètres** : coordonnées de l'entreprise, configuration SMS, listes métier
+  (types de matériel, systèmes d'exploitation, antivirus, prestations), statuts
+  d'intervention, modèles de rapports/commentaires.
+- **Journaux** d'activité (connexions, actions, historique des interventions).
+- **Statistiques** : interventions par mois, heures par technicien, CA estimé.
+
+---
+
+## Tests
+
+```bash
+php artisan test
+```
+
+Une suite de **tests de fumée** vérifie que chaque écran de l'application répond
+correctement (`tests/Feature/SmokeTest.php`).
+
+---
+
+## Architecture
+
+```
+app/
+  Http/Controllers/         # Contrôleurs (interventions, clients, agenda, …)
+    Intervention/           # Sous-ressources d'une intervention
+    Public/                 # Pages publiques (suivi client, satisfaction)
+  Models/                   # Modèles Eloquent du domaine
+  Services/                 # Notifier, SmsSender, AutomatismeRunner
+  Support/Permissions.php   # Catalogue des droits
+database/
+  migrations/               # Schéma normalisé (single-tenant)
+  seeders/                  # Données de référence + démo
+resources/views/
+  components/               # Composants Blade (UI)
+  layouts/                  # app (privé), public, auth
+  partials/                 # Sidebar, header, flash, post-it
+```
+
+Le code PHP d'origine est conservé pour référence dans l'historique Git
+(branche `master`) ; il n'est pas inclus dans cette branche.

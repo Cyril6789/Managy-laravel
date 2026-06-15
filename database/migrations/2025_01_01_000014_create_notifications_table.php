@@ -9,7 +9,7 @@ return new class extends Migration
     public function up(): void
     {
         // In-app notifications (ex notifys + changements_interventions).
-        Schema::create('notifications', function (Blueprint $table) {
+        Schema::create('app_notifications', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->constrained()->cascadeOnDelete();
             $table->foreignId('intervention_id')->nullable()->constrained('interventions')->nullOnDelete();
@@ -26,6 +26,6 @@ return new class extends Migration
 
     public function down(): void
     {
-        Schema::dropIfExists('notifications');
+        Schema::dropIfExists('app_notifications');
     }
 };
