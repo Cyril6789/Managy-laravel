@@ -3,7 +3,6 @@
 namespace Database\Seeders;
 
 use App\Models\Antivirus;
-use App\Models\Client;
 use App\Models\CommentaireType;
 use App\Models\Materiel;
 use App\Models\Prestation;

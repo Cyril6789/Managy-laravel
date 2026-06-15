@@ -10,20 +10,29 @@ final class Permissions
 {
     // Customers
     public const CLIENTS_VIEW = 'clients.view';
+
     public const CLIENTS_MANAGE = 'clients.manage';
 
     // Interventions
     public const INTERVENTIONS_VIEW = 'interventions.view';
+
     public const INTERVENTIONS_CREATE = 'interventions.create';
+
     public const INTERVENTIONS_MANAGE = 'interventions.manage';
+
     public const INTERVENTIONS_VIEW_ALL = 'interventions.view_all';        // incl. archived / others'
+
     public const INTERVENTIONS_DECLOTURE = 'interventions.decloture';
+
     public const INTERVENTIONS_FACTURATION = 'interventions.facturation';
 
     // Calendar / tasks
     public const CALENDAR_VIEW = 'calendar.view';
+
     public const CALENDAR_MANAGE = 'calendar.manage';
+
     public const TASKS_VIEW = 'tasks.view';
+
     public const TASKS_MANAGE = 'tasks.manage';
 
     // Communication
@@ -31,16 +40,21 @@ final class Permissions
 
     // Maintenance pack
     public const MAINTENANCE_VIEW = 'maintenance.view';
+
     public const MAINTENANCE_MANAGE = 'maintenance.manage';
 
     // Stats / logs
     public const STATS_VIEW = 'stats.view';
+
     public const LOGS_VIEW = 'logs.view';
+
     public const SATISFACTION_VIEW = 'satisfaction.view';
 
     // Administration
     public const STAFF_MANAGE = 'staff.manage';
+
     public const SETTINGS_MANAGE = 'settings.manage';
+
     public const AUTOMATISMES_MANAGE = 'automatismes.manage';
 
     /**

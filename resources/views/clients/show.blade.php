@@ -1,0 +1,70 @@
+@extends('layouts.app')
+@section('title', $client->nomComplet())
+
+@section('content')
+    <x-page-header :title="$client->nomComplet()" :subtitle="$client->type === 'professionnel' ? 'Professionnel' : 'Particulier'">
+        <x-slot:actions>
+            @can(\App\Support\Permissions::INTERVENTIONS_CREATE)
+                <x-button variant="secondary" :href="route('interventions.create', ['client_id' => $client->id])"><x-icon name="plus" class="h-4 w-4" /> Intervention</x-button>
+            @endcan
+            @can(\App\Support\Permissions::CLIENTS_MANAGE)
+                <x-button variant="secondary" :href="route('clients.edit', $client)">Modifier</x-button>
+                <form action="{{ route('clients.archive', $client) }}" method="POST">@csrf @method('PATCH')
+                    <x-button variant="secondary" type="submit">{{ $client->archived_at ? 'Réactiver' : 'Archiver' }}</x-button>
+                </form>
+            @endcan
+        </x-slot:actions>
+    </x-page-header>
+
+    <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
+        <div class="space-y-6">
+            <x-card title="Coordonnées">
+                <dl class="space-y-2 text-sm">
+                    <div class="flex justify-between gap-3"><dt class="text-gray-500">E-mail</dt><dd class="text-right">{{ $client->email ?: '—' }}</dd></div>
+                    <div class="flex justify-between gap-3"><dt class="text-gray-500">Fixe</dt><dd>{{ $client->telephone_fixe ?: '—' }}</dd></div>
+                    <div class="flex justify-between gap-3"><dt class="text-gray-500">Mobile</dt><dd>{{ $client->telephone_mobile ?: '—' }}</dd></div>
+                    <div class="flex justify-between gap-3"><dt class="text-gray-500">Adresse</dt><dd class="text-right">{{ $client->adresseComplete() ?: '—' }}</dd></div>
+                    @if ($client->siret)<div class="flex justify-between gap-3"><dt class="text-gray-500">SIRET</dt><dd>{{ $client->siret }}</dd></div>@endif
+                    @if ($client->parent)<div class="flex justify-between gap-3"><dt class="text-gray-500">Société</dt><dd><a class="text-brand-600 hover:underline" href="{{ route('clients.show', $client->parent) }}">{{ $client->parent->nomComplet() }}</a></dd></div>@endif
+                </dl>
+                @if ($client->notes)
+                    <div class="mt-4 rounded-lg bg-gray-50 p-3 text-sm text-gray-600 dark:bg-gray-800 dark:text-gray-300">{{ $client->notes }}</div>
+                @endif
+            </x-card>
+
+            @if ($client->contacts->isNotEmpty())
+                <x-card title="Contacts" :padding="false">
+                    <ul class="divide-y divide-gray-100 dark:divide-gray-800">
+                        @foreach ($client->contacts as $contact)
+                            <li class="px-5 py-3">
+                                <a href="{{ route('clients.show', $contact) }}" class="font-medium text-brand-600 hover:underline">{{ $contact->nomComplet() }}</a>
+                                <p class="text-xs text-gray-400">{{ $contact->email ?: $contact->telephone_mobile }}</p>
+                            </li>
+                        @endforeach
+                    </ul>
+                </x-card>
+            @endif
+        </div>
+
+        <div class="lg:col-span-2">
+            <x-card title="Interventions" :padding="false">
+                <div class="divide-y divide-gray-100 dark:divide-gray-800">
+                    @forelse ($interventions as $i)
+                        <a href="{{ route('interventions.show', $i) }}" class="flex items-center justify-between gap-3 px-5 py-3 hover:bg-gray-50 dark:hover:bg-gray-800/50">
+                            <div class="min-w-0">
+                                <p class="font-medium">{{ $i->reference }}</p>
+                                <p class="truncate text-sm text-gray-500">{{ \Illuminate\Support\Str::limit($i->panne, 60) ?: '—' }}</p>
+                            </div>
+                            <div class="flex shrink-0 items-center gap-2">
+                                @if ($i->statut)<x-badge :color="$i->statut->couleur">{{ $i->statut->nom }}</x-badge>@endif
+                                <span class="text-xs text-gray-400">{{ $i->opened_at?->format('d/m/Y') }}</span>
+                            </div>
+                        </a>
+                    @empty
+                        <x-empty-state icon="wrench" title="Aucune intervention" />
+                    @endforelse
+                </div>
+            </x-card>
+        </div>
+    </div>
+@endsection

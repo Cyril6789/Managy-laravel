@@ -1,0 +1,84 @@
+@extends('layouts.public')
+@section('title', 'Suivi intervention '.$intervention->reference)
+
+@php $i = $intervention; @endphp
+
+@section('content')
+    <div class="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-gray-900">
+        <div class="flex flex-wrap items-start justify-between gap-3">
+            <div>
+                <p class="text-sm text-gray-500">Suivi de votre intervention</p>
+                <h1 class="text-2xl font-bold">N° {{ $i->reference }}</h1>
+            </div>
+            @if ($i->estCloturee())
+                <x-badge color="#16a34a">Terminée</x-badge>
+            @elseif ($i->statut)
+                <x-badge :color="$i->statut->couleur">{{ $i->statut->nom }}</x-badge>
+            @endif
+        </div>
+
+        {{-- Timeline --}}
+        <div class="mt-6 grid grid-cols-3 gap-2 text-center text-xs">
+            @php
+                $etapes = [
+                    ['Reçue', $i->opened_at !== null],
+                    ['En cours', ! $i->estCloturee() || $i->closed_at],
+                    ['Terminée', $i->estCloturee()],
+                ];
+            @endphp
+            @foreach ($etapes as $idx => [$label, $done])
+                <div>
+                    <div class="mx-auto flex h-9 w-9 items-center justify-center rounded-full {{ $done ? 'bg-brand-600 text-white' : 'bg-gray-200 text-gray-400 dark:bg-gray-700' }}">
+                        @if ($done)<x-icon name="check" class="h-5 w-5" />@else {{ $idx + 1 }} @endif
+                    </div>
+                    <p class="mt-1 font-medium {{ $done ? 'text-gray-700 dark:text-gray-200' : 'text-gray-400' }}">{{ $label }}</p>
+                </div>
+            @endforeach
+        </div>
+
+        {{-- Pending alerts --}}
+        @if (! $i->estCloturee() && ($commandeEnAttente || $sstEnAttente))
+            <div class="mt-6 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-900 dark:bg-amber-900/20 dark:text-amber-300">
+                Votre intervention est en attente de réception de pièces ou de retour d'un prestataire.
+            </div>
+        @endif
+
+        <dl class="mt-6 space-y-3 text-sm">
+            <div class="flex justify-between gap-3 border-t border-gray-100 pt-3 dark:border-gray-800">
+                <dt class="text-gray-500">Client</dt><dd class="font-medium">{{ $i->client?->nomComplet() }}</dd>
+            </div>
+            @if ($i->materiel)
+                <div class="flex justify-between gap-3"><dt class="text-gray-500">Matériel</dt><dd>{{ $i->materiel->nom }}</dd></div>
+            @endif
+            <div class="flex justify-between gap-3"><dt class="text-gray-500">Reçue le</dt><dd>{{ $i->opened_at?->format('d/m/Y') }}</dd></div>
+            @if ($i->estCloturee())
+                <div class="flex justify-between gap-3"><dt class="text-gray-500">Terminée le</dt><dd>{{ $i->closed_at?->format('d/m/Y') }}</dd></div>
+            @endif
+        </dl>
+
+        @if ($i->panne)
+            <div class="mt-5">
+                <p class="mb-1 text-xs font-medium uppercase tracking-wide text-gray-400">Demande</p>
+                <p class="whitespace-pre-line text-gray-700 dark:text-gray-300">{{ $i->panne }}</p>
+            </div>
+        @endif
+
+        @if ($i->message_client)
+            <div class="mt-5 rounded-lg bg-brand-50 p-4 text-sm text-brand-900 dark:bg-brand-600/10 dark:text-brand-200">
+                <p class="mb-1 font-medium">Message de notre équipe</p>
+                <p class="whitespace-pre-line">{{ $i->message_client }}</p>
+            </div>
+        @endif
+
+        @if ($i->prestations->isNotEmpty() && $i->estCloturee())
+            <div class="mt-5">
+                <p class="mb-2 text-xs font-medium uppercase tracking-wide text-gray-400">Prestations réalisées</p>
+                <ul class="divide-y divide-gray-100 text-sm dark:divide-gray-800">
+                    @foreach ($i->prestations as $p)
+                        <li class="flex justify-between py-1.5"><span>{{ $p->designation }}</span><span class="text-gray-400">{{ rtrim(rtrim(number_format($p->duree, 2), '0'), '.') }} h</span></li>
+                    @endforeach
+                </ul>
+            </div>
+        @endif
+    </div>
+@endsection

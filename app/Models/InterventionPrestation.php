@@ -21,4 +21,9 @@ class InterventionPrestation extends Model
     {
         return $this->belongsTo(Intervention::class);
     }
+
+    public function prestation(): BelongsTo
+    {
+        return $this->belongsTo(Prestation::class);
+    }
 }
