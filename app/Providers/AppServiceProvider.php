@@ -6,6 +6,7 @@ use App\Models\Setting;
 use App\Models\User;
 use App\Support\Permissions;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
 
@@ -18,6 +19,8 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        $this->configureCodespaceUrl();
+
         // Admins ("gérant") bypass every gate.
         Gate::before(function (User $user) {
             return $user->is_admin ? true : null;
@@ -34,6 +37,22 @@ class AppServiceProvider extends ServiceProvider
                 $view->with('appSettings', $this->settings());
             }
         });
+    }
+
+    /**
+     * When running inside a GitHub Codespace, the forwarded request arrives with
+     * a "localhost" Host header, so redirects (login, etc.) would point to
+     * localhost. Force the public Codespaces URL instead — zero config needed.
+     */
+    private function configureCodespaceUrl(): void
+    {
+        $codespace = env('CODESPACE_NAME');
+        $domain = env('GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN');
+
+        if ($codespace && $domain) {
+            URL::forceRootUrl("https://{$codespace}-8000.{$domain}");
+            URL::forceScheme('https');
+        }
     }
 
     /** @return array<string, string|null> */
