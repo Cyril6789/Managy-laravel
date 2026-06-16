@@ -4,7 +4,7 @@ Application métier pour techniciens informatiques : gestion des **interventions
 des **clients**, du **matériel**, de l'**agenda**, des **tâches**, du **pack
 maintenance** et de la **satisfaction client**, avec suivi en direct côté client.
 
-Réécriture complète en **Laravel 13** (PHP 8.3+) d'une ancienne application PHP,
+Réécriture complète en **Laravel 13** (PHP 8.4+) d'une ancienne application PHP,
 avec interface **Tailwind CSS v4 + Alpine.js** et **mode clair / sombre**.
 
 > ℹ️ Cette version est **mono-entreprise** : chaque société télécharge et installe
@@ -21,7 +21,7 @@ avec interface **Tailwind CSS v4 + Alpine.js** et **mode clair / sombre**.
 | Composant       | Version / outil                          |
 |-----------------|------------------------------------------|
 | Framework       | Laravel 13                               |
-| PHP             | 8.3+                                      |
+| PHP             | 8.4+                                      |
 | Front           | Tailwind CSS v4 (Vite), Alpine.js        |
 | Base de données | MySQL 8 / MariaDB (SQLite en dev)        |
 | Auth            | Sessions Laravel, droits par Gates       |
