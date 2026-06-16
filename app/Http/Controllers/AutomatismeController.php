@@ -17,7 +17,10 @@ class AutomatismeController extends Controller
         'commande_recue' => 'À la réception d\'une commande',
         'sous_traitance_retour' => 'Au retour de sous-traitance',
         'restitution' => 'À la restitution / clôture',
+        'rendez_vous' => 'Autour du rendez-vous (planifié)',
     ];
+
+    private const UNITES = ['min' => 1, 'heures' => 60, 'jours' => 1440];
 
     public function index()
     {
@@ -81,7 +84,7 @@ class AutomatismeController extends Controller
 
     private function rules(Request $request): array
     {
-        return $request->validate([
+        $data = $request->validate([
             'libelle' => ['required', 'string', 'max:255'],
             'evenement' => ['required', Rule::in(array_keys(self::EVENTS))],
             'statut_id' => ['nullable', 'exists:statuts,id'],
@@ -89,6 +92,23 @@ class AutomatismeController extends Controller
             'sujet' => ['nullable', 'string', 'max:255'],
             'modele' => ['required', 'string'],
             'actif' => ['nullable', 'boolean'],
+            // Scheduling (only for the "rendez_vous" event)
+            'offset_sens' => ['nullable', 'in:avant,apres'],
+            'offset_valeur' => ['nullable', 'integer', 'min:0'],
+            'offset_unite' => ['nullable', Rule::in(array_keys(self::UNITES))],
+            'type_lieu' => ['nullable', 'in:atelier,domicile'],
         ]);
+
+        if ($data['evenement'] === 'rendez_vous') {
+            $minutes = (int) ($data['offset_valeur'] ?? 0) * self::UNITES[$data['offset_unite'] ?? 'min'];
+            $data['offset_minutes'] = ($data['offset_sens'] ?? 'avant') === 'avant' ? -$minutes : $minutes;
+        } else {
+            $data['offset_minutes'] = null;
+            $data['type_lieu'] = null;
+        }
+
+        unset($data['offset_sens'], $data['offset_valeur'], $data['offset_unite']);
+
+        return $data;
     }
 }

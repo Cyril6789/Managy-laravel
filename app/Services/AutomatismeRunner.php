@@ -28,19 +28,25 @@ class AutomatismeRunner
             ->get();
 
         foreach ($rules as $rule) {
-            $client = $intervention->client;
-            if (! $client) {
-                continue;
-            }
+            $this->fireRule($rule, $intervention);
+        }
+    }
 
-            $body = $this->render($rule->modele, $intervention);
-            $recipient = $intervention->recipientClient();
+    /** Send a single automatism for a given intervention. */
+    public function fireRule(Automatisme $rule, Intervention $intervention): void
+    {
+        $client = $intervention->client;
+        if (! $client) {
+            return;
+        }
 
-            if ($rule->canal === 'sms') {
-                $this->sms->send($client, $body, $intervention, $recipient);
-            } else {
-                $this->sendEmail($intervention, $rule->sujet ?? 'Suivi de votre intervention', $body, $recipient?->email);
-            }
+        $body = $this->render($rule->modele, $intervention);
+        $recipient = $intervention->recipientClient();
+
+        if ($rule->canal === 'sms') {
+            $this->sms->send($client, $body, $intervention, $recipient);
+        } else {
+            $this->sendEmail($intervention, $rule->sujet ?? 'Suivi de votre intervention', $body, $recipient?->email);
         }
     }
 
@@ -83,10 +89,12 @@ class AutomatismeRunner
 
         return strtr($template, [
             '{reference}' => $intervention->reference ?? (string) $intervention->id,
-            '{client}' => $client?->nomComplet() ?? '',
+            '{client}' => $intervention->recipientClient()?->nomComplet() ?? $client?->nomComplet() ?? '',
             '{statut}' => $intervention->statut?->nom ?? '',
             '{lien}' => route('public.intervention', $intervention->public_token),
             '{entreprise}' => Setting::get('company_name', ''),
+            '{date_rdv}' => $intervention->rdv_debut?->format('d/m/Y') ?? '',
+            '{heure_rdv}' => $intervention->rdv_debut?->format('H:i') ?? '',
         ]);
     }
 }

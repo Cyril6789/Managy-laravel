@@ -1,8 +1,7 @@
 <?php
 
-use Illuminate\Foundation\Inspiring;
-use Illuminate\Support\Facades\Artisan;
+use App\Console\Commands\RunScheduledAutomatismes;
+use Illuminate\Support\Facades\Schedule;
 
-Artisan::command('inspire', function () {
-    $this->comment(Inspiring::quote());
-})->purpose('Display an inspiring quote');
+// Fire appointment-based automatisms (reminders, satisfaction…) every 5 minutes.
+Schedule::command(RunScheduledAutomatismes::class)->everyFiveMinutes()->withoutOverlapping();

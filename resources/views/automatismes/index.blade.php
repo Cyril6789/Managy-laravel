@@ -17,7 +17,11 @@
                 @forelse ($automatismes as $a)
                     <tr class="hover:bg-gray-50 dark:hover:bg-gray-800/50">
                         <td class="px-5 py-3 font-medium">{{ $a->libelle }}</td>
-                        <td class="px-5 py-3">{{ $events[$a->evenement] ?? $a->evenement }}@if ($a->statut) <span class="text-xs text-gray-400">({{ $a->statut->nom }})</span>@endif</td>
+                        <td class="px-5 py-3">
+                            {{ $events[$a->evenement] ?? $a->evenement }}
+                            @if ($a->estPlanifie())<span class="text-xs text-brand-600">· {{ $a->timingLabel() }}@if ($a->type_lieu) ({{ $a->type_lieu }})@endif</span>@endif
+                            @if ($a->statut) <span class="text-xs text-gray-400">({{ $a->statut->nom }})</span>@endif
+                        </td>
                         <td class="px-5 py-3"><x-badge>{{ strtoupper($a->canal) }}</x-badge></td>
                         <td class="px-5 py-3">@if ($a->actif)<x-badge color="#16a34a">Actif</x-badge>@else<x-badge color="#ef4444">Inactif</x-badge>@endif</td>
                         <td class="px-5 py-3 text-right"><a href="{{ route('automatismes.edit', $a) }}" class="text-brand-600 hover:underline">Modifier</a></td>
