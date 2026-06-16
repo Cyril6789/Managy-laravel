@@ -75,6 +75,31 @@ class SettingsController extends Controller
         return back()->with('success', 'Coordonnées de l\'entreprise enregistrées.');
     }
 
+    public function updateSmtp(Request $request)
+    {
+        $this->authorize(Permissions::SETTINGS_MANAGE);
+
+        $data = $request->validate([
+            'mail_host' => ['nullable', 'string', 'max:255'],
+            'mail_port' => ['nullable', 'integer', 'between:1,65535'],
+            'mail_username' => ['nullable', 'string', 'max:255'],
+            'mail_password' => ['nullable', 'string', 'max:255'],
+            'mail_encryption' => ['nullable', 'in:tls,ssl,none'],
+            'mail_from_address' => ['nullable', 'email', 'max:255'],
+            'mail_from_name' => ['nullable', 'string', 'max:255'],
+        ]);
+
+        foreach ($data as $key => $value) {
+            // Keep the existing password if the field is left blank.
+            if ($key === 'mail_password' && ($value === null || $value === '')) {
+                continue;
+            }
+            Setting::put($key, $value);
+        }
+
+        return back()->with('success', 'Paramètres SMTP enregistrés.');
+    }
+
     public function updateAutomation(Request $request)
     {
         $this->authorize(Permissions::SETTINGS_MANAGE);

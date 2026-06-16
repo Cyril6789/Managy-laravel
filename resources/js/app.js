@@ -65,6 +65,61 @@ document.addEventListener('alpine:init', () => {
     }));
 });
 
+document.addEventListener('alpine:init', () => {
+    /** Touch / mouse signature pad drawing into a canvas; exposes a PNG data URL. */
+    window.Alpine.data('signaturePad', () => ({
+        drawing: false,
+        hasSignature: false,
+        value: '',
+        ctx: null,
+        last: { x: 0, y: 0 },
+
+        init() {
+            const canvas = this.$refs.canvas;
+            const ratio = window.devicePixelRatio || 1;
+            const rect = canvas.getBoundingClientRect();
+            canvas.width = rect.width * ratio;
+            canvas.height = rect.height * ratio;
+            this.ctx = canvas.getContext('2d');
+            this.ctx.scale(ratio, ratio);
+            this.ctx.lineWidth = 2;
+            this.ctx.lineCap = 'round';
+            this.ctx.strokeStyle = '#111827';
+        },
+        pos(e) {
+            const r = this.$refs.canvas.getBoundingClientRect();
+            const p = e.touches ? e.touches[0] : e;
+            return { x: p.clientX - r.left, y: p.clientY - r.top };
+        },
+        start(e) {
+            e.preventDefault();
+            this.drawing = true;
+            this.last = this.pos(e);
+        },
+        move(e) {
+            if (!this.drawing) return;
+            e.preventDefault();
+            const p = this.pos(e);
+            this.ctx.beginPath();
+            this.ctx.moveTo(this.last.x, this.last.y);
+            this.ctx.lineTo(p.x, p.y);
+            this.ctx.stroke();
+            this.last = p;
+            this.hasSignature = true;
+        },
+        end() {
+            if (!this.drawing) return;
+            this.drawing = false;
+            this.value = this.hasSignature ? this.$refs.canvas.toDataURL('image/png') : '';
+        },
+        clear() {
+            this.ctx.clearRect(0, 0, this.$refs.canvas.width, this.$refs.canvas.height);
+            this.hasSignature = false;
+            this.value = '';
+        },
+    }));
+});
+
 /** Inserts (replace or append) text from a reference list into a textarea. */
 window.fillTextarea = (targetId, value, mode = 'replace') => {
     const t = document.getElementById(targetId);

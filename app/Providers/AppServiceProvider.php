@@ -20,6 +20,7 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         $this->configureCodespaceUrl();
+        $this->configureMailFromSettings();
 
         // Admins ("gérant") bypass every gate.
         Gate::before(function (User $user) {
@@ -37,6 +38,40 @@ class AppServiceProvider extends ServiceProvider
                 $view->with('appSettings', $this->settings());
             }
         });
+    }
+
+    /**
+     * Configure the SMTP mailer from the in-app settings (Paramètres → E-mail),
+     * so each instance can use its own mail server without editing .env.
+     */
+    private function configureMailFromSettings(): void
+    {
+        try {
+            $s = $this->settings();
+        } catch (\Throwable) {
+            return;
+        }
+
+        if (empty($s['mail_host'])) {
+            return;
+        }
+
+        $encryption = ($s['mail_encryption'] ?? 'tls');
+        config([
+            'mail.default' => 'smtp',
+            'mail.mailers.smtp.host' => $s['mail_host'],
+            'mail.mailers.smtp.port' => (int) ($s['mail_port'] ?? 587),
+            'mail.mailers.smtp.username' => $s['mail_username'] ?: null,
+            'mail.mailers.smtp.password' => $s['mail_password'] ?: null,
+            'mail.mailers.smtp.encryption' => $encryption === 'none' ? null : $encryption,
+        ]);
+
+        if (! empty($s['mail_from_address'])) {
+            config([
+                'mail.from.address' => $s['mail_from_address'],
+                'mail.from.name' => $s['mail_from_name'] ?: ($s['company_name'] ?? config('app.name')),
+            ]);
+        }
     }
 
     /**

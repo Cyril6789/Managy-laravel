@@ -24,7 +24,7 @@
 
     <div class="flex h-16 items-center gap-2 border-b border-gray-200 px-5 dark:border-gray-800">
         @if (!empty($appSettings['company_logo']))
-            <img src="{{ \Illuminate\Support\Facades\Storage::url($appSettings['company_logo']) }}" alt="logo" class="h-9 max-w-[140px] object-contain">
+            <img src="{{ route('company.logo').'?v='.substr(md5($appSettings['company_logo']),0,8) }}" alt="logo" class="h-9 max-w-[140px] object-contain">
         @else
             <div class="flex h-9 w-9 items-center justify-center rounded-lg bg-brand-600 font-bold text-white">M</div>
             <span class="truncate text-lg font-semibold">{{ $appSettings['company_name'] ?? 'Managy' }}</span>

@@ -23,6 +23,16 @@ class Client extends Model
         return ['archived_at' => 'datetime'];
     }
 
+    protected static function booted(): void
+    {
+        // A company ("professionnel") has no first name.
+        static::saving(function (Client $client) {
+            if ($client->type === 'professionnel') {
+                $client->prenom = null;
+            }
+        });
+    }
+
     public function parent(): BelongsTo
     {
         return $this->belongsTo(Client::class, 'parent_id');

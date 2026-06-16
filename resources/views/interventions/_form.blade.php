@@ -14,6 +14,8 @@
                     <livewire:client-picker :selected="$clientId ? (int) $clientId : null" :selected-label="$clientLabel" />
                 </x-field>
 
+                <livewire:contact-picker :client-id="$clientId ? (int) $clientId : null" :contact-id="$val('contact_id') ? (int) $val('contact_id') : null" />
+
                 {{-- Maintenance pack banner (after a client is selected) --}}
                 <template x-if="maintenance && maintenance.has">
                     <div class="md:col-span-2 rounded-lg px-4 py-2.5 text-sm"

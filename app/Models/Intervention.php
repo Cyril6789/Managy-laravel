@@ -20,7 +20,8 @@ class Intervention extends Model
         'rdv_debut', 'rdv_fin', 'rdv_annule', 'priorite', 'urgente', 'garantie',
         'materiel_depose', 'panne', 'diagnostic', 'materiel_ajoute', 'message_client',
         'message_interne', 'mdp', 'tarif_estimatif', 'note', 'facturee', 'payee',
-        'public_token', 'opened_at', 'closed_at', 'restituted_at',
+        'public_token', 'signature_path', 'signataire_nom', 'signed_at',
+        'opened_at', 'closed_at', 'restituted_at',
     ];
 
     protected function casts(): array
@@ -37,6 +38,7 @@ class Intervention extends Model
             'opened_at' => 'datetime',
             'closed_at' => 'datetime',
             'restituted_at' => 'datetime',
+            'signed_at' => 'datetime',
         ];
     }
 
@@ -160,5 +162,11 @@ class Intervention extends Model
     public function tempsTotal(): float
     {
         return (float) $this->prestations->sum('duree');
+    }
+
+    /** Who actually gets the SMS / e-mail: the selected contact, else the client. */
+    public function recipientClient(): ?Client
+    {
+        return $this->contact ?: $this->client;
     }
 }

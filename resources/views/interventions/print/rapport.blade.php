@@ -50,8 +50,32 @@
             @if ($i->tarif_estimatif)<p style="margin-top:8px"><strong>Tarif estimatif :</strong> {{ number_format($i->tarif_estimatif, 2, ',', ' ') }} €</p>@endif
         </div>
 
+        @if (($soldeMaintenance ?? null) !== null)
+            <div class="box">
+                <h3>Pack maintenance</h3>
+                <strong>Solde restant : {{ number_format($soldeMaintenance, 2, ',', ' ') }} h</strong>
+            </div>
+        @endif
+
+        @php
+            $sigData = null;
+            if ($i->signature_path && \Illuminate\Support\Facades\Storage::disk('public')->exists($i->signature_path)) {
+                $sigData = 'data:image/png;base64,'.base64_encode(\Illuminate\Support\Facades\Storage::disk('public')->get($i->signature_path));
+            }
+        @endphp
         <div class="sign">
-            <div>Signature du client</div>
+            <div>
+                Signature du client
+                @if ($i->signataire_nom)
+                    ({{ $i->signataire_nom }})
+                @endif
+                @if ($sigData)
+                    <br><img src="{{ $sigData }}" alt="signature" style="max-height:70px; margin-top:4px">
+                @endif
+                @if ($i->signed_at)
+                    <br><span style="font-size:11px; color:#777">Signé le {{ $i->signed_at->format('d/m/Y H:i') }}</span>
+                @endif
+            </div>
             <div>Signature du technicien</div>
         </div>
     </x-slot:body>

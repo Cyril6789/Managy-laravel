@@ -8,6 +8,7 @@ use App\Models\Satisfaction;
 use App\Models\User;
 use Database\Seeders\DatabaseSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 class SmokeTest extends TestCase
@@ -112,6 +113,56 @@ class SmokeTest extends TestCase
         $total = (float) $intervention->prestations()->sum('duree');
         $this->post(route('interventions.restituer', $intervention))->assertRedirect();
         $this->assertEqualsWithDelta(10.0 - $total, $client->fresh()->soldeMaintenance(), 0.001);
+    }
+
+    public function test_sms_goes_to_the_selected_contact(): void
+    {
+        $this->actingAs($this->admin());
+
+        $company = Client::create(['type' => 'professionnel', 'nom' => 'ACME SARL', 'telephone_fixe' => '0388000000']);
+        $contact = Client::create(['type' => 'particulier', 'parent_id' => $company->id, 'nom' => 'Durand', 'prenom' => 'Léa', 'telephone_mobile' => '0699999999']);
+
+        $intervention = Intervention::create([
+            'client_id' => $company->id,
+            'contact_id' => $contact->id,
+            'opened_by' => $this->admin()->id,
+        ]);
+
+        $this->post(route('interventions.message_client', $intervention), [
+            'canal' => 'sms', 'corps' => 'Votre matériel est prêt.',
+        ])->assertRedirect();
+
+        $this->assertDatabaseHas('client_messages', [
+            'intervention_id' => $intervention->id,
+            'client_id' => $company->id,        // logged against the company
+            'destinataire' => '0699999999',     // but sent to the contact
+        ]);
+    }
+
+    public function test_company_has_no_first_name(): void
+    {
+        $company = Client::create(['type' => 'professionnel', 'nom' => 'Société X', 'prenom' => 'Ignoré']);
+        $this->assertNull($company->fresh()->prenom);
+    }
+
+    public function test_restitution_stores_signature(): void
+    {
+        Storage::fake('public');
+        $this->actingAs($this->admin());
+        $intervention = Intervention::ouvertes()->first();
+
+        $png = 'data:image/png;base64,'.base64_encode(base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=='));
+
+        $this->post(route('interventions.restituer', $intervention), [
+            'signataire_nom' => 'Jean Client',
+            'signature' => $png,
+        ])->assertRedirect();
+
+        $intervention->refresh();
+        $this->assertNotNull($intervention->signature_path);
+        $this->assertSame('Jean Client', $intervention->signataire_nom);
+        $this->assertNotNull($intervention->signed_at);
+        Storage::disk('public')->assertExists($intervention->signature_path);
     }
 
     public function test_public_intervention_link_is_accessible(): void

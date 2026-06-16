@@ -16,9 +16,14 @@ use Illuminate\Support\Facades\Log;
  */
 class SmsSender
 {
-    public function send(Client $client, string $message, ?Intervention $intervention = null): ClientMessage
+    /**
+     * @param  Client  $client  the client the message is logged against (the company)
+     * @param  Client|null  $recipient  who actually receives it (a contact), defaults to $client
+     */
+    public function send(Client $client, string $message, ?Intervention $intervention = null, ?Client $recipient = null): ClientMessage
     {
-        $destinataire = $client->telephone_mobile ?: $client->telephone_fixe;
+        $recipient ??= $client;
+        $destinataire = $recipient->telephone_mobile ?: $recipient->telephone_fixe;
         $signature = Setting::get('sms_signature');
         $corps = trim($message.($signature ? "\n".$signature : ''));
 

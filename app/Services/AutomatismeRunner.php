@@ -34,19 +34,20 @@ class AutomatismeRunner
             }
 
             $body = $this->render($rule->modele, $intervention);
+            $recipient = $intervention->recipientClient();
 
             if ($rule->canal === 'sms') {
-                $this->sms->send($client, $body, $intervention);
+                $this->sms->send($client, $body, $intervention, $recipient);
             } else {
-                $this->sendEmail($intervention, $rule->sujet ?? 'Suivi de votre intervention', $body);
+                $this->sendEmail($intervention, $rule->sujet ?? 'Suivi de votre intervention', $body, $recipient?->email);
             }
         }
     }
 
-    private function sendEmail(Intervention $intervention, string $sujet, string $body): void
+    private function sendEmail(Intervention $intervention, string $sujet, string $body, ?string $to = null): void
     {
         $client = $intervention->client;
-        $to = $client?->email;
+        $to ??= $client?->email;
 
         if (! $to) {
             return;

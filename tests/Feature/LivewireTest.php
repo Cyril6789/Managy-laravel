@@ -4,8 +4,11 @@ namespace Tests\Feature;
 
 use App\Livewire\ClientChat;
 use App\Livewire\ClientPicker;
+use App\Livewire\ContactManager;
+use App\Livewire\ContactPicker;
 use App\Livewire\InterventionPanel;
 use App\Livewire\InterventionReport;
+use App\Models\Client;
 use App\Models\Intervention;
 use App\Models\Statut;
 use App\Models\User;
@@ -48,6 +51,41 @@ class LivewireTest extends TestCase
             ->call('save');
 
         $this->assertSame('Carte mère remplacée, tests OK', $intervention->fresh()->diagnostic);
+    }
+
+    public function test_contact_manager_adds_a_contact_to_company(): void
+    {
+        $company = Client::create(['type' => 'professionnel', 'nom' => 'Globex']);
+
+        Livewire::test(ContactManager::class, ['company' => $company])
+            ->call('openCreate')
+            ->set('form.nom', 'Martin')
+            ->set('form.prenom', 'Paul')
+            ->set('form.telephone_mobile', '0612345678')
+            ->call('save')
+            ->assertSet('showModal', false);
+
+        $this->assertDatabaseHas('clients', [
+            'parent_id' => $company->id,
+            'nom' => 'Martin',
+            'prenom' => 'Paul',
+            'type' => 'particulier',
+        ]);
+    }
+
+    public function test_contact_picker_detects_company_and_creates_contact(): void
+    {
+        $company = Client::create(['type' => 'professionnel', 'nom' => 'Initech']);
+
+        Livewire::test(ContactPicker::class)
+            ->call('onClientSelected', $company->id)
+            ->assertSet('isCompany', true)
+            ->call('openCreate')
+            ->set('form.nom', 'Lumbergh')
+            ->call('save')
+            ->assertSet('isCompany', true);
+
+        $this->assertDatabaseHas('clients', ['parent_id' => $company->id, 'nom' => 'Lumbergh']);
     }
 
     public function test_panel_adds_prestation_and_changes_status_inline(): void

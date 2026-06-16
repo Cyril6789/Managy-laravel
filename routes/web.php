@@ -13,6 +13,7 @@ use App\Http\Controllers\Intervention\SousTraitanceController;
 use App\Http\Controllers\InterventionController;
 use App\Http\Controllers\LogController;
 use App\Http\Controllers\MaintenanceController;
+use App\Http\Controllers\MediaController;
 use App\Http\Controllers\MessageController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\ProfileController;
@@ -28,6 +29,7 @@ use App\Http\Controllers\TaskController;
 use Illuminate\Support\Facades\Route;
 
 // ----- Public (no auth) ------------------------------------------------------
+Route::get('/logo-entreprise', [MediaController::class, 'logo'])->name('company.logo');
 Route::get('/suivi/{token}', [PublicInterventionController::class, 'show'])->name('public.intervention');
 Route::get('/satisfaction/{token}', [PublicSatisfactionController::class, 'show'])->name('public.satisfaction');
 Route::post('/satisfaction/{token}', [PublicSatisfactionController::class, 'store'])->name('public.satisfaction.store');
@@ -117,6 +119,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/parametres', [SettingsController::class, 'index'])->name('settings.index');
     Route::put('/parametres/entreprise', [SettingsController::class, 'updateCompany'])->name('settings.company');
     Route::put('/parametres/sms', [SettingsController::class, 'updateSms'])->name('settings.sms');
+    Route::put('/parametres/smtp', [SettingsController::class, 'updateSmtp'])->name('settings.smtp');
     Route::put('/parametres/automatisation', [SettingsController::class, 'updateAutomation'])->name('settings.automation');
     // Generic reference-list CRUD (materiels, systemes, antivirus, prestations, statuts, modeles...)
     Route::post('/parametres/{type}', [SettingsController::class, 'storeReference'])->name('settings.reference.store');

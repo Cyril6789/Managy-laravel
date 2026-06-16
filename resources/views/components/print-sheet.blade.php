@@ -42,7 +42,7 @@
     <header>
         <div class="company">
             @if (!empty($s['company_logo']))
-                <img class="logo" src="{{ \Illuminate\Support\Facades\Storage::url($s['company_logo']) }}" alt="logo">
+                <img class="logo" src="{{ route('company.logo').'?v='.substr(md5($s['company_logo']),0,8) }}" alt="logo">
             @else
                 <h1>{{ $s['company_name'] ?? 'Mon entreprise' }}</h1>
             @endif

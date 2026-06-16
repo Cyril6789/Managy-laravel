@@ -30,27 +30,29 @@ class MessageController extends Controller
         ]);
 
         $client = $intervention->client;
+        $recipient = $intervention->recipientClient();
 
         if ($data['canal'] === 'sms') {
-            $sms->send($client, $data['corps'], $intervention);
+            $sms->send($client, $data['corps'], $intervention, $recipient);
         } else {
-            $this->sendEmail($intervention, $data['sujet'] ?? 'Votre intervention', $data['corps']);
+            $this->sendEmail($intervention, $data['sujet'] ?? 'Votre intervention', $data['corps'], $recipient?->email);
         }
 
+        $cible = $intervention->contact ? 'au contact '.$recipient->nomComplet() : 'au client';
         InterventionLog::create([
             'intervention_id' => $intervention->id,
             'user_id' => Auth::id(),
-            'texte' => 'a envoyé un '.($data['canal'] === 'sms' ? 'SMS' : 'e-mail').' au client',
+            'texte' => 'a envoyé un '.($data['canal'] === 'sms' ? 'SMS' : 'e-mail').' '.$cible,
             'created_at' => now(),
         ]);
 
         return back()->with('success', 'Message envoyé.');
     }
 
-    private function sendEmail(Intervention $intervention, string $sujet, string $corps): void
+    private function sendEmail(Intervention $intervention, string $sujet, string $corps, ?string $to = null): void
     {
         $client = $intervention->client;
-        $to = $client?->email;
+        $to ??= $client?->email;
         $statut = 'envoye';
 
         if (! $to) {

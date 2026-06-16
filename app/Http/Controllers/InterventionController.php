@@ -17,6 +17,9 @@ use App\Support\Permissions;
 use App\Support\Qr;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 
 class InterventionController extends Controller
@@ -213,25 +216,83 @@ class InterventionController extends Controller
     {
         $this->authorize(Permissions::INTERVENTIONS_MANAGE);
 
+        $data = $request->validate([
+            'signataire_nom' => ['nullable', 'string', 'max:255'],
+            'signature' => ['nullable', 'string'], // PNG data URL
+        ]);
+
         // The report itself is saved separately (saveRapport); here we only close.
         $statutCloture = Statut::where('est_cloture', true)->orderBy('ordre')->first();
+
+        $signaturePath = $this->storeSignature($data['signature'] ?? null, $intervention);
 
         $intervention->update([
             'closed_at' => now(),
             'restituted_at' => now(),
             'restituted_by' => Auth::id(),
             'statut_id' => $statutCloture?->id ?? $intervention->statut_id,
+            'signataire_nom' => $data['signataire_nom'] ?? null,
+            'signature_path' => $signaturePath ?? $intervention->signature_path,
+            'signed_at' => $signaturePath ? now() : $intervention->signed_at,
         ]);
 
-        $this->log($intervention, 'a restitué et clôturé l\'intervention');
+        $this->log($intervention, 'a restitué et clôturé l\'intervention'.($signaturePath ? ' (signée)' : ''));
 
         // Auto-debit the maintenance pack (if the client has one) with the hours spent.
         $this->debitMaintenancePack($intervention);
+
+        // E-mail a signed copy of the final report to the customer / contact.
+        $this->emailSignedReport($intervention);
 
         Notifier::interventionChanged($intervention, 'Intervention clôturée');
         $this->automatismes->fire('restitution', $intervention);
 
         return back()->with('success', 'Intervention clôturée.');
+    }
+
+    private function storeSignature(?string $dataUrl, Intervention $intervention): ?string
+    {
+        if (! $dataUrl || ! str_starts_with($dataUrl, 'data:image')) {
+            return null;
+        }
+
+        $base64 = substr($dataUrl, strpos($dataUrl, ',') + 1);
+        $binary = base64_decode($base64, true);
+        if ($binary === false) {
+            return null;
+        }
+
+        $path = 'signatures/intervention-'.$intervention->id.'-'.now()->timestamp.'.png';
+        Storage::disk('public')->put($path, $binary);
+
+        return $path;
+    }
+
+    private function emailSignedReport(Intervention $intervention): void
+    {
+        $recipient = $intervention->recipientClient();
+        $to = $recipient?->email;
+        if (! $to) {
+            return;
+        }
+
+        $intervention->loadMissing(['client', 'materiel', 'prestations', 'statut']);
+        $html = view('interventions.print.rapport', [
+            'intervention' => $intervention,
+            'qr' => Qr::svg(route('public.intervention', $intervention->public_token), 120),
+            'soldeMaintenance' => $intervention->client?->maintenanceMovements()->exists()
+                ? $intervention->client->soldeMaintenance() : null,
+            'forEmail' => true,
+        ])->render();
+
+        try {
+            Mail::html($html, function ($m) use ($to, $intervention) {
+                $m->to($to)->subject('Votre rapport d\'intervention '.$intervention->reference)
+                    ->from(Setting::get('mail_from_address') ?: Setting::get('company_email', config('mail.from.address')), Setting::get('company_name'));
+            });
+        } catch (\Throwable $e) {
+            Log::error('Signed report email failed: '.$e->getMessage());
+        }
     }
 
     public function decloturer(Intervention $intervention)
@@ -314,6 +375,8 @@ class InterventionController extends Controller
         return view("interventions.print.{$type}", [
             'intervention' => $intervention,
             'qr' => Qr::svg(route('public.intervention', $intervention->public_token), 150),
+            'soldeMaintenance' => $intervention->client?->maintenanceMovements()->exists()
+                ? $intervention->client->soldeMaintenance() : null,
         ]);
     }
 

@@ -63,11 +63,29 @@
                     <livewire:intervention-report :intervention="$i" :key="'report-'.$i->id" />
                 </x-card>
 
-                <x-card title="Clôturer l'intervention">
-                    <p class="mb-3 text-sm text-gray-500">Enregistrez d'abord le rapport ci-dessus, puis clôturez. Les heures saisies seront déduites du pack maintenance le cas échéant.</p>
-                    <form action="{{ route('interventions.restituer', $i) }}" method="POST" onsubmit="return confirm('Clôturer définitivement cette intervention ?')">
+                <x-card title="Restituer & clôturer">
+                    <p class="mb-3 text-sm text-gray-500">Enregistrez le rapport ci-dessus, faites signer le client, puis clôturez. Les heures saisies seront déduites du pack maintenance et une copie signée sera envoyée par e-mail au client.</p>
+                    <form action="{{ route('interventions.restituer', $i) }}" method="POST" x-data="signaturePad"
+                          @submit="$refs.sig.value = value">
                         @csrf
-                        <x-button type="submit">Restituer & clôturer</x-button>
+                        <input type="hidden" name="signature" x-ref="sig">
+                        <x-field label="Nom du signataire" name="signataire_nom">
+                            <x-input name="signataire_nom" value="{{ $i->client?->nomComplet() }}" />
+                        </x-field>
+                        <div class="mt-3">
+                            <div class="mb-1 flex items-center justify-between">
+                                <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Signature du client</span>
+                                <button type="button" @click="clear()" class="text-xs text-gray-500 hover:text-red-600">Effacer</button>
+                            </div>
+                            <canvas x-ref="canvas"
+                                    @mousedown="start($event)" @mousemove="move($event)" @mouseup="end()" @mouseleave="end()"
+                                    @touchstart="start($event)" @touchmove="move($event)" @touchend="end()"
+                                    class="h-40 w-full touch-none rounded-lg border-2 border-dashed border-gray-300 bg-white dark:border-gray-600"></canvas>
+                            <p class="mt-1 text-xs text-gray-400">Signez ci-dessus avec le doigt ou la souris (facultatif).</p>
+                        </div>
+                        <div class="mt-4">
+                            <x-button type="submit" @click="$refs.sig.value = value">Restituer & clôturer</x-button>
+                        </div>
                     </form>
                 </x-card>
             @endif

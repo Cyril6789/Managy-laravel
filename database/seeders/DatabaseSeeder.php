@@ -44,6 +44,13 @@ class DatabaseSeeder extends Seeder
             'sms_provider' => 'log',          // log | smsmode | smsfactor
             'sms_api_key' => '',
             'company_logo' => null,
+            'mail_host' => '',
+            'mail_port' => '587',
+            'mail_username' => '',
+            'mail_password' => '',
+            'mail_encryption' => 'tls',
+            'mail_from_address' => '',
+            'mail_from_name' => '',
             'maintenance_alert_threshold' => '2',
             'statut_attente_id' => null,
             'statut_pret_id' => null,
@@ -117,5 +124,13 @@ class DatabaseSeeder extends Seeder
         CommentaireType::firstOrCreate(['titre' => 'Matériel prêt'], [
             'texte' => 'Votre matériel est prêt et disponible. Vous pouvez venir le récupérer aux horaires d\'ouverture.',
         ]);
+
+        // Enable the order/subcontracting status automation out of the box.
+        if (! Setting::get('statut_attente_id')) {
+            Setting::put('statut_attente_id', Statut::where('nom', 'En attente')->value('id'));
+        }
+        if (! Setting::get('statut_pret_id')) {
+            Setting::put('statut_pret_id', Statut::where('nom', 'En cours')->value('id'));
+        }
     }
 }

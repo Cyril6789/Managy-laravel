@@ -32,17 +32,8 @@
                 @endif
             </x-card>
 
-            @if ($client->contacts->isNotEmpty())
-                <x-card title="Contacts" :padding="false">
-                    <ul class="divide-y divide-gray-100 dark:divide-gray-800">
-                        @foreach ($client->contacts as $contact)
-                            <li class="px-5 py-3">
-                                <a href="{{ route('clients.show', $contact) }}" class="font-medium text-brand-600 hover:underline">{{ $contact->nomComplet() }}</a>
-                                <p class="text-xs text-gray-400">{{ $contact->email ?: $contact->telephone_mobile }}</p>
-                            </li>
-                        @endforeach
-                    </ul>
-                </x-card>
+            @if ($client->type === 'professionnel' && $client->parent_id === null)
+                <livewire:contact-manager :company="$client" />
             @endif
 
             @can(\App\Support\Permissions::MAINTENANCE_VIEW)

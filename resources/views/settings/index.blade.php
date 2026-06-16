@@ -6,7 +6,7 @@
 
     <div x-data="{ tab: 'entreprise' }">
         <div class="mb-6 flex flex-wrap gap-1 border-b border-gray-200 dark:border-gray-800">
-            @foreach (['entreprise' => 'Entreprise', 'sms' => 'SMS', 'listes' => 'Listes métier', 'statuts' => 'Statuts', 'modeles' => 'Modèles'] as $key => $label)
+            @foreach (['entreprise' => 'Entreprise', 'sms' => 'SMS', 'smtp' => 'E-mail (SMTP)', 'listes' => 'Listes métier', 'statuts' => 'Statuts', 'modeles' => 'Modèles'] as $key => $label)
                 <button @click="tab='{{ $key }}'" :class="tab==='{{ $key }}' ? 'border-brand-600 text-brand-600' : 'border-transparent text-gray-500'" class="border-b-2 px-4 py-2 text-sm font-medium">{{ $label }}</button>
             @endforeach
         </div>
@@ -18,7 +18,7 @@
                     @csrf @method('PUT')
                     <div class="md:col-span-2 flex flex-wrap items-center gap-4">
                         @if (!empty($settings['company_logo']))
-                            <img src="{{ \Illuminate\Support\Facades\Storage::url($settings['company_logo']) }}" alt="logo" class="h-14 rounded border border-gray-200 bg-white p-1 dark:border-gray-700">
+                            <img src="{{ route('company.logo').'?v='.substr(md5($settings['company_logo']),0,8) }}" alt="logo" class="h-14 rounded border border-gray-200 bg-white p-1 dark:border-gray-700">
                         @else
                             <div class="flex h-14 w-14 items-center justify-center rounded-lg bg-brand-600 text-2xl font-bold text-white">M</div>
                         @endif
@@ -62,6 +62,31 @@
                     <x-field label="Signature" name="sms_signature"><x-input name="sms_signature" value="{{ $settings['sms_signature'] ?? '' }}" /></x-field>
                     <div class="md:col-span-2 flex justify-end"><x-button type="submit">Enregistrer</x-button></div>
                 </form>
+            </x-card>
+        </div>
+
+        {{-- SMTP / E-mail --}}
+        <div x-show="tab==='smtp'" x-cloak>
+            <x-card title="Serveur d'envoi des e-mails (SMTP)">
+                <form action="{{ route('settings.smtp') }}" method="POST" class="grid grid-cols-1 gap-5 md:grid-cols-2">
+                    @csrf @method('PUT')
+                    <x-field label="Hôte" name="mail_host" hint="ex. smtp.gmail.com"><x-input name="mail_host" value="{{ $settings['mail_host'] ?? '' }}" /></x-field>
+                    <x-field label="Port" name="mail_port" hint="587 (TLS) ou 465 (SSL)"><x-input name="mail_port" type="number" value="{{ $settings['mail_port'] ?? '587' }}" /></x-field>
+                    <x-field label="Utilisateur (facultatif)" name="mail_username"><x-input name="mail_username" value="{{ $settings['mail_username'] ?? '' }}" autocomplete="off" /></x-field>
+                    <x-field label="Mot de passe" name="mail_password" hint="Laisser vide pour conserver l'actuel."><x-input name="mail_password" type="password" autocomplete="new-password" /></x-field>
+                    <x-field label="Chiffrement" name="mail_encryption">
+                        <x-select name="mail_encryption">
+                            @foreach (['tls' => 'TLS', 'ssl' => 'SSL', 'none' => 'Aucun'] as $v => $l)
+                                <option value="{{ $v }}" @selected(($settings['mail_encryption'] ?? 'tls')===$v)>{{ $l }}</option>
+                            @endforeach
+                        </x-select>
+                    </x-field>
+                    <div></div>
+                    <x-field label="Adresse expéditeur" name="mail_from_address"><x-input name="mail_from_address" type="email" value="{{ $settings['mail_from_address'] ?? '' }}" /></x-field>
+                    <x-field label="Nom expéditeur" name="mail_from_name"><x-input name="mail_from_name" value="{{ $settings['mail_from_name'] ?? '' }}" /></x-field>
+                    <div class="md:col-span-2 flex justify-end"><x-button type="submit">Enregistrer</x-button></div>
+                </form>
+                <p class="mt-3 text-xs text-gray-400">Tant qu'aucun hôte n'est renseigné, l'application utilise la configuration de votre fichier <code>.env</code>.</p>
             </x-card>
         </div>
 
