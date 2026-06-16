@@ -1,1 +1,0 @@
-<?phpdefine(ADMIN_DESCRIPTION_MODULES, "Descriptions des modules");define(ADMIN_DESCRIPTION_MODULES_SB_SEE, 'Descriptions des modules');$page_title = ADMIN_DESCRIPTION_MODULES;?>
