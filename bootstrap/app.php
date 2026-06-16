@@ -13,6 +13,10 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        // Trust the reverse proxy (Codespaces, Render, Fly, load balancers…) so
+        // Laravel detects HTTPS and generates correct asset / cookie URLs.
+        $middleware->trustProxies(at: '*');
+
         $middleware->web(append: [
             TrackLastActivity::class,
         ]);
