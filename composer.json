@@ -1,10 +1,10 @@
 {
     "$schema": "https://getcomposer.org/schema.json",
-    "name": "laravel/laravel",
+    "name": "managy/managy",
     "type": "project",
-    "description": "The skeleton application for the Laravel framework.",
-    "keywords": ["laravel", "framework"],
-    "license": "MIT",
+    "description": "Managy — logiciel de gestion d'interventions pour techniciens informatiques.",
+    "keywords": ["managy", "interventions", "helpdesk", "laravel"],
+    "license": "proprietary",
     "require": {
         "php": "^8.4",
         "endroid/qr-code": "^6.1",

@@ -129,6 +129,9 @@ et un mode sombre**.
   interventions en cours, tâches.
 - **Statistiques** : interventions par mois, **heures par technicien** (sur les
   interventions clôturées), chiffre d'affaires estimé.
+- **Facturation** : menu listant les interventions **clôturées à facturer**, avec
+  marquage « facturée » **en un clic** (ou « tout facturer »), recherche et
+  bascule À facturer / Facturées.
 - **Satisfaction** : enquêtes envoyées au client, note moyenne et répartition.
 - **Journaux** d'activité (connexions, actions, historique des interventions).
 
@@ -359,7 +362,8 @@ app/
     Intervention/           # Sous-ressources d'une intervention
     Public/                 # Pages publiques (suivi client, satisfaction)
   Livewire/                 # Composants temps réel : ClientPicker, ContactPicker,
-                            # ContactManager, InterventionPanel, InterventionReport, ClientChat
+                            # ContactManager, InterventionPanel, InterventionReport,
+                            # ClientChat, Facturation
   Models/                   # Modèles Eloquent du domaine
   Services/                 # Notifier, SmsSender (multi-fournisseur), AutomatismeRunner
   Support/                  # Permissions, InterventionStatus, Qr
@@ -423,8 +427,37 @@ public** (onglet *Ports*) puis à ouvrir l'URL. Connexion : `admin / password`.
 
 ---
 
-## 14. Licence & origine
+## 14. Licence, contributions & origine
 
-Managy est la modernisation, sous **Laravel**, d'une application PHP propriétaire
-développée il y a une quinzaine d'années. Le code historique reste consultable
-dans l'historique Git du dépôt ; il n'est pas inclus dans cette branche.
+**Managy est gratuit et son code source est ouvert (« source-available »).**
+
+Vous pouvez **librement** :
+
+- l'utiliser, y compris pour les besoins **internes de votre entreprise**
+  (y compris à but lucratif : c'est l'objet même de l'outil) ;
+- l'**installer**, le **modifier**, l'**héberger** vous-même ;
+- le **partager** et le **redistribuer gratuitement** (avec cette licence).
+
+En revanche, il est **interdit** :
+
+- de **vendre, revendre, sous-licencier ou louer** le logiciel ;
+- d'en **faire commerce** : le commercialiser comme produit, ou le proposer
+  comme **service hébergé / SaaS payant**.
+
+> En clair : servez-vous-en autant que vous voulez pour faire tourner votre
+> activité, améliorez-le, partagez-le — mais **on ne vend pas Managy**.
+
+Le texte complet fait foi : voir le fichier [`LICENSE`](LICENSE).
+
+### Contributions
+
+**Toute suggestion, correction ou amélioration est la bienvenue !** Ouvrez une
+*issue* pour proposer une idée ou signaler un bug, ou une *pull request* pour
+contribuer du code. En contribuant, vous acceptez que votre apport soit distribué
+sous la même licence.
+
+### Origine
+
+Managy est la modernisation, sous **Laravel**, d'une application PHP développée
+il y a une quinzaine d'années. Le code historique reste consultable dans
+l'historique Git du dépôt ; il n'est pas inclus dans cette branche.

@@ -1,0 +1,69 @@
+Managy — Source-Available, No-Resale License (v1.0)
+Copyright (c) 2026 Cyril Heilmann (GitHub: Cyril6789)
+
+================================================================================
+Version française (fait foi) — an English summary follows below.
+================================================================================
+
+1. Définitions
+   « Logiciel » désigne le code source et les fichiers de ce dépôt, ainsi que
+   toute version modifiée (« Œuvre dérivée »).
+   « Vous » désigne toute personne physique ou morale exerçant les droits
+   accordés par la présente licence.
+
+2. Autorisation
+   Sous réserve du respect des conditions ci-dessous, l'auteur Vous accorde à
+   titre gratuit, mondial et non exclusif le droit de :
+   a) utiliser le Logiciel, y compris pour les besoins internes d'une activité
+      professionnelle, y compris à but lucratif ;
+   b) copier, modifier et créer des Œuvres dérivées ;
+   c) installer et héberger le Logiciel pour Votre propre usage ;
+   d) redistribuer le Logiciel et les Œuvres dérivées, **à titre gratuit
+      uniquement**.
+
+3. Restrictions
+   Il Vous est interdit, sans autorisation écrite préalable de l'auteur :
+   a) de vendre, revendre, louer, prêter à titre onéreux, ou sous-licencier le
+      Logiciel ou une Œuvre dérivée ;
+   b) de commercialiser le Logiciel, de le proposer comme produit payant, ou de
+      le fournir comme service hébergé / SaaS donnant lieu à une contrepartie
+      financière au titre du Logiciel lui-même ;
+   c) de faire payer le Logiciel ou une Œuvre dérivée (la prestation de
+      services connexes — installation, hébergement à prix coûtant, support,
+      formation — n'est pas couverte par cette interdiction, à condition que le
+      Logiciel lui-même ne soit pas facturé ni vendu).
+
+4. Conditions de redistribution
+   Toute copie ou Œuvre dérivée redistribuée doit inclure cette licence,
+   l'avis de droit d'auteur ci-dessus, et indiquer les modifications notables.
+
+5. Marques
+   Cette licence n'accorde aucun droit sur les noms, logos ou marques de
+   l'auteur (dont « Managy »), sauf pour décrire l'origine du Logiciel.
+
+6. Absence de garantie
+   LE LOGICIEL EST FOURNI « EN L'ÉTAT », SANS GARANTIE D'AUCUNE SORTE, EXPRESSE
+   OU IMPLICITE. EN AUCUN CAS L'AUTEUR NE POURRA ÊTRE TENU RESPONSABLE D'UN
+   QUELCONQUE DOMMAGE DÉCOULANT DE L'UTILISATION DU LOGICIEL.
+
+7. Résiliation
+   Tout manquement aux présentes conditions met fin automatiquement aux droits
+   accordés.
+
+================================================================================
+English summary (non-binding translation)
+================================================================================
+
+You may use (including for the internal operations of a for-profit business),
+copy, modify, self-host, and redistribute this Software FREE OF CHARGE, provided
+this license and the copyright notice are kept.
+
+You may NOT sell, resell, rent, sublicense, or otherwise commercialize the
+Software or a derivative, nor offer it as a paid product or paid hosted/SaaS
+service. Providing paid ancillary services (installation, support, training) is
+allowed as long as the Software itself is not sold or charged for.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
+"Managy" and related logos/trademarks are not licensed.
+
+For any use beyond these terms, contact the author for written permission.
