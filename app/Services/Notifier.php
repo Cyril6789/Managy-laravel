@@ -17,9 +17,13 @@ class Notifier
     {
         $actorId = Auth::id();
 
-        $recipients = $intervention->techniciens()
-            ->when($actorId, fn ($q) => $q->where('users.id', '!=', $actorId))
-            ->pluck('users.id');
+        // Notify the assigned technicians AND the person who opened the intervention.
+        $recipients = $intervention->techniciens()->pluck('users.id')
+            ->push($intervention->opened_by)
+            ->filter()
+            ->unique()
+            ->reject(fn ($id) => $actorId && (int) $id === (int) $actorId)
+            ->values();
 
         foreach ($recipients as $userId) {
             Notification::create([

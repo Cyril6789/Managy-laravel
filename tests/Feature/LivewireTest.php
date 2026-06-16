@@ -4,8 +4,10 @@ namespace Tests\Feature;
 
 use App\Livewire\ClientChat;
 use App\Livewire\ClientPicker;
+use App\Livewire\InterventionPanel;
 use App\Livewire\InterventionReport;
 use App\Models\Intervention;
+use App\Models\Statut;
 use App\Models\User;
 use Database\Seeders\DatabaseSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -46,6 +48,42 @@ class LivewireTest extends TestCase
             ->call('save');
 
         $this->assertSame('Carte mère remplacée, tests OK', $intervention->fresh()->diagnostic);
+    }
+
+    public function test_panel_adds_prestation_and_changes_status_inline(): void
+    {
+        $intervention = Intervention::ouvertes()->first();
+        $statut = Statut::where('id', '!=', $intervention->statut_id)->first();
+
+        Livewire::test(InterventionPanel::class, ['intervention' => $intervention])
+            ->set('presta.designation', 'Changement disque SSD')
+            ->set('presta.duree', '1.5')
+            ->call('addPrestation')
+            ->set('statutId', $statut->id)
+            ->call('changeStatut');
+
+        $this->assertDatabaseHas('intervention_prestations', [
+            'intervention_id' => $intervention->id,
+            'designation' => 'Changement disque SSD',
+        ]);
+        $this->assertSame($statut->id, $intervention->fresh()->statut_id);
+    }
+
+    public function test_staff_chat_and_public_chat_share_the_same_thread(): void
+    {
+        $intervention = Intervention::first();
+
+        // Staff posts from the intervention panel chat
+        Livewire::test(ClientChat::class, ['intervention' => $intervention])
+            ->set('body', 'Bonjour, votre PC est prêt.')
+            ->call('send');
+
+        // The customer sees it on the public page (same intervention thread)
+        $publicMessages = Livewire::test(ClientChat::class, ['token' => $intervention->public_token])
+            ->get('intervention')->publicMessages;
+
+        $this->assertCount(1, $publicMessages);
+        $this->assertSame('staff', $publicMessages->first()->author);
     }
 
     public function test_public_chat_lets_customer_post(): void

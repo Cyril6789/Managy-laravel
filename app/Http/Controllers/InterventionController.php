@@ -4,13 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Models\Antivirus;
 use App\Models\Client;
-use App\Models\CommentaireType;
 use App\Models\Intervention;
 use App\Models\InterventionLog;
 use App\Models\Materiel;
-use App\Models\MaterielAjouteType;
-use App\Models\Prestation;
-use App\Models\RapportType;
 use App\Models\Setting;
 use App\Models\Statut;
 use App\Models\SystemeExploitation;
@@ -117,23 +113,16 @@ class InterventionController extends Controller
     {
         $this->authorize(Permissions::INTERVENTIONS_VIEW);
 
-        $intervention->load([
-            'client', 'contact', 'materiel', 'systemeExploitation', 'antivirus', 'statut',
-            'ouvreur', 'techniciens', 'prestations.prestation', 'commandes', 'sousTraitances',
-            'messages.user', 'logs.user', 'clientMessages',
-        ]);
+        // The interactive panel and report cards are Livewire components that
+        // load their own data; here we only need the header / sidebar data.
+        $intervention->load(['client', 'materiel', 'statut', 'ouvreur', 'techniciens', 'logs.user']);
 
         $client = $intervention->client;
         $hasPack = $client && $client->maintenanceMovements()->exists();
 
         return view('interventions.show', [
             'intervention' => $intervention,
-            'statuts' => Statut::orderBy('ordre')->get(),
-            'prestationsCatalogue' => Prestation::orderBy('designation')->get(),
             'techniciens' => User::where('is_active', true)->orderBy('nom')->get(),
-            'rapportTypes' => RapportType::orderBy('titre')->get(),
-            'commentaireTypes' => CommentaireType::orderBy('titre')->get(),
-            'materielAjouteTypes' => MaterielAjouteType::orderBy('nom')->get(),
             'maintenance' => [
                 'has' => $hasPack,
                 'balance' => $hasPack ? $client->soldeMaintenance() : 0,
