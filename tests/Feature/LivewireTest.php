@@ -10,6 +10,7 @@ use App\Livewire\InterventionPanel;
 use App\Livewire\InterventionReport;
 use App\Models\Client;
 use App\Models\Intervention;
+use App\Models\Setting;
 use App\Models\Statut;
 use App\Models\User;
 use Database\Seeders\DatabaseSeeder;
@@ -105,6 +106,34 @@ class LivewireTest extends TestCase
             'designation' => 'Changement disque SSD',
         ]);
         $this->assertSame($statut->id, $intervention->fresh()->statut_id);
+    }
+
+    public function test_pending_order_moves_status_to_waiting(): void
+    {
+        // Force the fallback (no configured statuses).
+        Setting::query()->whereIn('key', ['statut_attente_id', 'statut_pret_id'])->delete();
+
+        $intervention = Intervention::ouvertes()->first();
+
+        Livewire::test(InterventionPanel::class, ['intervention' => $intervention])
+            ->set('commande.fournisseur', 'LDLC')
+            ->call('addCommande');
+
+        $waiting = Statut::where('nom', 'En attente')->first();
+        $this->assertSame($waiting->id, $intervention->fresh()->statut_id);
+    }
+
+    public function test_contact_picker_clears_contact_button_state(): void
+    {
+        $company = Client::create(['type' => 'professionnel', 'nom' => 'BigCorp']);
+        $contact = $company->contacts()->create(['type' => 'particulier', 'nom' => 'Roy']);
+
+        Livewire::test(ContactPicker::class)
+            ->call('onClientSelected', $company->id)
+            ->set('contactId', $contact->id)
+            ->assertSeeHtml('Modifier')      // edit button visible once a contact is chosen
+            ->set('contactId', null)
+            ->assertDontSeeHtml('wire:click="openEdit"'); // and hidden again when cleared
     }
 
     public function test_staff_chat_and_public_chat_share_the_same_thread(): void

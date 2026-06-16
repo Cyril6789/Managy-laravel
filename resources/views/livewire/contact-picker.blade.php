@@ -5,7 +5,7 @@
     @if ($isCompany)
         <label class="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Contact (destinataire des SMS / e-mails)</label>
         <div class="flex flex-wrap gap-2">
-            <select wire:model="contactId"
+            <select wire:model.live="contactId"
                     class="min-w-48 flex-1 rounded-lg border-gray-300 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:border-gray-700 dark:bg-gray-800">
                 <option value="">— Aucun contact (facultatif) —</option>
                 @foreach ($contacts as $c)
