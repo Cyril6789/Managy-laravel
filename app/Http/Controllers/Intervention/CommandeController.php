@@ -7,6 +7,7 @@ use App\Models\Commande;
 use App\Models\Intervention;
 use App\Models\InterventionLog;
 use App\Services\AutomatismeRunner;
+use App\Support\InterventionStatus;
 use App\Support\Permissions;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -21,6 +22,7 @@ class CommandeController extends Controller
 
         $intervention->commandes()->create($this->rules($request));
         $this->log($intervention, 'a ajouté une commande fournisseur');
+        InterventionStatus::syncFromDependencies($intervention->refresh());
 
         return back()->with('success', 'Commande ajoutée.');
     }
@@ -37,6 +39,8 @@ class CommandeController extends Controller
             $this->log($commande->intervention, 'a réceptionné la commande '.($commande->numero_commande ?? ''));
             $this->automatismes->fire('commande_recue', $commande->intervention);
         }
+
+        InterventionStatus::syncFromDependencies($commande->intervention->refresh());
 
         return back()->with('success', 'Commande mise à jour.');
     }

@@ -26,6 +26,8 @@ final class Permissions
 
     public const INTERVENTIONS_FACTURATION = 'interventions.facturation';
 
+    public const INTERVENTIONS_ASSIGN = 'interventions.assign';
+
     // Calendar / tasks
     public const CALENDAR_VIEW = 'calendar.view';
 
@@ -76,6 +78,7 @@ final class Permissions
                 self::INTERVENTIONS_VIEW_ALL => 'Voir toutes les interventions (archivées incluses)',
                 self::INTERVENTIONS_DECLOTURE => 'Déclôturer une intervention',
                 self::INTERVENTIONS_FACTURATION => 'Gérer la facturation',
+                self::INTERVENTIONS_ASSIGN => 'Affecter des techniciens aux interventions',
             ],
             'Agenda & tâches' => [
                 self::CALENDAR_VIEW => 'Voir le calendrier',

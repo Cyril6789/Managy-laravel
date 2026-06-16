@@ -7,6 +7,7 @@ use App\Models\Intervention;
 use App\Models\InterventionLog;
 use App\Models\SousTraitance;
 use App\Services\AutomatismeRunner;
+use App\Support\InterventionStatus;
 use App\Support\Permissions;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -21,6 +22,7 @@ class SousTraitanceController extends Controller
 
         $intervention->sousTraitances()->create($this->rules($request));
         $this->log($intervention, 'a ajouté une sous-traitance');
+        InterventionStatus::syncFromDependencies($intervention->refresh());
 
         return back()->with('success', 'Sous-traitance ajoutée.');
     }
@@ -37,6 +39,8 @@ class SousTraitanceController extends Controller
             $this->log($sousTraitance->intervention, 'a réceptionné le retour de sous-traitance');
             $this->automatismes->fire('sous_traitance_retour', $sousTraitance->intervention);
         }
+
+        InterventionStatus::syncFromDependencies($sousTraitance->intervention->refresh());
 
         return back()->with('success', 'Sous-traitance mise à jour.');
     }

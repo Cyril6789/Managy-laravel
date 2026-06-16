@@ -11,6 +11,8 @@
 @section('content')
     <x-page-header :title="'Intervention '.$i->reference" :subtitle="$i->client?->nomComplet()">
         <x-slot:actions>
+            <x-button variant="secondary" :href="route('interventions.print', [$i, 'depot'])" target="_blank">Fiche dépôt</x-button>
+            <x-button variant="secondary" :href="route('interventions.print', [$i, 'rapport'])" target="_blank">Rapport</x-button>
             <form action="{{ route('interventions.pec', $i) }}" method="POST">@csrf
                 <x-button variant="secondary" type="submit">{{ $estTech ? 'Ne plus prendre en charge' : 'Prendre en charge' }}</x-button>
             </form>
@@ -35,6 +37,18 @@
                     <button class="font-medium underline">{{ $i->facturee ? 'Marquée facturée ✓' : 'Marquer comme facturée' }}</button>
                 </form>
             @endcan
+        </div>
+    @endif
+
+    @if ($maintenance['has'])
+        @php $low = $maintenance['balance'] < $maintenance['threshold']; @endphp
+        <div class="mb-4 flex items-center gap-2 rounded-lg border px-4 py-2.5 text-sm
+            {{ $low ? 'border-red-200 bg-red-50 text-red-700 dark:border-red-900 dark:bg-red-900/30 dark:text-red-300'
+                    : 'border-green-200 bg-green-50 text-green-700 dark:border-green-900 dark:bg-green-900/30 dark:text-green-300' }}">
+            <x-icon name="shield" class="h-4 w-4" />
+            <span><span class="font-semibold">Pack maintenance :</span> {{ number_format($maintenance['balance'], 2) }} h restantes</span>
+            @if ($low)<span class="font-medium">— ⚠️ solde sous le seuil de {{ rtrim(rtrim(number_format($maintenance['threshold'],2),'0'),'.') }} h</span>@endif
+            <a href="{{ route('maintenance.show', $i->client) }}" class="ml-auto underline">Détail</a>
         </div>
     @endif
 
@@ -250,18 +264,59 @@
                 </div>
             </x-card>
 
-            {{-- Restitution (close) --}}
+            {{-- Technical report (save without closing) --}}
             @if ($peutGerer && ! $i->estCloturee())
-                <x-card title="Restituer & clôturer">
-                    <form action="{{ route('interventions.restituer', $i) }}" method="POST" class="space-y-4">
+                <x-card title="Rapport technique">
+                    <form action="{{ route('interventions.rapport', $i) }}" method="POST" class="space-y-4"
+                          x-data="{ dirty: false }" @input="dirty = true" @change="dirty = true" @submit="dirty = false"
+                          x-init="window.addEventListener('beforeunload', e => { if (dirty) { e.preventDefault(); e.returnValue = ''; } })">
+                        @csrf @method('PATCH')
+
+                        <x-field name="diagnostic">
+                            <div class="mb-1 flex flex-wrap items-center justify-between gap-2">
+                                <label for="diagnostic" class="text-sm font-medium text-gray-700 dark:text-gray-300">Diagnostic / rapport technique</label>
+                                <x-fill-select target="diagnostic" :items="$rapportTypes" field="texte" label-field="titre" mode="replace" placeholder="Diag récurrent…" />
+                            </div>
+                            <x-textarea name="diagnostic" id="diagnostic" rows="4">{{ $i->diagnostic }}</x-textarea>
+                        </x-field>
+
+                        <x-field name="message_client">
+                            <div class="mb-1 flex flex-wrap items-center justify-between gap-2">
+                                <label for="message_client" class="text-sm font-medium text-gray-700 dark:text-gray-300">Message au client</label>
+                                <x-fill-select target="message_client" :items="$commentaireTypes" field="texte" label-field="titre" mode="replace" placeholder="Modèle…" />
+                            </div>
+                            <x-textarea name="message_client" id="message_client" rows="2">{{ $i->message_client }}</x-textarea>
+                        </x-field>
+
+                        <x-field name="materiel_ajoute">
+                            <div class="mb-1 flex flex-wrap items-center justify-between gap-2">
+                                <label for="materiel_ajoute" class="text-sm font-medium text-gray-700 dark:text-gray-300">Matériel ajouté / remplacé</label>
+                                <x-fill-select target="materiel_ajoute" :items="$materielAjouteTypes" field="texte" label-field="nom" mode="append" placeholder="Ajouter…" />
+                            </div>
+                            <x-textarea name="materiel_ajoute" id="materiel_ajoute" rows="2">{{ $i->materiel_ajoute }}</x-textarea>
+                        </x-field>
+
+                        <div class="grid grid-cols-2 gap-3">
+                            <x-field label="Tarif estimatif (€)" name="tarif_estimatif">
+                                <x-input name="tarif_estimatif" type="number" step="0.01" value="{{ $i->tarif_estimatif }}" />
+                            </x-field>
+                            <x-field label="Accès / mot de passe" name="mdp">
+                                <x-input name="mdp" value="{{ $i->mdp }}" />
+                            </x-field>
+                        </div>
+
+                        <div class="flex items-center justify-between gap-2">
+                            <span x-show="dirty" x-cloak class="text-xs text-amber-600">Modifications non enregistrées</span>
+                            <x-button type="submit" class="ml-auto">Enregistrer le rapport</x-button>
+                        </div>
+                    </form>
+                </x-card>
+
+                <x-card title="Clôturer l'intervention">
+                    <p class="mb-3 text-sm text-gray-500">Enregistrez d'abord le rapport ci-dessus, puis clôturez. Les heures saisies seront déduites du pack maintenance le cas échéant.</p>
+                    <form action="{{ route('interventions.restituer', $i) }}" method="POST" onsubmit="return confirm('Clôturer définitivement cette intervention ?')">
                         @csrf
-                        <x-field label="Diagnostic / rapport technique" name="diagnostic">
-                            <x-textarea name="diagnostic" rows="3">{{ $i->diagnostic }}</x-textarea>
-                        </x-field>
-                        <x-field label="Message au client" name="message_client">
-                            <x-textarea name="message_client" rows="2">{{ $i->message_client }}</x-textarea>
-                        </x-field>
-                        <div class="flex justify-end"><x-button type="submit">Clôturer l'intervention</x-button></div>
+                        <x-button type="submit">Restituer & clôturer</x-button>
                     </form>
                 </x-card>
             @endif
@@ -280,14 +335,34 @@
             </x-card>
 
             <x-card title="Techniciens">
+                @php $assignables = $techniciens->whereNotIn('id', $i->techniciens->pluck('id')); @endphp
                 @forelse ($i->techniciens as $t)
                     <div class="flex items-center gap-2 py-1">
                         <span class="flex h-7 w-7 items-center justify-center rounded-full bg-brand-600 text-[10px] font-semibold text-white">{{ $t->initials() }}</span>
-                        <span class="text-sm">{{ $t->fullName() }}</span>
+                        <span class="flex-1 text-sm">{{ $t->fullName() }}</span>
+                        @can(\App\Support\Permissions::INTERVENTIONS_ASSIGN)
+                            <form action="{{ route('interventions.assign', $i) }}" method="POST">@csrf
+                                <input type="hidden" name="user_id" value="{{ $t->id }}">
+                                <input type="hidden" name="action" value="remove">
+                                <button class="text-gray-300 hover:text-red-600" title="Retirer">&times;</button>
+                            </form>
+                        @endcan
                     </div>
                 @empty
                     <p class="text-sm text-gray-400">Personne</p>
                 @endforelse
+
+                @can(\App\Support\Permissions::INTERVENTIONS_ASSIGN)
+                    @if ($assignables->isNotEmpty())
+                        <form action="{{ route('interventions.assign', $i) }}" method="POST" class="mt-3 flex gap-2 border-t border-gray-100 pt-3 dark:border-gray-800">
+                            @csrf
+                            <input type="hidden" name="action" value="add">
+                            <x-searchable-select name="user_id" :options="$assignables->mapWithKeys(fn ($u) => [$u->id => $u->fullName()])"
+                                :allow-empty="false" placeholder="Affecter…" class="flex-1" />
+                            <x-button type="submit">Affecter</x-button>
+                        </form>
+                    @endif
+                @endcan
             </x-card>
 
             <x-card title="Suivi client (lien sécurisé)">

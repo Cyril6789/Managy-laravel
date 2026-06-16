@@ -13,6 +13,7 @@ use App\Models\Statut;
 use App\Models\SystemeExploitation;
 use App\Support\Permissions;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 
 class SettingsController extends Controller
 {
@@ -52,12 +53,49 @@ class SettingsController extends Controller
         $fields = ['company_name', 'company_email', 'company_phone', 'company_address',
             'company_postal_code', 'company_city', 'company_siret', 'company_vat', 'company_website'];
 
-        $data = $request->validate(array_fill_keys($fields, ['nullable', 'string', 'max:255']));
+        $data = $request->validate(array_fill_keys($fields, ['nullable', 'string', 'max:255']) + [
+            'logo' => ['nullable', 'image', 'max:2048'],
+            'remove_logo' => ['nullable', 'boolean'],
+        ]);
+
+        foreach ($fields as $key) {
+            Setting::put($key, $data[$key] ?? null);
+        }
+
+        if ($request->boolean('remove_logo')) {
+            $this->deleteLogo();
+            Setting::put('company_logo', null);
+        }
+
+        if ($request->hasFile('logo')) {
+            $this->deleteLogo();
+            Setting::put('company_logo', $request->file('logo')->store('logos', 'public'));
+        }
+
+        return back()->with('success', 'Coordonnées de l\'entreprise enregistrées.');
+    }
+
+    public function updateAutomation(Request $request)
+    {
+        $this->authorize(Permissions::SETTINGS_MANAGE);
+
+        $data = $request->validate([
+            'maintenance_alert_threshold' => ['nullable', 'numeric', 'min:0'],
+            'statut_attente_id' => ['nullable', 'exists:statuts,id'],
+            'statut_pret_id' => ['nullable', 'exists:statuts,id'],
+        ]);
         foreach ($data as $key => $value) {
             Setting::put($key, $value);
         }
 
-        return back()->with('success', 'Coordonnées de l\'entreprise enregistrées.');
+        return back()->with('success', 'Automatisations enregistrées.');
+    }
+
+    private function deleteLogo(): void
+    {
+        if ($current = Setting::get('company_logo')) {
+            Storage::disk('public')->delete($current);
+        }
     }
 
     public function updateSms(Request $request)

@@ -43,6 +43,10 @@ class DatabaseSeeder extends Seeder
             'sms_signature' => '',
             'sms_provider' => 'log',          // log | smsmode | smsfactor
             'sms_api_key' => '',
+            'company_logo' => null,
+            'maintenance_alert_threshold' => '2',
+            'statut_attente_id' => null,
+            'statut_pret_id' => null,
         ];
 
         foreach ($defaults as $key => $value) {

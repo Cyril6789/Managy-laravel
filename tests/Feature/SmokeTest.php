@@ -58,6 +58,62 @@ class SmokeTest extends TestCase
         $this->get(route('interventions.edit', $intervention))->assertOk();
     }
 
+    public function test_intervention_print_sheets_render(): void
+    {
+        $this->actingAs($this->admin());
+        $intervention = Intervention::first();
+
+        $this->get(route('interventions.print', [$intervention, 'depot']))->assertOk()->assertSee('Dépôt');
+        $this->get(route('interventions.print', [$intervention, 'rapport']))->assertOk()->assertSee('Rapport');
+    }
+
+    public function test_client_json_endpoints(): void
+    {
+        $this->actingAs($this->admin());
+
+        $this->getJson('/clients/recherche?q=du')->assertOk();
+        $this->postJson('/clients/rapide', ['nom' => 'Client Test API'])
+            ->assertOk()->assertJsonStructure(['id', 'label']);
+
+        $client = Client::first();
+        $this->getJson(route('interventions.client_context', $client))
+            ->assertOk()->assertJsonStructure(['maintenance' => ['has', 'balance', 'threshold', 'low'], 'materiels', 'pannes', 'notes']);
+    }
+
+    public function test_save_report_and_assign(): void
+    {
+        $admin = $this->admin();
+        $this->actingAs($admin);
+        $intervention = Intervention::ouvertes()->first();
+
+        $this->patch(route('interventions.rapport', $intervention), ['diagnostic' => 'Rapport en cours'])
+            ->assertRedirect();
+        $this->assertSame('Rapport en cours', $intervention->fresh()->diagnostic);
+
+        $tech = User::where('pseudo', 'tech')->first();
+        $this->post(route('interventions.assign', $intervention), ['user_id' => $tech->id, 'action' => 'add'])->assertRedirect();
+        $this->assertTrue($intervention->techniciens()->where('users.id', $tech->id)->exists());
+    }
+
+    public function test_maintenance_credit_then_debit_on_close(): void
+    {
+        $admin = $this->admin();
+        $this->actingAs($admin);
+
+        $intervention = Intervention::ouvertes()->first();
+        $client = $intervention->client;
+
+        // Credit 10h
+        $this->post(route('maintenance.store', $client), ['sens' => 'credit', 'heures' => 10])->assertRedirect();
+        $this->assertEqualsWithDelta(10.0, $client->soldeMaintenance(), 0.001);
+
+        // Add a 2h prestation then close -> pack debited by the total logged hours.
+        $intervention->prestations()->create(['designation' => 'Test', 'duree' => 2]);
+        $total = (float) $intervention->prestations()->sum('duree');
+        $this->post(route('interventions.restituer', $intervention))->assertRedirect();
+        $this->assertEqualsWithDelta(10.0 - $total, $client->fresh()->soldeMaintenance(), 0.001);
+    }
+
     public function test_public_intervention_link_is_accessible(): void
     {
         $intervention = Intervention::first();

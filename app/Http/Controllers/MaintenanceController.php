@@ -55,7 +55,7 @@ class MaintenanceController extends Controller
 
         $client->maintenanceMovements()->create([
             'mouvement' => $data['sens'] === 'credit' ? $data['heures'] : -$data['heures'],
-            'description' => $data['description'],
+            'description' => $data['description'] ?? null,
             'intervention_id' => $data['intervention_id'] ?? null,
             'user_id' => Auth::id(),
         ]);

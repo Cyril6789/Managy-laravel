@@ -55,11 +55,17 @@ Route::middleware('auth')->group(function () {
     Route::put('/profil/mot-de-passe', [ProfileController::class, 'updatePassword'])->name('profile.password');
 
     // Clients
+    Route::get('clients/recherche', [ClientController::class, 'search'])->name('clients.search');
+    Route::post('clients/rapide', [ClientController::class, 'quickStore'])->name('clients.quick-store');
     Route::resource('clients', ClientController::class);
     Route::patch('clients/{client}/archive', [ClientController::class, 'archive'])->name('clients.archive');
 
     // Interventions
+    Route::get('interventions/contexte-client/{client}', [InterventionController::class, 'clientContext'])->name('interventions.client_context');
     Route::resource('interventions', InterventionController::class);
+    Route::get('interventions/{intervention}/impression/{type}', [InterventionController::class, 'print'])->name('interventions.print')->where('type', 'depot|rapport');
+    Route::patch('interventions/{intervention}/rapport', [InterventionController::class, 'saveRapport'])->name('interventions.rapport');
+    Route::post('interventions/{intervention}/affectation', [InterventionController::class, 'assign'])->name('interventions.assign');
     Route::post('interventions/{intervention}/statut', [InterventionController::class, 'updateStatut'])->name('interventions.statut');
     Route::post('interventions/{intervention}/rdv', [InterventionController::class, 'updateRdv'])->name('interventions.rdv');
     Route::post('interventions/{intervention}/prise-en-charge', [InterventionController::class, 'togglePriseEnCharge'])->name('interventions.pec');
@@ -111,6 +117,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/parametres', [SettingsController::class, 'index'])->name('settings.index');
     Route::put('/parametres/entreprise', [SettingsController::class, 'updateCompany'])->name('settings.company');
     Route::put('/parametres/sms', [SettingsController::class, 'updateSms'])->name('settings.sms');
+    Route::put('/parametres/automatisation', [SettingsController::class, 'updateAutomation'])->name('settings.automation');
     // Generic reference-list CRUD (materiels, systemes, antivirus, prestations, statuts, modeles...)
     Route::post('/parametres/{type}', [SettingsController::class, 'storeReference'])->name('settings.reference.store');
     Route::put('/parametres/{type}/{id}', [SettingsController::class, 'updateReference'])->name('settings.reference.update');

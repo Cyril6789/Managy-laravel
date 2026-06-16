@@ -8,14 +8,17 @@ use App\Models\CommentaireType;
 use App\Models\Intervention;
 use App\Models\InterventionLog;
 use App\Models\Materiel;
+use App\Models\MaterielAjouteType;
 use App\Models\Prestation;
 use App\Models\RapportType;
+use App\Models\Setting;
 use App\Models\Statut;
 use App\Models\SystemeExploitation;
 use App\Models\User;
 use App\Services\AutomatismeRunner;
 use App\Services\Notifier;
 use App\Support\Permissions;
+use App\Support\Qr;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\Rule;
@@ -81,6 +84,35 @@ class InterventionController extends Controller
         return redirect()->route('interventions.show', $intervention)->with('success', 'Intervention créée.');
     }
 
+    /**
+     * Context for the create form once a client is selected: maintenance-pack
+     * balance + distinct history values to prefill the text areas (JSON).
+     */
+    public function clientContext(Client $client)
+    {
+        $this->authorize(Permissions::INTERVENTIONS_VIEW);
+
+        $hasPack = $client->maintenanceMovements()->exists();
+        $balance = $client->soldeMaintenance();
+        $threshold = (float) Setting::get('maintenance_alert_threshold', 2);
+
+        $distinct = fn (string $col) => Intervention::where('client_id', $client->id)
+            ->whereNotNull($col)->where($col, '!=', '')
+            ->orderByDesc('opened_at')->limit(20)->pluck($col)->unique()->take(10)->values();
+
+        return response()->json([
+            'maintenance' => [
+                'has' => $hasPack,
+                'balance' => $balance,
+                'threshold' => $threshold,
+                'low' => $hasPack && $balance < $threshold,
+            ],
+            'materiels' => $distinct('materiel_depose'),
+            'pannes' => $distinct('panne'),
+            'notes' => $distinct('message_interne'),
+        ]);
+    }
+
     public function show(Intervention $intervention)
     {
         $this->authorize(Permissions::INTERVENTIONS_VIEW);
@@ -91,6 +123,9 @@ class InterventionController extends Controller
             'messages.user', 'logs.user', 'clientMessages',
         ]);
 
+        $client = $intervention->client;
+        $hasPack = $client && $client->maintenanceMovements()->exists();
+
         return view('interventions.show', [
             'intervention' => $intervention,
             'statuts' => Statut::orderBy('ordre')->get(),
@@ -98,6 +133,12 @@ class InterventionController extends Controller
             'techniciens' => User::where('is_active', true)->orderBy('nom')->get(),
             'rapportTypes' => RapportType::orderBy('titre')->get(),
             'commentaireTypes' => CommentaireType::orderBy('titre')->get(),
+            'materielAjouteTypes' => MaterielAjouteType::orderBy('nom')->get(),
+            'maintenance' => [
+                'has' => $hasPack,
+                'balance' => $hasPack ? $client->soldeMaintenance() : 0,
+                'threshold' => (float) Setting::get('maintenance_alert_threshold', 2),
+            ],
         ]);
     }
 
@@ -183,15 +224,10 @@ class InterventionController extends Controller
     {
         $this->authorize(Permissions::INTERVENTIONS_MANAGE);
 
-        $data = $request->validate([
-            'diagnostic' => ['nullable', 'string'],
-            'message_client' => ['nullable', 'string'],
-            'materiel_ajoute' => ['nullable', 'string'],
-        ]);
-
+        // The report itself is saved separately (saveRapport); here we only close.
         $statutCloture = Statut::where('est_cloture', true)->orderBy('ordre')->first();
 
-        $intervention->update($data + [
+        $intervention->update([
             'closed_at' => now(),
             'restituted_at' => now(),
             'restituted_by' => Auth::id(),
@@ -199,6 +235,10 @@ class InterventionController extends Controller
         ]);
 
         $this->log($intervention, 'a restitué et clôturé l\'intervention');
+
+        // Auto-debit the maintenance pack (if the client has one) with the hours spent.
+        $this->debitMaintenancePack($intervention);
+
         Notifier::interventionChanged($intervention, 'Intervention clôturée');
         $this->automatismes->fire('restitution', $intervention);
 
@@ -223,6 +263,69 @@ class InterventionController extends Controller
         $this->log($intervention, $intervention->facturee ? 'a marqué comme facturée' : 'a retiré la facturation');
 
         return back();
+    }
+
+    /**
+     * Save the technical report progressively WITHOUT closing the intervention.
+     */
+    public function saveRapport(Request $request, Intervention $intervention)
+    {
+        $this->authorize(Permissions::INTERVENTIONS_MANAGE);
+
+        $intervention->update($request->validate([
+            'diagnostic' => ['nullable', 'string'],
+            'message_client' => ['nullable', 'string'],
+            'materiel_ajoute' => ['nullable', 'string'],
+            'message_interne' => ['nullable', 'string'],
+            'mdp' => ['nullable', 'string', 'max:255'],
+            'tarif_estimatif' => ['nullable', 'numeric', 'min:0'],
+        ]));
+
+        $this->log($intervention, 'a enregistré le rapport');
+
+        return back()->with('success', 'Rapport enregistré.');
+    }
+
+    /**
+     * Assign / unassign a technician to the intervention (admins & granted users).
+     */
+    public function assign(Request $request, Intervention $intervention)
+    {
+        $this->authorize(Permissions::INTERVENTIONS_ASSIGN);
+
+        $data = $request->validate([
+            'user_id' => ['required', 'exists:users,id'],
+            'action' => ['required', 'in:add,remove'],
+        ]);
+
+        $tech = User::find($data['user_id']);
+
+        if ($data['action'] === 'add') {
+            $intervention->techniciens()->syncWithoutDetaching([$tech->id => ['assigned_at' => now()]]);
+            $this->log($intervention, 'a affecté '.$tech->fullName());
+            Notifier::toUser($tech->id, 'Intervention '.($intervention->reference ?? '#'.$intervention->id),
+                'Vous avez été affecté à cette intervention.', route('interventions.show', $intervention));
+        } else {
+            $intervention->techniciens()->detach($tech->id);
+            $this->log($intervention, 'a retiré '.$tech->fullName());
+        }
+
+        return back();
+    }
+
+    /**
+     * Printable A4 sheets: "depot" (deposit slip + QR) or "rapport" (final report).
+     */
+    public function print(Intervention $intervention, string $type)
+    {
+        $this->authorize(Permissions::INTERVENTIONS_VIEW);
+
+        $intervention->load(['client', 'materiel', 'prestations', 'statut']);
+
+        return view("interventions.print.{$type}", [
+            'intervention' => $intervention,
+            'qr' => Qr::svg(route('public.intervention', $intervention->public_token), 150),
+        ]);
     }
 
     // ----- Helpers -----------------------------------------------------------
@@ -260,6 +363,32 @@ class InterventionController extends Controller
             'message_interne' => ['nullable', 'string'],
             'mdp' => ['nullable', 'string', 'max:255'],
             'tarif_estimatif' => ['nullable', 'numeric', 'min:0'],
+        ]);
+    }
+
+    /**
+     * If the client owns a maintenance pack, consume the intervention's logged
+     * hours from it (once). Skipped when the client has no pack.
+     */
+    private function debitMaintenancePack(Intervention $intervention): void
+    {
+        $client = $intervention->client;
+        $heures = $intervention->prestations()->sum('duree');
+
+        if (! $client || $heures <= 0 || ! $client->maintenanceMovements()->exists()) {
+            return;
+        }
+
+        // Avoid double-debit if this intervention was already debited.
+        if ($client->maintenanceMovements()->where('intervention_id', $intervention->id)->where('mouvement', '<', 0)->exists()) {
+            return;
+        }
+
+        $client->maintenanceMovements()->create([
+            'mouvement' => -$heures,
+            'description' => 'Intervention '.($intervention->reference ?? '#'.$intervention->id),
+            'intervention_id' => $intervention->id,
+            'user_id' => Auth::id(),
         ]);
     }
 

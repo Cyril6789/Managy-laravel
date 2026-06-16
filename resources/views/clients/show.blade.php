@@ -44,10 +44,41 @@
                     </ul>
                 </x-card>
             @endif
+
+            @can(\App\Support\Permissions::MAINTENANCE_VIEW)
+                <x-card title="Pack maintenance">
+                    @if ($aPackMaintenance)
+                        <p class="text-3xl font-bold {{ $soldeMaintenance < 0 ? 'text-red-600' : 'text-green-600' }}">{{ number_format($soldeMaintenance, 2) }} h</p>
+                        <a href="{{ route('maintenance.show', $client) }}" class="text-sm text-brand-600 hover:underline">Voir l'historique →</a>
+                    @else
+                        <p class="text-sm text-gray-500">Ce client n'a pas encore de pack maintenance.</p>
+                    @endif
+
+                    @can(\App\Support\Permissions::MAINTENANCE_MANAGE)
+                        <form action="{{ route('maintenance.store', $client) }}" method="POST" class="mt-4 space-y-3 border-t border-gray-100 pt-4 dark:border-gray-800">
+                            @csrf
+                            <div class="flex gap-2">
+                                <x-select name="sens" class="w-32">
+                                    <option value="credit">Créditer +</option>
+                                    <option value="debit">Débiter −</option>
+                                </x-select>
+                                <x-input name="heures" type="number" step="0.25" min="0.25" placeholder="Heures" class="flex-1" required />
+                            </div>
+                            <x-input name="description" placeholder="Description (ex. contrat annuel)" />
+                            <x-button type="submit" class="w-full">Enregistrer le mouvement</x-button>
+                        </form>
+                    @endcan
+                </x-card>
+            @endcan
         </div>
 
-        <div class="lg:col-span-2">
-            <x-card title="Interventions" :padding="false">
+        <div class="lg:col-span-2" x-data="{ tab: 'inter' }">
+            <div class="mb-4 flex gap-1 border-b border-gray-200 dark:border-gray-800">
+                <button @click="tab='inter'" :class="tab==='inter' ? 'border-brand-600 text-brand-600' : 'border-transparent text-gray-500'" class="border-b-2 px-4 py-2 text-sm font-medium">Interventions ({{ $interventions->count() }})</button>
+                <button @click="tab='comm'" :class="tab==='comm' ? 'border-brand-600 text-brand-600' : 'border-transparent text-gray-500'" class="border-b-2 px-4 py-2 text-sm font-medium">Communications ({{ $messages->count() }})</button>
+            </div>
+
+            <x-card :padding="false" x-show="tab==='inter'">
                 <div class="divide-y divide-gray-100 dark:divide-gray-800">
                     @forelse ($interventions as $i)
                         <a href="{{ route('interventions.show', $i) }}" class="flex items-center justify-between gap-3 px-5 py-3 hover:bg-gray-50 dark:hover:bg-gray-800/50">
@@ -62,6 +93,27 @@
                         </a>
                     @empty
                         <x-empty-state icon="wrench" title="Aucune intervention" />
+                    @endforelse
+                </div>
+            </x-card>
+
+            <x-card :padding="false" x-show="tab==='comm'" x-cloak>
+                <div class="divide-y divide-gray-100 dark:divide-gray-800">
+                    @forelse ($messages as $msg)
+                        <div class="px-5 py-3 text-sm">
+                            <div class="mb-1 flex items-center justify-between gap-2">
+                                <span class="flex items-center gap-2">
+                                    <x-badge :color="$msg->canal === 'sms' ? '#2563eb' : '#7c3aed'">{{ strtoupper($msg->canal) }}</x-badge>
+                                    <span class="text-gray-500">→ {{ $msg->destinataire }}</span>
+                                    @if ($msg->intervention)<a href="{{ route('interventions.show', $msg->intervention) }}" class="text-xs text-brand-600 hover:underline">{{ $msg->intervention->reference }}</a>@endif
+                                </span>
+                                <span class="text-xs text-gray-400">{{ $msg->created_at?->format('d/m/Y H:i') }}</span>
+                            </div>
+                            @if ($msg->sujet)<p class="font-medium">{{ $msg->sujet }}</p>@endif
+                            <p class="whitespace-pre-line text-gray-600 dark:text-gray-300">{{ \Illuminate\Support\Str::limit($msg->corps, 200) }}</p>
+                        </div>
+                    @empty
+                        <x-empty-state icon="bell" title="Aucune communication" message="Les SMS et e-mails envoyés à ce client apparaîtront ici." />
                     @endforelse
                 </div>
             </x-card>

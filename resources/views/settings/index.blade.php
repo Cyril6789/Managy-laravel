@@ -14,8 +14,23 @@
         {{-- Entreprise --}}
         <div x-show="tab==='entreprise'">
             <x-card title="Coordonnées de l'entreprise">
-                <form action="{{ route('settings.company') }}" method="POST" class="grid grid-cols-1 gap-5 md:grid-cols-2">
+                <form action="{{ route('settings.company') }}" method="POST" enctype="multipart/form-data" class="grid grid-cols-1 gap-5 md:grid-cols-2">
                     @csrf @method('PUT')
+                    <div class="md:col-span-2 flex flex-wrap items-center gap-4">
+                        @if (!empty($settings['company_logo']))
+                            <img src="{{ \Illuminate\Support\Facades\Storage::url($settings['company_logo']) }}" alt="logo" class="h-14 rounded border border-gray-200 bg-white p-1 dark:border-gray-700">
+                        @else
+                            <div class="flex h-14 w-14 items-center justify-center rounded-lg bg-brand-600 text-2xl font-bold text-white">M</div>
+                        @endif
+                        <x-field label="Logo (PNG/JPG, 2 Mo max)" name="logo" class="flex-1">
+                            <x-input name="logo" type="file" accept="image/*" />
+                        </x-field>
+                        @if (!empty($settings['company_logo']))
+                            <label class="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+                                <input type="checkbox" name="remove_logo" value="1" class="rounded border-gray-300 text-red-600"> Supprimer le logo
+                            </label>
+                        @endif
+                    </div>
                     <x-field label="Nom de l'entreprise" name="company_name"><x-input name="company_name" value="{{ $settings['company_name'] ?? '' }}" /></x-field>
                     <x-field label="E-mail" name="company_email"><x-input name="company_email" type="email" value="{{ $settings['company_email'] ?? '' }}" /></x-field>
                     <x-field label="Téléphone" name="company_phone"><x-input name="company_phone" value="{{ $settings['company_phone'] ?? '' }}" /></x-field>
@@ -80,7 +95,29 @@
         </div>
 
         {{-- Statuts --}}
-        <div x-show="tab==='statuts'" x-cloak>
+        <div x-show="tab==='statuts'" x-cloak class="space-y-6">
+            <x-card title="Automatisation des statuts">
+                <form action="{{ route('settings.automation') }}" method="POST" class="grid grid-cols-1 gap-5 md:grid-cols-3">
+                    @csrf @method('PUT')
+                    <x-field label="Statut « en attente de réception »" name="statut_attente_id" hint="Appliqué quand une commande / sous-traitance est en cours.">
+                        <x-select name="statut_attente_id">
+                            <option value="">— Désactivé —</option>
+                            @foreach ($statuts as $s)<option value="{{ $s->id }}" @selected(($settings['statut_attente_id'] ?? null)==$s->id)>{{ $s->nom }}</option>@endforeach
+                        </x-select>
+                    </x-field>
+                    <x-field label="Statut « réception faite »" name="statut_pret_id" hint="Rétabli quand tout est reçu / retourné.">
+                        <x-select name="statut_pret_id">
+                            <option value="">— Aucun —</option>
+                            @foreach ($statuts as $s)<option value="{{ $s->id }}" @selected(($settings['statut_pret_id'] ?? null)==$s->id)>{{ $s->nom }}</option>@endforeach
+                        </x-select>
+                    </x-field>
+                    <x-field label="Seuil d'alerte maintenance (h)" name="maintenance_alert_threshold">
+                        <x-input name="maintenance_alert_threshold" type="number" step="0.5" min="0" value="{{ $settings['maintenance_alert_threshold'] ?? '2' }}" />
+                    </x-field>
+                    <div class="md:col-span-3 flex justify-end"><x-button type="submit">Enregistrer</x-button></div>
+                </form>
+            </x-card>
+
             <x-card title="Statuts d'intervention" :padding="false">
                 <div class="divide-y divide-gray-100 dark:divide-gray-800">
                     @foreach ($statuts as $s)

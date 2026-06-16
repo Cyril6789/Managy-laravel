@@ -18,6 +18,9 @@ php artisan key:generate --force
 touch database/database.sqlite
 php artisan migrate --seed --force
 
+# Public storage symlink (for uploaded logos, etc.)
+php artisan storage:link || true
+
 # Front-end assets
 npm install
 npm run build

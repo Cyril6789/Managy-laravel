@@ -34,6 +34,44 @@ class ClientController extends Controller
         return view('clients.index', compact('clients'));
     }
 
+    /** Live search (JSON) for the searchable client picker. */
+    public function search(Request $request)
+    {
+        $this->authorize(Permissions::CLIENTS_VIEW);
+
+        $term = '%'.$request->string('q').'%';
+
+        return Client::active()
+            ->where(fn ($w) => $w->where('nom', 'like', $term)
+                ->orWhere('prenom', 'like', $term)
+                ->orWhere('email', 'like', $term)
+                ->orWhere('ville', 'like', $term)
+                ->orWhere('telephone_mobile', 'like', $term)
+                ->orWhere('telephone_fixe', 'like', $term))
+            ->orderBy('nom')
+            ->limit(15)
+            ->get()
+            ->map(fn (Client $c) => ['id' => $c->id, 'label' => $c->nomComplet(), 'ville' => $c->ville]);
+    }
+
+    /** Inline creation (JSON) from the client picker. */
+    public function quickStore(Request $request)
+    {
+        $this->authorize(Permissions::CLIENTS_MANAGE);
+
+        $data = $request->validate([
+            'nom' => ['required', 'string', 'max:255'],
+            'type' => ['nullable', 'in:professionnel,particulier'],
+        ]);
+
+        $client = Client::create([
+            'nom' => $data['nom'],
+            'type' => $data['type'] ?? 'particulier',
+        ]);
+
+        return response()->json(['id' => $client->id, 'label' => $client->nomComplet(), 'ville' => $client->ville]);
+    }
+
     public function create()
     {
         $this->authorize(Permissions::CLIENTS_MANAGE);
@@ -59,8 +97,15 @@ class ClientController extends Controller
 
         $client->load(['contacts', 'parent']);
         $interventions = $client->interventions()->with('statut')->latest('opened_at')->limit(25)->get();
+        $messages = $client->messages()->with('intervention')->limit(50)->get();
 
-        return view('clients.show', compact('client', 'interventions'));
+        return view('clients.show', [
+            'client' => $client,
+            'interventions' => $interventions,
+            'messages' => $messages,
+            'soldeMaintenance' => $client->soldeMaintenance(),
+            'aPackMaintenance' => $client->maintenanceMovements()->exists(),
+        ]);
     }
 
     public function edit(Client $client)
