@@ -60,9 +60,9 @@
             <x-card title="Prestations" :padding="false">
                 <div class="divide-y divide-gray-100 dark:divide-gray-800">
                     @foreach ($prestations as $p)
-                        <form action="{{ route('settings.reference.update', ['prestations', $p->id]) }}" method="POST" class="flex items-center gap-2 px-5 py-2">
+                        <form action="{{ route('settings.reference.update', ['prestations', $p->id]) }}" method="POST" class="flex flex-wrap items-center gap-2 px-5 py-2">
                             @csrf @method('PUT')
-                            <x-input name="designation" value="{{ $p->designation }}" class="flex-1" />
+                            <x-input name="designation" value="{{ $p->designation }}" class="w-full sm:flex-1 sm:w-auto" />
                             <x-input name="duree_defaut" type="number" step="0.25" value="{{ rtrim(rtrim(number_format($p->duree_defaut,2),'0'),'.') }}" class="w-20" title="Durée par défaut (h)" />
                             <x-button variant="secondary" type="submit">OK</x-button>
                             <button form="del-presta-{{ $p->id }}" class="px-1 text-gray-300 hover:text-red-600">&times;</button>
@@ -70,9 +70,9 @@
                         <form id="del-presta-{{ $p->id }}" action="{{ route('settings.reference.destroy', ['prestations', $p->id]) }}" method="POST" class="hidden" onsubmit="return confirm('Supprimer ?')">@csrf @method('DELETE')</form>
                     @endforeach
                 </div>
-                <form action="{{ route('settings.reference.store', 'prestations') }}" method="POST" class="flex gap-2 border-t border-gray-100 p-4 dark:border-gray-800">
+                <form action="{{ route('settings.reference.store', 'prestations') }}" method="POST" class="flex flex-wrap gap-2 border-t border-gray-100 p-4 dark:border-gray-800">
                     @csrf
-                    <x-input name="designation" placeholder="Désignation" class="flex-1" />
+                    <x-input name="designation" placeholder="Désignation" class="w-full sm:flex-1 sm:w-auto" />
                     <x-input name="duree_defaut" type="number" step="0.25" placeholder="h" class="w-20" />
                     <x-button type="submit"><x-icon name="plus" class="h-4 w-4" /></x-button>
                 </form>

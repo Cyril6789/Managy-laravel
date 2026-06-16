@@ -80,8 +80,13 @@
                     @forelse ($rdvJour as $i)
                         <a href="{{ route('interventions.show', $i) }}" class="flex items-center gap-3 px-5 py-3 hover:bg-gray-50 dark:hover:bg-gray-800/50">
                             <span class="font-mono text-sm font-semibold text-brand-600">{{ $i->rdv_debut->format('H:i') }}</span>
-                            <span class="truncate text-sm">{{ $i->client?->nomComplet() }}</span>
-                            <span class="ml-auto text-xs text-gray-400">{{ $i->type_lieu === 'domicile' ? 'Domicile' : 'Atelier' }}</span>
+                            <div class="min-w-0 flex-1">
+                                <p class="truncate text-sm">{{ $i->client?->nomComplet() }}</p>
+                                @if ($i->type_lieu === 'domicile' && ($i->client?->ville || $i->client?->code_postal))
+                                    <p class="truncate text-xs text-gray-400">📍 {{ trim($i->client->code_postal.' '.$i->client->ville) }}</p>
+                                @endif
+                            </div>
+                            <span class="shrink-0 text-xs {{ $i->type_lieu === 'domicile' ? 'font-medium text-amber-600' : 'text-gray-400' }}">{{ $i->type_lieu === 'domicile' ? 'Domicile' : 'Atelier' }}</span>
                         </a>
                     @empty
                         <x-empty-state icon="calendar" title="Aucun rendez-vous aujourd'hui" />

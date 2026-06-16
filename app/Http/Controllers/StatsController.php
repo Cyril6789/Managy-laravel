@@ -28,7 +28,7 @@ class StatsController extends Controller
             ]);
         }
 
-        // Hours per technician over the period.
+        // Hours per technician over the period — only CLOSED (billable) interventions.
         $heuresParTech = User::query()
             ->select('users.id', 'users.prenom', 'users.nom')
             ->selectSub(
@@ -36,7 +36,8 @@ class StatsController extends Controller
                     ->join('interventions', 'interventions.id', '=', 'intervention_prestations.intervention_id')
                     ->join('intervention_user', 'intervention_user.intervention_id', '=', 'interventions.id')
                     ->whereColumn('intervention_user.user_id', 'users.id')
-                    ->whereBetween('interventions.opened_at', [$from, $to]),
+                    ->whereNotNull('interventions.closed_at')
+                    ->whereBetween('interventions.closed_at', [$from, $to]),
                 'heures'
             )
             ->where('is_active', true)

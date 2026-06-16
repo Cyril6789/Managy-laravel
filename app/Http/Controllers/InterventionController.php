@@ -88,7 +88,7 @@ class InterventionController extends Controller
         $intervention->load([
             'client', 'contact', 'materiel', 'systemeExploitation', 'antivirus', 'statut',
             'ouvreur', 'techniciens', 'prestations.prestation', 'commandes', 'sousTraitances',
-            'messages.user', 'logs.user',
+            'messages.user', 'logs.user', 'clientMessages',
         ]);
 
         return view('interventions.show', [

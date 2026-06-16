@@ -43,6 +43,11 @@ class Client extends Model
         return $this->hasMany(MaintenanceMovement::class);
     }
 
+    public function messages(): HasMany
+    {
+        return $this->hasMany(ClientMessage::class)->latest();
+    }
+
     public function scopeActive(Builder $query): Builder
     {
         return $query->whereNull('archived_at');

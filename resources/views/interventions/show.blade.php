@@ -62,12 +62,20 @@
 
             {{-- Tabs --}}
             <x-card :padding="false">
+                @php
+                    $tabCounts = [
+                        'prestations' => $i->prestations->count(),
+                        'commandes' => $i->commandes->count(),
+                        'sst' => $i->sousTraitances->count(),
+                        'contact' => $i->clientMessages->count(),
+                    ];
+                @endphp
                 <div class="flex gap-1 overflow-x-auto border-b border-gray-100 px-3 pt-2 dark:border-gray-800">
-                    @foreach (['details' => 'Détails', 'prestations' => 'Prestations', 'commandes' => 'Commandes', 'sst' => 'Sous-traitance', 'tchat' => 'Tchat'] as $key => $label)
+                    @foreach (['details' => 'Détails', 'prestations' => 'Prestations', 'commandes' => 'Commandes', 'sst' => 'Sous-traitance', 'contact' => 'Contact', 'tchat' => 'Tchat'] as $key => $label)
                         <button @click="tab = '{{ $key }}'"
                                 :class="tab === '{{ $key }}' ? 'border-brand-600 text-brand-600' : 'border-transparent text-gray-500 hover:text-gray-700'"
                                 class="whitespace-nowrap border-b-2 px-3 py-2 text-sm font-medium">{{ $label }}
-                            @if ($key === 'prestations' && $i->prestations->count())<span class="ml-1 text-xs text-gray-400">({{ $i->prestations->count() }})</span>@endif
+                            @if (! empty($tabCounts[$key]))<span class="ml-1 text-xs text-gray-400">({{ $tabCounts[$key] }})</span>@endif
                         </button>
                     @endforeach
                 </div>
@@ -196,6 +204,26 @@
                                 <div class="col-span-2"><x-button type="submit">Ajouter</x-button></div>
                             </form>
                         @endif
+                    </div>
+
+                    {{-- Historique contact (SMS / e-mails au client pour cette intervention) --}}
+                    <div x-show="tab === 'contact'" x-cloak class="space-y-3">
+                        @forelse ($i->clientMessages as $msg)
+                            <div class="rounded-lg border border-gray-100 p-3 text-sm dark:border-gray-800">
+                                <div class="mb-1 flex items-center justify-between gap-2">
+                                    <span class="flex items-center gap-2">
+                                        <x-badge :color="$msg->canal === 'sms' ? '#2563eb' : '#7c3aed'">{{ strtoupper($msg->canal) }}</x-badge>
+                                        <span class="text-gray-500">→ {{ $msg->destinataire }}</span>
+                                        @if ($msg->statut === 'echec')<x-badge color="#ef4444">Échec</x-badge>@endif
+                                    </span>
+                                    <span class="text-xs text-gray-400">{{ $msg->created_at?->format('d/m/Y H:i') }}</span>
+                                </div>
+                                @if ($msg->sujet)<p class="font-medium">{{ $msg->sujet }}</p>@endif
+                                <p class="whitespace-pre-line text-gray-600 dark:text-gray-300">{{ $msg->corps }}</p>
+                            </div>
+                        @empty
+                            <x-empty-state icon="bell" title="Aucune communication" message="Les SMS et e-mails envoyés au client pour cette intervention apparaîtront ici." />
+                        @endforelse
                     </div>
 
                     {{-- Tchat --}}

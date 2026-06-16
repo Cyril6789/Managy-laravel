@@ -120,6 +120,11 @@ class Intervention extends Model
         return $this->hasMany(InterventionLog::class)->latest();
     }
 
+    public function clientMessages(): HasMany
+    {
+        return $this->hasMany(ClientMessage::class)->latest();
+    }
+
     public function satisfaction(): BelongsTo
     {
         return $this->belongsTo(Satisfaction::class);
