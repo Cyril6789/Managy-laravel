@@ -40,7 +40,7 @@ class SmokeTest extends TestCase
             '/', '/clients', '/clients/create', '/interventions', '/interventions/create',
             '/calendrier', '/tasks', '/maintenance', '/statistiques', '/journaux',
             '/satisfaction', '/staff', '/staff/create', '/automatismes', '/automatismes/create',
-            '/parametres', '/profil', '/recherche?q=dup',
+            '/facturation', '/parametres', '/profil', '/recherche?q=dup',
         ] as $url) {
             $this->get($url)->assertOk();
         }

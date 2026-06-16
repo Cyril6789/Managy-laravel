@@ -6,6 +6,7 @@ use App\Livewire\ClientChat;
 use App\Livewire\ClientPicker;
 use App\Livewire\ContactManager;
 use App\Livewire\ContactPicker;
+use App\Livewire\Facturation;
 use App\Livewire\InterventionPanel;
 use App\Livewire\InterventionReport;
 use App\Models\Client;
@@ -134,6 +135,21 @@ class LivewireTest extends TestCase
             ->assertSeeHtml('Modifier')      // edit button visible once a contact is chosen
             ->set('contactId', null)
             ->assertDontSeeHtml('wire:click="openEdit"'); // and hidden again when cleared
+    }
+
+    public function test_facturation_marks_intervention_as_invoiced(): void
+    {
+        $intervention = Intervention::create([
+            'client_id' => Client::first()->id,
+            'closed_at' => now(),
+            'facturee' => false,
+        ]);
+
+        Livewire::test(Facturation::class)
+            ->assertSee($intervention->reference)
+            ->call('facturer', $intervention->id);
+
+        $this->assertTrue($intervention->fresh()->facturee);
     }
 
     public function test_staff_chat_and_public_chat_share_the_same_thread(): void

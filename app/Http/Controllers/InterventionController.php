@@ -305,6 +305,13 @@ class InterventionController extends Controller
         return back()->with('success', 'Intervention déclôturée.');
     }
 
+    public function facturationIndex()
+    {
+        $this->authorize(Permissions::INTERVENTIONS_FACTURATION);
+
+        return view('facturation.index');
+    }
+
     public function toggleFacturation(Intervention $intervention)
     {
         $this->authorize(Permissions::INTERVENTIONS_FACTURATION);

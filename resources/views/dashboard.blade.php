@@ -13,16 +13,17 @@
     {{-- KPIs --}}
     <div class="grid grid-cols-2 gap-4 lg:grid-cols-4">
         @php
+            $factUrl = auth()->user()->can(\App\Support\Permissions::INTERVENTIONS_FACTURATION) ? route('facturation.index') : null;
             $kpis = [
-                ['Interventions ouvertes', $stats['ouvertes'], 'wrench', 'text-brand-600'],
-                ['Urgentes', $stats['urgentes'], 'bolt', 'text-red-600'],
-                ['Clôturées ce mois', $stats['cloturees_mois'], 'check', 'text-green-600'],
-                ['À facturer', $stats['a_facturer'], 'list', 'text-amber-600'],
+                ['Interventions ouvertes', $stats['ouvertes'], 'wrench', 'text-brand-600', null],
+                ['Urgentes', $stats['urgentes'], 'bolt', 'text-red-600', null],
+                ['Clôturées ce mois', $stats['cloturees_mois'], 'check', 'text-green-600', null],
+                ['À facturer', $stats['a_facturer'], 'list', 'text-amber-600', $factUrl],
             ];
         @endphp
-        @foreach ($kpis as [$label, $value, $icon, $color])
-            <x-card>
-                <div class="flex items-center gap-3">
+        @foreach ($kpis as [$label, $value, $icon, $color, $url])
+            <x-card :class="$url ? 'transition hover:shadow-md' : ''">
+                <a @if ($url) href="{{ $url }}" @endif class="flex items-center gap-3">
                     <div class="flex h-11 w-11 items-center justify-center rounded-xl bg-gray-100 {{ $color }} dark:bg-gray-800">
                         <x-icon :name="$icon" class="h-6 w-6" />
                     </div>
@@ -30,7 +31,7 @@
                         <p class="text-2xl font-bold">{{ $value }}</p>
                         <p class="text-xs text-gray-500">{{ $label }}</p>
                     </div>
-                </div>
+                </a>
             </x-card>
         @endforeach
     </div>

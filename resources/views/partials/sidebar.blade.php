@@ -3,6 +3,7 @@
     $nav = [
         ['dashboard', 'Tableau de bord', 'home', null],
         ['interventions.index', 'Interventions', 'wrench', \App\Support\Permissions::INTERVENTIONS_VIEW],
+        ['facturation.index', 'Facturation', 'list', \App\Support\Permissions::INTERVENTIONS_FACTURATION],
         ['calendar.index', 'Calendrier', 'calendar', \App\Support\Permissions::CALENDAR_VIEW],
         ['clients.index', 'Clients', 'users', \App\Support\Permissions::CLIENTS_VIEW],
         ['tasks.index', 'Tâches', 'check', \App\Support\Permissions::TASKS_VIEW],

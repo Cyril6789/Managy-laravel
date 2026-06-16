@@ -63,6 +63,7 @@ Route::middleware('auth')->group(function () {
     Route::patch('clients/{client}/archive', [ClientController::class, 'archive'])->name('clients.archive');
 
     // Interventions
+    Route::get('/facturation', [InterventionController::class, 'facturationIndex'])->name('facturation.index');
     Route::get('interventions/contexte-client/{client}', [InterventionController::class, 'clientContext'])->name('interventions.client_context');
     Route::resource('interventions', InterventionController::class);
     Route::get('interventions/{intervention}/impression/{type}', [InterventionController::class, 'print'])->name('interventions.print')->where('type', 'depot|rapport');
