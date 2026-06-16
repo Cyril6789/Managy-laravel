@@ -264,52 +264,10 @@
                 </div>
             </x-card>
 
-            {{-- Technical report (save without closing) --}}
+            {{-- Technical report (live auto-save, no page reload — Livewire) --}}
             @if ($peutGerer && ! $i->estCloturee())
                 <x-card title="Rapport technique">
-                    <form action="{{ route('interventions.rapport', $i) }}" method="POST" class="space-y-4"
-                          x-data="{ dirty: false }" @input="dirty = true" @change="dirty = true" @submit="dirty = false"
-                          x-init="window.addEventListener('beforeunload', e => { if (dirty) { e.preventDefault(); e.returnValue = ''; } })">
-                        @csrf @method('PATCH')
-
-                        <x-field name="diagnostic">
-                            <div class="mb-1 flex flex-wrap items-center justify-between gap-2">
-                                <label for="diagnostic" class="text-sm font-medium text-gray-700 dark:text-gray-300">Diagnostic / rapport technique</label>
-                                <x-fill-select target="diagnostic" :items="$rapportTypes" field="texte" label-field="titre" mode="replace" placeholder="Diag récurrent…" />
-                            </div>
-                            <x-textarea name="diagnostic" id="diagnostic" rows="4">{{ $i->diagnostic }}</x-textarea>
-                        </x-field>
-
-                        <x-field name="message_client">
-                            <div class="mb-1 flex flex-wrap items-center justify-between gap-2">
-                                <label for="message_client" class="text-sm font-medium text-gray-700 dark:text-gray-300">Message au client</label>
-                                <x-fill-select target="message_client" :items="$commentaireTypes" field="texte" label-field="titre" mode="replace" placeholder="Modèle…" />
-                            </div>
-                            <x-textarea name="message_client" id="message_client" rows="2">{{ $i->message_client }}</x-textarea>
-                        </x-field>
-
-                        <x-field name="materiel_ajoute">
-                            <div class="mb-1 flex flex-wrap items-center justify-between gap-2">
-                                <label for="materiel_ajoute" class="text-sm font-medium text-gray-700 dark:text-gray-300">Matériel ajouté / remplacé</label>
-                                <x-fill-select target="materiel_ajoute" :items="$materielAjouteTypes" field="texte" label-field="nom" mode="append" placeholder="Ajouter…" />
-                            </div>
-                            <x-textarea name="materiel_ajoute" id="materiel_ajoute" rows="2">{{ $i->materiel_ajoute }}</x-textarea>
-                        </x-field>
-
-                        <div class="grid grid-cols-2 gap-3">
-                            <x-field label="Tarif estimatif (€)" name="tarif_estimatif">
-                                <x-input name="tarif_estimatif" type="number" step="0.01" value="{{ $i->tarif_estimatif }}" />
-                            </x-field>
-                            <x-field label="Accès / mot de passe" name="mdp">
-                                <x-input name="mdp" value="{{ $i->mdp }}" />
-                            </x-field>
-                        </div>
-
-                        <div class="flex items-center justify-between gap-2">
-                            <span x-show="dirty" x-cloak class="text-xs text-amber-600">Modifications non enregistrées</span>
-                            <x-button type="submit" class="ml-auto">Enregistrer le rapport</x-button>
-                        </div>
-                    </form>
+                    <livewire:intervention-report :intervention="$i" :key="'report-'.$i->id" />
                 </x-card>
 
                 <x-card title="Clôturer l'intervention">
@@ -391,6 +349,11 @@
                     </form>
                 </x-card>
             @endcan
+
+            <x-card title="Chat de suivi client">
+                <p class="mb-3 text-xs text-gray-500">Conversation en direct avec le client via sa page de suivi.</p>
+                <livewire:client-chat :intervention="$i" :key="'chat-'.$i->id" />
+            </x-card>
 
             <x-card title="Journal">
                 <ol class="space-y-3">

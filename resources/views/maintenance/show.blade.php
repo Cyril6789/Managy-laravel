@@ -40,7 +40,15 @@
                         @forelse ($mouvements as $m)
                             <tr>
                                 <td class="px-5 py-3 text-gray-400">{{ $m->created_at->format('d/m/Y') }}</td>
-                                <td class="px-5 py-3">{{ $m->description ?: ($m->intervention?->reference ?? '—') }}<p class="text-xs text-gray-400">{{ $m->user?->fullName() }}</p></td>
+                                <td class="px-5 py-3">
+                                    @if ($m->intervention)
+                                        <a href="{{ route('interventions.show', $m->intervention) }}" class="font-medium text-brand-600 hover:underline">{{ $m->intervention->reference }}</a>
+                                        @if ($m->description)<span class="text-gray-500"> · {{ $m->description }}</span>@endif
+                                    @else
+                                        {{ $m->description ?: '—' }}
+                                    @endif
+                                    <p class="text-xs text-gray-400">{{ $m->user?->fullName() }}</p>
+                                </td>
                                 <td class="px-5 py-3 text-right font-semibold {{ $m->mouvement < 0 ? 'text-red-600' : 'text-green-600' }}">{{ $m->mouvement > 0 ? '+' : '' }}{{ number_format($m->mouvement, 2) }} h</td>
                                 <td class="px-5 py-3 text-right">
                                     @can(\App\Support\Permissions::MAINTENANCE_MANAGE)

@@ -55,5 +55,6 @@
 
         <p class="mt-6 text-center text-xs text-gray-400">© {{ date('Y') }} {{ $appSettings['company_name'] ?? 'Managy' }}</p>
     </div>
+    @livewireScripts
 </body>
 </html>

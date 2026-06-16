@@ -81,4 +81,11 @@
             </div>
         @endif
     </div>
+
+    {{-- Two-way chat with the workshop --}}
+    <div class="mt-6 rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-gray-900">
+        <h2 class="mb-1 text-lg font-semibold">Une question ? Échangez avec nous</h2>
+        <p class="mb-4 text-sm text-gray-500">Vos messages arrivent directement à l'équipe en charge de votre intervention.</p>
+        <livewire:client-chat :token="$intervention->public_token" />
+    </div>
 @endsection

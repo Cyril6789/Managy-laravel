@@ -6,6 +6,7 @@
     <title>@yield('title', 'Suivi') · {{ $appSettings['company_name'] ?? config('app.name') }}</title>
     <script>(function(){const t=localStorage.getItem('theme');if(t==='dark'||(!t&&matchMedia('(prefers-color-scheme: dark)').matches))document.documentElement.classList.add('dark');})();</script>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+    @livewireStyles
 </head>
 <body class="min-h-full bg-gray-100 text-gray-900 antialiased dark:bg-gray-950 dark:text-gray-100">
     <header class="border-b border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900">
@@ -30,5 +31,6 @@
         @if (!empty($appSettings['company_phone'])) {{ $appSettings['company_phone'] }} · @endif
         © {{ date('Y') }} {{ $appSettings['company_name'] ?? 'Managy' }}
     </footer>
+    @livewireScripts
 </body>
 </html>

@@ -5,13 +5,13 @@
 @endphp
 
 <div x-data="interventionForm({ contextUrl: '{{ url('interventions/contexte-client') }}', clientId: '{{ $clientId }}' })"
-     @client-selected="onClient($event.detail)"
+     @client-selected.window="onClient($event.detail.id)"
      class="grid grid-cols-1 gap-6 lg:grid-cols-3">
     <div class="space-y-5 lg:col-span-2">
         <x-card title="Client & matériel">
             <div class="grid grid-cols-1 gap-5 md:grid-cols-2">
                 <x-field label="Client" name="client_id" required class="md:col-span-2">
-                    <x-client-select name="client_id" :selected="$clientId" :selected-label="$clientLabel" />
+                    <livewire:client-picker :selected="$clientId ? (int) $clientId : null" :selected-label="$clientLabel" />
                 </x-field>
 
                 {{-- Maintenance pack banner (after a client is selected) --}}

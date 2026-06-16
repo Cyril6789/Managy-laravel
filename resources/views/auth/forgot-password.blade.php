@@ -24,5 +24,6 @@
 
         <a href="{{ route('login') }}" class="mt-4 block text-center text-sm text-brand-600 hover:underline">Retour à la connexion</a>
     </div>
+    @livewireScripts
 </body>
 </html>

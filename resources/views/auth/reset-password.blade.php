@@ -28,5 +28,6 @@
             <x-button type="submit" class="w-full">Réinitialiser</x-button>
         </form>
     </div>
+    @livewireScripts
 </body>
 </html>

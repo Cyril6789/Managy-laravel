@@ -57,14 +57,19 @@
                     @can(\App\Support\Permissions::MAINTENANCE_MANAGE)
                         <form action="{{ route('maintenance.store', $client) }}" method="POST" class="mt-4 space-y-3 border-t border-gray-100 pt-4 dark:border-gray-800">
                             @csrf
-                            <div class="flex gap-2">
-                                <x-select name="sens" class="w-32">
-                                    <option value="credit">Créditer +</option>
-                                    <option value="debit">Débiter −</option>
+                            <p class="text-xs font-semibold uppercase tracking-wide text-gray-400">Nouveau mouvement</p>
+                            <x-field label="Opération" name="sens">
+                                <x-select name="sens">
+                                    <option value="credit">Créditer (+) des heures</option>
+                                    <option value="debit">Débiter (−) des heures</option>
                                 </x-select>
-                                <x-input name="heures" type="number" step="0.25" min="0.25" placeholder="Heures" class="flex-1" required />
-                            </div>
-                            <x-input name="description" placeholder="Description (ex. contrat annuel)" />
+                            </x-field>
+                            <x-field label="Nombre d'heures" name="heures">
+                                <x-input name="heures" type="number" step="0.25" min="0.25" placeholder="ex. 10" required />
+                            </x-field>
+                            <x-field label="Description" name="description">
+                                <x-input name="description" placeholder="ex. contrat annuel" />
+                            </x-field>
                             <x-button type="submit" class="w-full">Enregistrer le mouvement</x-button>
                         </form>
                     @endcan
