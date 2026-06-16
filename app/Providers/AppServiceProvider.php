@@ -46,8 +46,9 @@ class AppServiceProvider extends ServiceProvider
      */
     private function configureCodespaceUrl(): void
     {
-        $codespace = env('CODESPACE_NAME');
-        $domain = env('GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN');
+        $codespace = $_SERVER['CODESPACE_NAME'] ?? getenv('CODESPACE_NAME') ?: null;
+        $domain = $_SERVER['GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN']
+            ?? getenv('GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN') ?: null;
 
         if ($codespace && $domain) {
             URL::forceRootUrl("https://{$codespace}-8000.{$domain}");
