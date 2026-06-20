@@ -15,38 +15,6 @@ document.addEventListener('alpine:init', () => {
         },
     });
 
-    // Mobile-friendly searchable single-select (hidden input + native change event).
-    Alpine.data('searchableSelect', (cfg = {}) => ({
-        options: cfg.options || [],
-        value: cfg.selected != null ? String(cfg.selected) : '',
-        allowEmpty: cfg.allowEmpty !== false,
-        open: false,
-        query: '',
-        toggle() {
-            this.open = !this.open;
-            // Auto-focusing the search field pops the on-screen keyboard, which on
-            // tablets (iPad) covers the options list and makes it feel impossible to
-            // scroll. Only steal focus when a precise pointer (desktop) is present.
-            if (this.open && window.matchMedia('(pointer: fine)').matches) {
-                this.$nextTick(() => this.$refs.search && this.$refs.search.focus());
-            }
-        },
-        pick(v) {
-            this.value = String(v);
-            this.open = false;
-            this.query = '';
-            this.$refs.input.dispatchEvent(new Event('change', { bubbles: true }));
-        },
-        label() {
-            const o = this.options.find((o) => String(o.value) === this.value);
-            return o ? o.label : '';
-        },
-        filtered() {
-            const q = this.query.toLowerCase().trim();
-            return q ? this.options.filter((o) => o.label.toLowerCase().includes(q)) : this.options;
-        },
-    }));
-
     /**
      * Address autocomplete backed by the French Base Adresse Nationale (BAN)
      * — https://api-adresse.data.gouv.fr — free, no API key, CORS-enabled, so
