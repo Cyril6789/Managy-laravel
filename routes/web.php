@@ -102,8 +102,8 @@ Route::middleware('auth')->group(function () {
     Route::put('/calendrier/evenements/{event}', [CalendarController::class, 'update'])->name('calendar.update');
     Route::delete('/calendrier/evenements/{event}', [CalendarController::class, 'destroy'])->name('calendar.destroy');
 
-    // Tasks
-    Route::resource('tasks', TaskController::class)->except(['show', 'create', 'edit']);
+    // Tasks (list + create/complete/delete handled by <livewire:tasks />)
+    Route::get('tasks', [TaskController::class, 'index'])->name('tasks.index');
     Route::post('tasks/{task}/toggle', [TaskController::class, 'toggle'])->name('tasks.toggle');
 
     // Sticky notes
