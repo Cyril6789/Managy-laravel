@@ -38,6 +38,55 @@ class AppServiceProvider extends ServiceProvider
                 $view->with('appSettings', $this->settings());
             }
         });
+
+        // Sidebar badge counters (open interventions, pending reception, tasks).
+        View::composer('partials.sidebar', function ($view) {
+            $view->with('navCounts', $this->navCounts());
+        });
+    }
+
+    /**
+     * Live counters shown as badges in the sidebar. Each is gated by the same
+     * permission as its nav item, so we never run a query the user can't see.
+     *
+     * @return array<string, int>
+     */
+    private function navCounts(): array
+    {
+        $user = auth()->user();
+        if (! $user) {
+            return [];
+        }
+
+        $counts = [];
+
+        try {
+            if ($user->can(Permissions::INTERVENTIONS_VIEW)) {
+                $counts['interventions.index'] = \App\Models\Intervention::ouvertes()
+                    ->when(! $user->can(Permissions::INTERVENTIONS_VIEW_ALL),
+                        fn ($q) => $q->whereHas('techniciens', fn ($w) => $w->where('users.id', $user->id)))
+                    ->count();
+            }
+
+            if ($user->can(Permissions::COMMANDES_RECEPTION)) {
+                $counts['reception.commandes'] = \App\Models\Commande::where('recue', false)
+                    ->whereHas('intervention', fn ($i) => $i->whereNull('closed_at'))->count();
+            }
+
+            if ($user->can(Permissions::SOUS_TRAITANCES_RECEPTION)) {
+                $counts['reception.sous_traitances'] = \App\Models\SousTraitance::where('retournee', false)
+                    ->whereHas('intervention', fn ($i) => $i->whereNull('closed_at'))->count();
+            }
+
+            if ($user->can(Permissions::TASKS_VIEW)) {
+                $counts['tasks.index'] = \App\Models\Task::where('user_id', $user->id)
+                    ->where('statut', '!=', 'terminee')->count();
+            }
+        } catch (\Throwable) {
+            return []; // DB not migrated yet (e.g. during install)
+        }
+
+        return $counts;
     }
 
     /**

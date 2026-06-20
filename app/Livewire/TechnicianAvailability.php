@@ -39,7 +39,10 @@ class TechnicianAvailability extends Component
 
     public function mount(?string $date = null): void
     {
-        $this->date = $date && strtotime($date)
+        // Honour a ?date=YYYY-MM-DD query param (e.g. the "voir le planning du
+        // jour" link from the scheduling panel).
+        $date = $date ?: request('date');
+        $this->date = $date && strtotime((string) $date)
             ? Carbon::parse($date)->toDateString()
             : now()->toDateString();
         $this->absenceUserId = Auth::id();
@@ -230,6 +233,6 @@ class TechnicianAvailability extends Component
             'technicians' => $technicians,
             'motifs' => TechnicianAbsence::MOTIFS,
             'villesDuJour' => $villesDuJour,
-        ])->layout('layouts.app', ['title' => 'Disponibilités techniciens']);
+        ]);
     }
 }

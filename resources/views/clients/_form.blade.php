@@ -12,13 +12,16 @@
             <option value="particulier" @selected(old('type', $client->type)==='particulier')>Particulier</option>
         </x-select>
     </x-field>
-    <x-field label="Civilité" name="civilite">
-        <x-select name="civilite">
-            @foreach (['' => '—', 'M.' => 'M.', 'Mme' => 'Mme', 'Sté' => 'Société'] as $v => $l)
-                <option value="{{ $v }}" @selected(old('civilite', $client->civilite)===$v)>{{ $l }}</option>
-            @endforeach
-        </x-select>
-    </x-field>
+    {{-- La civilité ne concerne que les particuliers (une société n'en a pas). --}}
+    <div x-show="type !== 'professionnel'" x-cloak>
+        <x-field label="Civilité" name="civilite">
+            <x-select name="civilite">
+                @foreach (['' => '—', 'M.' => 'M.', 'Mme' => 'Mme'] as $v => $l)
+                    <option value="{{ $v }}" @selected(old('civilite', $client->civilite)===$v)>{{ $l }}</option>
+                @endforeach
+            </x-select>
+        </x-field>
+    </div>
     <x-field label="Nom / Raison sociale" name="nom" required>
         <x-input name="nom" value="{{ old('nom', $client->nom) }}" />
     </x-field>

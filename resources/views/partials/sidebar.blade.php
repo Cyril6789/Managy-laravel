@@ -38,7 +38,7 @@
     <nav class="flex h-[calc(100%-4rem)] flex-col gap-1 overflow-y-auto p-3">
         @foreach ($nav as [$route, $label, $icon, $gate])
             @if (! $gate || auth()->user()?->can($gate))
-                <x-nav-link :route="$route" :icon="$icon">{{ $label }}</x-nav-link>
+                <x-nav-link :route="$route" :icon="$icon" :count="($navCounts ?? [])[$route] ?? null">{{ $label }}</x-nav-link>
             @endif
         @endforeach
 

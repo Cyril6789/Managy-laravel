@@ -59,13 +59,18 @@
                             <option value="particulier">Particulier</option>
                         </x-select>
                     </x-field>
-                    <x-field label="Civilité">
-                        <x-select wire:model="form.civilite">
-                            @foreach (['' => '—', 'M.' => 'M.', 'Mme' => 'Mme', 'Sté' => 'Société'] as $v => $l)
-                                <option value="{{ $v }}">{{ $l }}</option>
-                            @endforeach
-                        </x-select>
-                    </x-field>
+                    {{-- La civilité ne concerne que les particuliers. --}}
+                    @if (($form['type'] ?? 'particulier') !== 'professionnel')
+                        <x-field label="Civilité">
+                            <x-select wire:model="form.civilite">
+                                @foreach (['' => '—', 'M.' => 'M.', 'Mme' => 'Mme'] as $v => $l)
+                                    <option value="{{ $v }}">{{ $l }}</option>
+                                @endforeach
+                            </x-select>
+                        </x-field>
+                    @else
+                        <div class="hidden sm:block"></div>
+                    @endif
                     <x-field label="Nom / Raison sociale" :required="true">
                         <x-input wire:model="form.nom" />
                         @error('form.nom')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
