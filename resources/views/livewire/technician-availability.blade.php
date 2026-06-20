@@ -116,13 +116,19 @@
                     </div>
                 @endforeach
 
-                {{-- Bookings --}}
+                {{-- Bookings & calendar appointments --}}
                 @forelse ($t['slots'] as $s)
-                    <a href="{{ $s['url'] }}"
-                       class="mb-1.5 flex items-start gap-2 rounded-md border border-gray-100 px-2.5 py-1.5 text-xs hover:bg-gray-50 dark:border-gray-800 dark:hover:bg-gray-800">
+                    <a @if ($s['url']) href="{{ $s['url'] }}" @endif
+                       class="mb-1.5 flex items-start gap-2 rounded-md border px-2.5 py-1.5 text-xs hover:bg-gray-50 dark:hover:bg-gray-800
+                              {{ $s['event'] ? 'border-emerald-200 bg-emerald-50/40 dark:border-emerald-900/50 dark:bg-emerald-900/10' : 'border-gray-100 dark:border-gray-800' }}">
                         <span class="shrink-0 font-mono text-gray-500 dark:text-gray-400">{{ $s['debut'] }}@if ($s['fin'])<br>{{ $s['fin'] }}@endif</span>
                         <span class="min-w-0 flex-1">
-                            <span class="block truncate font-medium">{{ $s['client'] }}</span>
+                            <span class="flex items-center gap-1 truncate font-medium">
+                                @if ($s['event'])
+                                    <svg class="h-3 w-3 shrink-0 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a1.5 1.5 0 0 1 1.5-1.5h15a1.5 1.5 0 0 1 1.5 1.5v11.25m-18 0A1.5 1.5 0 0 0 4.5 20.25h15a1.5 1.5 0 0 0 1.5-1.5m-18 0V11.25h18"/></svg>
+                                @endif
+                                {{ $s['client'] }}
+                            </span>
                             <span class="flex flex-wrap items-center gap-1 text-gray-400">
                                 @if ($s['reference'])<span>{{ $s['reference'] }}</span>@endif
                                 @if ($s['ville'])

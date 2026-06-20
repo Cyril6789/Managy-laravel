@@ -60,7 +60,9 @@ class CalendarController extends Controller
     {
         $this->authorize(Permissions::CALENDAR_MANAGE);
 
-        Event::create($this->rules($request) + ['user_id' => $request->input('user_id', $request->user()->id)]);
+        $data = $this->rules($request);
+        $data['user_id'] = $data['user_id'] ?? $request->user()->id;
+        Event::create($data);
 
         return back()->with('success', 'Rendez-vous ajouté.');
     }
@@ -118,6 +120,7 @@ class CalendarController extends Controller
         return $request->validate([
             'titre' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
+            'user_id' => ['nullable', 'exists:users,id'],
             'client_id' => ['nullable', 'exists:clients,id'],
             'debut' => ['required', 'date'],
             'fin' => ['nullable', 'date', 'after_or_equal:debut'],
