@@ -74,6 +74,12 @@
                             @endforeach
                             @foreach ($t['slots'] as $s)
                                 <li class="flex flex-wrap items-center gap-1.5 {{ $s['same_ville'] ? 'text-violet-700 dark:text-violet-300' : 'text-gray-500 dark:text-gray-400' }}">
+                                    @if ($s['event'])
+                                        <span class="inline-flex items-center gap-0.5 rounded bg-emerald-50 px-1 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300" title="Rendez-vous agenda">
+                                            <svg class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a1.5 1.5 0 0 1 1.5-1.5h15a1.5 1.5 0 0 1 1.5 1.5v11.25m-18 0A1.5 1.5 0 0 0 4.5 20.25h15a1.5 1.5 0 0 0 1.5-1.5m-18 0V11.25h18"/></svg>
+                                            RDV
+                                        </span>
+                                    @endif
                                     <span class="font-mono">{{ $s['debut'] }}@if ($s['fin'])–{{ $s['fin'] }}@endif</span>
                                     <span>·</span>
                                     <span class="truncate">{{ $s['client'] }}</span>

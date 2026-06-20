@@ -3,6 +3,7 @@
 namespace App\Livewire;
 
 use App\Models\Client;
+use App\Models\Event;
 use App\Models\Intervention;
 use App\Models\InterventionLog;
 use App\Models\TechnicianAbsence;
@@ -160,6 +161,7 @@ class InterventionSchedule extends Component
 
         $bookings = collect();
         $absences = collect();
+        $events = collect();
         if ($day) {
             $bookings = Intervention::query()
                 ->whereNotNull('rdv_debut')
@@ -170,24 +172,53 @@ class InterventionSchedule extends Component
                 ->get();
 
             $absences = TechnicianAbsence::onDay($day)->get()->groupBy('user_id');
+
+            // Calendar appointments ("rendez-vous") assigned to a technician also
+            // occupy their day — otherwise we'd wrongly show them as free.
+            $events = Event::query()
+                ->whereNotNull('user_id')
+                ->whereDate('debut', $day->toDateString())
+                ->with('client:id,nom,prenom,type,ville')
+                ->get()
+                ->groupBy('user_id');
         }
 
-        return $techniciens->map(function (User $u) use ($bookings, $absences, $day, $rdvEnd, $targetVille) {
-            $slots = $bookings->filter(fn (Intervention $i) => $i->techniciens->contains('id', $u->id))
-                ->sortBy('rdv_debut')
+        return $techniciens->map(function (User $u) use ($bookings, $absences, $events, $day, $rdvEnd, $targetVille) {
+            $bookingSlots = $bookings->filter(fn (Intervention $i) => $i->techniciens->contains('id', $u->id))
                 ->map(function (Intervention $i) use ($targetVille) {
                     $ville = $i->client?->ville;
 
                     return [
+                        'sort' => $i->rdv_debut->format('H:i'),
                         'debut' => $i->rdv_debut->format('H:i'),
                         'fin' => $i->rdv_fin?->format('H:i'),
                         'client' => $i->client?->nomComplet(),
                         'ville' => $ville,
                         'reference' => $i->reference,
                         'domicile' => $i->type_lieu === 'domicile',
+                        'event' => false,
                         'same_ville' => $targetVille && $this->normalizeVille($ville) === $targetVille,
                     ];
-                })->values()->all();
+                });
+
+            $eventSlots = ($events->get($u->id) ?? collect())
+                ->map(function (Event $e) use ($targetVille) {
+                    $ville = $e->client?->ville;
+
+                    return [
+                        'sort' => $e->debut->format('H:i'),
+                        'debut' => $e->debut->format('H:i'),
+                        'fin' => $e->fin?->format('H:i'),
+                        'client' => $e->titre,
+                        'ville' => $ville,
+                        'reference' => null,
+                        'domicile' => false,
+                        'event' => true,
+                        'same_ville' => $targetVille && $ville && $this->normalizeVille($ville) === $targetVille,
+                    ];
+                });
+
+            $slots = $bookingSlots->concat($eventSlots)->sortBy('sort')->values()->all();
 
             // Absences covering the day, and whether one hits the RDV window.
             $dayAbsences = ($absences->get($u->id) ?? collect());

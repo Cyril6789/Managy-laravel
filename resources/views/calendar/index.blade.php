@@ -20,6 +20,13 @@
                                     <x-field label="Début" name="debut" required><x-input name="debut" type="datetime-local" /></x-field>
                                     <x-field label="Fin" name="fin"><x-input name="fin" type="datetime-local" /></x-field>
                                 </div>
+                                <x-field label="Technicien" name="user_id" hint="Le rendez-vous occupera l'agenda de ce technicien.">
+                                    <x-select name="user_id">
+                                        @foreach ($techniciens as $t)
+                                            <option value="{{ $t->id }}" @selected($t->id === auth()->id())>{{ $t->fullName() }}</option>
+                                        @endforeach
+                                    </x-select>
+                                </x-field>
                                 <x-field label="Client" name="client_id">
                                     {{-- Recherche client en Ajax (au lieu d'une liste de tous les clients). --}}
                                     <livewire:client-picker />

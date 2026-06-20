@@ -2,6 +2,7 @@
 
 namespace App\Livewire;
 
+use App\Models\Event;
 use App\Models\Intervention;
 use App\Models\TechnicianAbsence;
 use App\Models\User;
@@ -182,19 +183,40 @@ class TechnicianAvailability extends Component
             ->with('creator:id,prenom,nom')
             ->get()->groupBy('user_id');
 
-        $board = $technicians->map(function (User $u) use ($bookings, $absencesByUser, $day) {
-            $slots = $bookings->filter(fn (Intervention $i) => $i->techniciens->contains('id', $u->id))
-                ->sortBy('rdv_debut')
+        $eventsByUser = Event::query()
+            ->whereNotNull('user_id')
+            ->whereDate('debut', $day->toDateString())
+            ->with('client:id,nom,prenom,type,ville')
+            ->get()->groupBy('user_id');
+
+        $board = $technicians->map(function (User $u) use ($bookings, $absencesByUser, $eventsByUser, $day) {
+            $bookingSlots = $bookings->filter(fn (Intervention $i) => $i->techniciens->contains('id', $u->id))
                 ->map(fn (Intervention $i) => [
-                    'id' => $i->id,
+                    'sort' => $i->rdv_debut->format('H:i'),
                     'debut' => $i->rdv_debut->format('H:i'),
                     'fin' => $i->rdv_fin?->format('H:i'),
                     'client' => $i->client?->nomComplet(),
                     'ville' => $i->client?->ville,
                     'domicile' => $i->type_lieu === 'domicile',
                     'reference' => $i->reference,
+                    'event' => false,
                     'url' => route('interventions.show', $i),
-                ])->values();
+                ]);
+
+            $eventSlots = ($eventsByUser->get($u->id) ?? collect())
+                ->map(fn (Event $e) => [
+                    'sort' => $e->debut->format('H:i'),
+                    'debut' => $e->debut->format('H:i'),
+                    'fin' => $e->fin?->format('H:i'),
+                    'client' => $e->titre,
+                    'ville' => $e->client?->ville,
+                    'domicile' => false,
+                    'reference' => null,
+                    'event' => true,
+                    'url' => null,
+                ]);
+
+            $slots = $bookingSlots->concat($eventSlots)->sortBy('sort')->values();
 
             $absences = ($absencesByUser->get($u->id) ?? collect())
                 ->sortBy('debut')
