@@ -83,6 +83,14 @@ class ClientPicker extends Component
         $this->dispatch('client-selected', id: $id);
     }
 
+    /** Fill the address fields from a Base Adresse Nationale suggestion. */
+    public function fillAddress(array $address): void
+    {
+        $this->form['adresse'] = (string) ($address['adresse'] ?? '');
+        $this->form['code_postal'] = (string) ($address['code_postal'] ?? '');
+        $this->form['ville'] = (string) ($address['ville'] ?? '');
+    }
+
     public function openCreate(): void
     {
         Gate::authorize(Permissions::CLIENTS_MANAGE);

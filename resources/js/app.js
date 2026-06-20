@@ -42,6 +42,73 @@ document.addEventListener('alpine:init', () => {
         },
     }));
 
+    /**
+     * Address autocomplete backed by the French Base Adresse Nationale (BAN)
+     * — https://api-adresse.data.gouv.fr — free, no API key, CORS-enabled, so
+     * the lookup happens directly from the browser. On selection it emits an
+     * `address-picked` event whose detail carries the parsed street / postcode /
+     * city, letting the surrounding form fill its fields.
+     */
+    Alpine.data('addressAutocomplete', () => ({
+        query: '',
+        results: [],
+        open: false,
+        loading: false,
+        active: -1,
+        controller: null,
+        async search() {
+            const q = this.query.trim();
+            if (q.length < 3) {
+                this.results = [];
+                this.open = false;
+                return;
+            }
+            this.loading = true;
+            if (this.controller) this.controller.abort();
+            this.controller = new AbortController();
+            try {
+                const url = `https://api-adresse.data.gouv.fr/search/?limit=6&autocomplete=1&q=${encodeURIComponent(q)}`;
+                const r = await fetch(url, { signal: this.controller.signal });
+                if (!r.ok) throw new Error('ban');
+                const d = await r.json();
+                this.results = (d.features || []).map((f) => {
+                    const p = f.properties;
+                    const street = [p.housenumber, p.street].filter(Boolean).join(' ');
+                    return {
+                        label: p.label,
+                        adresse: street || (p.type === 'municipality' ? '' : p.name) || '',
+                        code_postal: p.postcode || '',
+                        ville: p.city || '',
+                    };
+                });
+                this.open = true;
+                this.active = -1;
+            } catch (e) {
+                if (e.name !== 'AbortError') {
+                    this.results = [];
+                    this.open = false;
+                }
+            } finally {
+                this.loading = false;
+            }
+        },
+        move(dir) {
+            if (!this.open || !this.results.length) return;
+            this.active = (this.active + dir + this.results.length) % this.results.length;
+        },
+        pick(r) {
+            if (!r) return;
+            this.open = false;
+            this.query = '';
+            this.results = [];
+            this.active = -1;
+            this.$dispatch('address-picked', r);
+        },
+        enter() {
+            if (this.active >= 0) this.pick(this.results[this.active]);
+        },
+    }));
+
     // Intervention create/edit form: fetch the selected client's context.
     Alpine.data('interventionForm', (cfg = {}) => ({
         contextUrl: cfg.contextUrl,

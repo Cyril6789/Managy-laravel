@@ -76,6 +76,22 @@ class User extends Authenticatable
         return $this->hasMany(UserPermission::class);
     }
 
+    public function absences(): HasMany
+    {
+        return $this->hasMany(TechnicianAbsence::class);
+    }
+
+    /** Whether the technician is absent at the given moment / window. */
+    public function isAbsentBetween(\Illuminate\Support\Carbon $start, ?\Illuminate\Support\Carbon $end = null): bool
+    {
+        $end = $end ?: $start->copy()->addMinute();
+
+        return $this->absences()
+            ->where('debut', '<', $end)
+            ->where('fin', '>', $start)
+            ->exists();
+    }
+
     // ----- Permissions -------------------------------------------------------
 
     /**
