@@ -3,7 +3,7 @@
     $unread = $user ? $user->appNotifications()->whereNull('read_at')->count() : 0;
 @endphp
 
-<header class="sticky top-0 z-20 flex h-16 items-center gap-3 border-b border-gray-200 bg-white/90 px-4 backdrop-blur dark:border-gray-800 dark:bg-gray-900/90 sm:px-6 lg:px-8">
+<header class="sticky top-0 z-20 flex h-16 items-center gap-3 border-b border-gray-200 bg-white px-4 dark:border-gray-800 dark:bg-gray-900 sm:px-6 lg:px-8">
     {{-- Mobile menu --}}
     <button type="button" @click="sidebarOpen = true"
             class="rounded-lg p-2 text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 lg:hidden">
