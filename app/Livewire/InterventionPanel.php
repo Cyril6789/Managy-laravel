@@ -14,6 +14,7 @@ use App\Services\AutomatismeRunner;
 use App\Services\Notifier;
 use App\Support\InterventionStatus;
 use App\Support\Permissions;
+use App\Support\Reception;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
 use Livewire\Component;
@@ -140,13 +141,11 @@ class InterventionPanel extends Component
         $this->syncStatut();
     }
 
-    public function receiveCommande(int $id, AutomatismeRunner $automatismes): void
+    public function receiveCommande(int $id): void
     {
         Gate::authorize(Permissions::INTERVENTIONS_MANAGE);
         $c = Commande::where('intervention_id', $this->intervention->id)->findOrFail($id);
-        $c->update(['recue' => true, 'recue_le' => now()]);
-        $this->log('a réceptionné la commande '.($c->numero_commande ?? ''));
-        $automatismes->fire('commande_recue', $this->intervention);
+        Reception::receiveCommande($c);
         $this->syncStatut();
     }
 
@@ -170,13 +169,11 @@ class InterventionPanel extends Component
         $this->syncStatut();
     }
 
-    public function returnSousTraitance(int $id, AutomatismeRunner $automatismes): void
+    public function returnSousTraitance(int $id): void
     {
         Gate::authorize(Permissions::INTERVENTIONS_MANAGE);
         $s = SousTraitance::where('intervention_id', $this->intervention->id)->findOrFail($id);
-        $s->update(['retournee' => true, 'retour_le' => now()]);
-        $this->log('a réceptionné le retour de sous-traitance');
-        $automatismes->fire('sous_traitance_retour', $this->intervention);
+        Reception::returnSousTraitance($s);
         $this->syncStatut();
     }
 

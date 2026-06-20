@@ -19,6 +19,7 @@ use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\Public\PublicInterventionController;
 use App\Http\Controllers\Public\PublicSatisfactionController;
+use App\Http\Controllers\ReceptionController;
 use App\Http\Controllers\SatisfactionController;
 use App\Http\Controllers\SearchController;
 use App\Http\Controllers\SettingsController;
@@ -61,6 +62,10 @@ Route::middleware('auth')->group(function () {
     Route::post('clients/rapide', [ClientController::class, 'quickStore'])->name('clients.quick-store');
     Route::resource('clients', ClientController::class);
     Route::patch('clients/{client}/archive', [ClientController::class, 'archive'])->name('clients.archive');
+
+    // Réception (commandes / sous-traitances en cours) — handled without opening the intervention
+    Route::get('/commandes-en-cours', [ReceptionController::class, 'commandes'])->name('reception.commandes');
+    Route::get('/sous-traitances-en-cours', [ReceptionController::class, 'sousTraitances'])->name('reception.sous_traitances');
 
     // Interventions
     Route::get('/facturation', [InterventionController::class, 'facturationIndex'])->name('facturation.index');

@@ -32,6 +32,11 @@ final class Permissions
 
     public const INTERVENTIONS_RISTOURNE = 'interventions.ristourne';     // grant a discount at restitution
 
+    // Réception (handled without opening the intervention)
+    public const COMMANDES_RECEPTION = 'commandes.reception';
+
+    public const SOUS_TRAITANCES_RECEPTION = 'sous_traitances.reception';
+
     // Calendar / tasks
     public const CALENDAR_VIEW = 'calendar.view';
 
@@ -85,6 +90,10 @@ final class Permissions
                 self::INTERVENTIONS_FACTURATION => 'Gérer la facturation',
                 self::INTERVENTIONS_ASSIGN => 'Affecter des techniciens aux interventions',
                 self::INTERVENTIONS_RISTOURNE => 'Accorder une ristourne sur une intervention',
+            ],
+            'Réception colis & sous-traitance' => [
+                self::COMMANDES_RECEPTION => 'Réceptionner les commandes fournisseurs en cours (sans ouvrir l\'intervention)',
+                self::SOUS_TRAITANCES_RECEPTION => 'Réceptionner les retours de sous-traitance en cours',
             ],
             'Agenda & tâches' => [
                 self::CALENDAR_VIEW => 'Voir le calendrier',
