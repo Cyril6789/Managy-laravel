@@ -82,10 +82,29 @@
         @endif
     </div>
 
-    {{-- Two-way chat with the workshop --}}
-    <div class="mt-6 rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-gray-900">
-        <h2 class="mb-1 text-lg font-semibold">Une question ? Échangez avec nous</h2>
-        <p class="mb-4 text-sm text-gray-500">Vos messages arrivent directement à l'équipe en charge de votre intervention.</p>
-        <livewire:client-chat :token="$intervention->public_token" />
-    </div>
+    @if ($i->estCloturee())
+        {{-- Closed: invite the customer to rate the intervention (chat is hidden). --}}
+        @if ($satisfaction && ! $satisfaction->submitted_at)
+            <div class="mt-6 rounded-2xl border border-brand-200 bg-brand-50 p-6 text-center shadow-sm dark:border-brand-800 dark:bg-brand-600/10">
+                <h2 class="text-lg font-semibold text-brand-900 dark:text-brand-100">Votre intervention est terminée 🎉</h2>
+                <p class="mt-1 text-sm text-brand-800 dark:text-brand-200">Votre avis nous aide à nous améliorer. Cela ne prend qu'une minute.</p>
+                <a href="{{ route('public.satisfaction', $satisfaction->token) }}"
+                   class="mt-4 inline-flex items-center gap-2 rounded-lg bg-brand-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-brand-700">
+                    <x-icon name="star" class="h-4 w-4" />
+                    Donner mon avis
+                </a>
+            </div>
+        @elseif ($satisfaction && $satisfaction->submitted_at)
+            <div class="mt-6 rounded-2xl border border-gray-200 bg-white p-6 text-center shadow-sm dark:border-gray-800 dark:bg-gray-900">
+                <p class="text-sm text-gray-600 dark:text-gray-300">Merci d'avoir partagé votre avis sur cette intervention. 🙏</p>
+            </div>
+        @endif
+    @else
+        {{-- Two-way chat with the workshop (only while the job is ongoing) --}}
+        <div class="mt-6 rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-gray-900">
+            <h2 class="mb-1 text-lg font-semibold">Une question ? Échangez avec nous</h2>
+            <p class="mb-4 text-sm text-gray-500">Vos messages arrivent directement à l'équipe en charge de votre intervention.</p>
+            <livewire:client-chat :token="$intervention->public_token" />
+        </div>
+    @endif
 @endsection

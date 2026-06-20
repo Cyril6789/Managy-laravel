@@ -109,7 +109,7 @@
                 </div>
             </x-card>
 
-            @include('partials.stickies', ['postits' => $postits])
+            <livewire:sticky-notes />
         </div>
     </div>
 @endsection
