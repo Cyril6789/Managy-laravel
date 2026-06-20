@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Intervention;
 use App\Models\Notification;
+use App\Support\ChatPresence;
 use Illuminate\Support\Facades\Auth;
 
 /**
@@ -33,6 +34,31 @@ class Notifier
                 'message' => $message,
                 'url' => route('interventions.show', $intervention),
                 'icone' => 'wrench',
+            ]);
+        }
+    }
+
+    /**
+     * Like interventionChanged, but skips staff members who are currently
+     * watching the intervention's live chat (they already see the message).
+     */
+    public static function clientChatMessage(Intervention $intervention, string $message): void
+    {
+        $recipients = $intervention->techniciens()->pluck('users.id')
+            ->push($intervention->opened_by)
+            ->filter()
+            ->unique()
+            ->reject(fn ($id) => ChatPresence::isViewing($intervention->id, (int) $id))
+            ->values();
+
+        foreach ($recipients as $userId) {
+            Notification::create([
+                'user_id' => $userId,
+                'intervention_id' => $intervention->id,
+                'titre' => 'Intervention '.($intervention->reference ?? '#'.$intervention->id),
+                'message' => $message,
+                'url' => route('interventions.show', $intervention),
+                'icone' => 'bell',
             ]);
         }
     }

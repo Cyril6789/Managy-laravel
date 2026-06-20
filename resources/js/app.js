@@ -45,6 +45,7 @@ document.addEventListener('alpine:init', () => {
     // Intervention create/edit form: fetch the selected client's context.
     Alpine.data('interventionForm', (cfg = {}) => ({
         contextUrl: cfg.contextUrl,
+        lieu: cfg.lieu || 'atelier',
         maintenance: null,
         hist: { materiels: [], pannes: [], notes: [] },
         init() {
@@ -137,10 +138,10 @@ document.addEventListener('alpine:init', () => {
         deplDefault: Number(cfg.deplDefault || 0),
         canRistourne: !!cfg.canRistourne,
 
-        // Modal + billing state
-        open: false,
+        // Billing state
         km: 0,
         deplacement: 0,
+        waiveDepl: false,
         remiseType: 'euro',
         remiseValeur: 0,
         payee: false,
@@ -183,6 +184,10 @@ document.addEventListener('alpine:init', () => {
         onKm() {
             this.deplacement = this.computeDeplacement();
         },
+        get effectiveDepl() {
+            if (!this.isDomicile || this.waiveDepl) return 0;
+            return Number(this.deplacement) || 0;
+        },
         get sousTotal() {
             return Math.round((this.prestaNet + this.piecesNet) * 100) / 100;
         },
@@ -193,13 +198,11 @@ document.addEventListener('alpine:init', () => {
             return Math.round(m * 100) / 100;
         },
         get total() {
-            const depl = this.isDomicile ? Number(this.deplacement) || 0 : 0;
-            return Math.round((this.sousTotal - this.remiseMontant + depl) * 100) / 100;
+            return Math.round((this.sousTotal - this.remiseMontant + this.effectiveDepl) * 100) / 100;
         },
-        openModal() {
+        beforeSubmit() {
             this.end(); // capture any in-progress stroke
-            if (!this.montantPaye) this.montantPaye = this.total;
-            this.open = true;
+            if (this.payee && !this.montantPaye) this.montantPaye = this.total;
         },
         // --- signature pad ---
         pos(e) {

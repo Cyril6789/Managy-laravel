@@ -103,6 +103,7 @@ Route::middleware('auth')->group(function () {
 
     // Notifications
     Route::post('/notifications/lire-tout', [NotificationController::class, 'readAll'])->name('notifications.read_all');
+    Route::get('/notifications/{notification}/lire', [NotificationController::class, 'read'])->name('notifications.read');
 
     // Maintenance pack
     Route::get('/maintenance', [MaintenanceController::class, 'index'])->name('maintenance.index');

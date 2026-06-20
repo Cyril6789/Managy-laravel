@@ -31,12 +31,12 @@
     </button>
 
     <div x-show="open" x-cloak @click.outside="open = false" x-transition.opacity
-         class="absolute z-30 mt-1 w-full overflow-hidden rounded-lg border border-gray-200 bg-white shadow-lg dark:border-gray-700 dark:bg-gray-800">
+         class="absolute z-30 mt-1 max-h-72 w-full overflow-hidden rounded-lg border border-gray-200 bg-white shadow-lg dark:border-gray-700 dark:bg-gray-800">
         <div class="border-b border-gray-100 p-2 dark:border-gray-700">
             <input x-ref="search" x-model="query" type="text" placeholder="{{ $searchPlaceholder }}"
                    class="w-full rounded-md border-gray-300 text-sm focus:border-brand-500 focus:ring-brand-500 dark:border-gray-600 dark:bg-gray-900">
         </div>
-        <ul class="max-h-60 overflow-y-auto py-1 text-sm">
+        <ul class="max-h-60 overflow-y-auto overscroll-contain py-1 text-sm">
             <template x-if="allowEmpty">
                 <li @click="pick('')" class="cursor-pointer px-3 py-2 text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700">{{ $placeholder }}</li>
             </template>

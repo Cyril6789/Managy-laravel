@@ -35,11 +35,30 @@ final class Billing
     ): array {
         $client = $intervention->client;
 
-        $prestaPct = (float) ($client?->remise_prestations ?? 0);
-        $piecesPct = (float) ($client?->remise_pieces ?? 0);
-
         $prestaBrut = round($intervention->montantPrestations(), 2);
         $piecesBrut = round($intervention->montantPieces(), 2);
+
+        // Under warranty everything is free: nothing is billed.
+        if ($intervention->garantie) {
+            return [
+                'prestations_brut' => $prestaBrut,
+                'prestations_remise_pct' => 0.0,
+                'prestations_net' => 0.0,
+                'pieces_brut' => $piecesBrut,
+                'pieces_remise_pct' => 0.0,
+                'pieces_net' => 0.0,
+                'sous_total' => 0.0,
+                'ristourne_type' => null,
+                'ristourne_valeur' => 0.0,
+                'ristourne_montant' => 0.0,
+                'deplacement' => 0.0,
+                'total' => 0.0,
+                'garantie' => true,
+            ];
+        }
+
+        $prestaPct = (float) ($client?->remise_prestations ?? 0);
+        $piecesPct = (float) ($client?->remise_pieces ?? 0);
 
         $prestaNet = round($prestaBrut * (1 - $prestaPct / 100), 2);
         $piecesNet = round($piecesBrut * (1 - $piecesPct / 100), 2);
@@ -80,6 +99,7 @@ final class Billing
             'ristourne_montant' => $ristourneMontant,
             'deplacement' => $deplacement,
             'total' => $total,
+            'garantie' => false,
         ];
     }
 }

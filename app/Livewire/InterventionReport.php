@@ -4,7 +4,6 @@ namespace App\Livewire;
 
 use App\Models\CommentaireType;
 use App\Models\Intervention;
-use App\Models\MaterielAjouteType;
 use App\Models\RapportType;
 use App\Support\Permissions;
 use Illuminate\Support\Facades\Gate;
@@ -18,8 +17,6 @@ class InterventionReport extends Component
 
     public ?string $message_client = null;
 
-    public ?string $materiel_ajoute = null;
-
     public ?string $message_interne = null;
 
     public ?string $mdp = null;
@@ -31,7 +28,7 @@ class InterventionReport extends Component
     public function mount(Intervention $intervention): void
     {
         $this->intervention = $intervention;
-        foreach (['diagnostic', 'message_client', 'materiel_ajoute', 'message_interne', 'mdp', 'tarif_estimatif'] as $f) {
+        foreach (['diagnostic', 'message_client', 'message_interne', 'mdp', 'tarif_estimatif'] as $f) {
             $this->{$f} = $intervention->{$f};
         }
     }
@@ -41,7 +38,6 @@ class InterventionReport extends Component
         return [
             'diagnostic' => ['nullable', 'string'],
             'message_client' => ['nullable', 'string'],
-            'materiel_ajoute' => ['nullable', 'string'],
             'message_interne' => ['nullable', 'string'],
             'mdp' => ['nullable', 'string', 'max:255'],
             'tarif_estimatif' => ['nullable', 'numeric', 'min:0'],
@@ -66,7 +62,7 @@ class InterventionReport extends Component
 
     public function applyModele(string $field, string $value, string $mode = 'replace'): void
     {
-        if (! in_array($field, ['diagnostic', 'message_client', 'materiel_ajoute'], true) || $value === '') {
+        if (! in_array($field, ['diagnostic', 'message_client'], true) || $value === '') {
             return;
         }
 
@@ -82,7 +78,6 @@ class InterventionReport extends Component
         return view('livewire.intervention-report', [
             'rapportTypes' => RapportType::orderBy('titre')->get(),
             'commentaireTypes' => CommentaireType::orderBy('titre')->get(),
-            'materielAjouteTypes' => MaterielAjouteType::orderBy('nom')->get(),
         ]);
     }
 }

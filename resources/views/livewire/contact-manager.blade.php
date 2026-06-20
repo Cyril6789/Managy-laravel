@@ -18,14 +18,31 @@
                         <button wire:click="openEdit({{ $contact->id }})" class="rounded p-1 text-gray-400 hover:text-brand-600" title="Modifier">
                             <x-icon name="cog" class="h-4 w-4" />
                         </button>
-                        <button wire:click="delete({{ $contact->id }})" wire:confirm="Supprimer ce contact ?" class="rounded p-1 text-gray-300 hover:text-red-600" title="Supprimer">&times;</button>
+                        <button wire:click="detach({{ $contact->id }})" wire:confirm="Détacher ce contact de la société ? (le particulier est conservé)" class="rounded p-1 text-gray-300 hover:text-red-600" title="Détacher">&times;</button>
                     </div>
                 </li>
             @empty
-                <li class="px-5 py-6 text-center text-sm text-gray-400">Aucun contact. Ajoutez les salariés de cette entreprise.</li>
+                <li class="px-5 py-6 text-center text-sm text-gray-400">Aucun contact. Rattachez un particulier existant ou créez-en un.</li>
             @endforelse
         </ul>
-        @error('delete')<p class="px-5 py-2 text-xs text-red-600">{{ $message }}</p>@enderror
+
+        {{-- Attach an existing particulier as a contact (live search) --}}
+        <div class="relative border-t border-gray-100 p-4 dark:border-gray-800" @click.outside="$wire.set('open', false)">
+            <input type="text" wire:model.live.debounce.300ms="query" placeholder="Rattacher un particulier existant…"
+                   class="w-full rounded-lg border-gray-300 text-sm focus:border-brand-500 focus:ring-brand-500 dark:border-gray-700 dark:bg-gray-800">
+            @if ($open && strlen(trim($query)) >= 2)
+                <ul class="absolute left-4 right-4 z-30 mt-1 max-h-56 overflow-y-auto rounded-lg border border-gray-200 bg-white py-1 text-sm shadow-lg dark:border-gray-700 dark:bg-gray-800">
+                    @forelse ($results as $r)
+                        <li wire:key="cres-{{ $r['id'] }}" wire:click="attachExisting({{ $r['id'] }})" class="cursor-pointer px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-700">
+                            <span class="font-medium">{{ $r['label'] }}</span>@if ($r['ville'])<span class="text-xs text-gray-400"> · {{ $r['ville'] }}</span>@endif
+                        </li>
+                    @empty
+                        <li class="px-3 py-2 text-gray-400">Aucun particulier trouvé.</li>
+                    @endforelse
+                </ul>
+            @endif
+            <p class="mt-2 text-xs text-gray-400">Un contact est un particulier : il peut avoir ses propres interventions.</p>
+        </div>
     </x-card>
 
     @if ($showModal)

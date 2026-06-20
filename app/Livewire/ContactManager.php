@@ -8,7 +8,10 @@ use Illuminate\Support\Facades\Gate;
 use Livewire\Component;
 
 /**
- * Full management of a company's contacts (its employees) on the client page.
+ * Manage a company's contacts. A contact is a regular "particulier" client
+ * linked to the company through the company_contact pivot: it can be an existing
+ * particulier attached here, or a new one created on the fly. Detaching only
+ * removes the link — the particulier (and its own interventions) is kept.
  */
 class ContactManager extends Component
 {
@@ -21,6 +24,13 @@ class ContactManager extends Component
     public ?int $editingId = null;
 
     public array $form = [];
+
+    // Live search to attach an existing particulier as a contact.
+    public string $query = '';
+
+    public array $results = [];
+
+    public bool $open = false;
 
     public function mount(Client $company): void
     {
@@ -38,6 +48,32 @@ class ContactManager extends Component
             'form.telephone_mobile' => ['nullable', 'string', 'max:30'],
             'form.telephone_fixe' => ['nullable', 'string', 'max:30'],
         ];
+    }
+
+    public function updatedQuery(): void
+    {
+        $this->open = true;
+        $term = trim($this->query);
+        $attached = $this->company->contacts()->pluck('clients.id')->all();
+
+        $this->results = strlen($term) < 2 ? [] : Client::active()
+            ->particuliers()
+            ->whereNotIn('id', $attached)
+            ->where(fn ($w) => $w->where('nom', 'like', "%{$term}%")
+                ->orWhere('prenom', 'like', "%{$term}%")
+                ->orWhere('email', 'like', "%{$term}%")
+                ->orWhere('telephone_mobile', 'like', "%{$term}%"))
+            ->orderBy('nom')->limit(10)->get()
+            ->map(fn (Client $c) => ['id' => $c->id, 'label' => $c->nomComplet(), 'ville' => $c->ville])
+            ->all();
+    }
+
+    public function attachExisting(int $id): void
+    {
+        Gate::authorize(Permissions::CLIENTS_MANAGE);
+        $contact = Client::particuliers()->findOrFail($id);
+        $this->company->contacts()->syncWithoutDetaching([$contact->id]);
+        $this->reset('query', 'results', 'open');
     }
 
     public function openCreate(): void
@@ -68,23 +104,18 @@ class ContactManager extends Component
         if ($this->mode === 'edit' && $this->editingId) {
             $this->company->contacts()->findOrFail($this->editingId)->update($this->form);
         } else {
-            $this->company->contacts()->create($this->form + ['type' => 'particulier']);
+            $contact = Client::create($this->form + ['type' => 'particulier']);
+            $this->company->contacts()->syncWithoutDetaching([$contact->id]);
         }
 
         $this->showModal = false;
     }
 
-    public function delete(int $id): void
+    /** Removes the link with the company; the particulier itself is kept. */
+    public function detach(int $id): void
     {
         Gate::authorize(Permissions::CLIENTS_MANAGE);
-        $contact = $this->company->contacts()->findOrFail($id);
-
-        if ($contact->interventions()->exists()) {
-            $this->addError('delete', 'Ce contact a des interventions et ne peut pas être supprimé.');
-
-            return;
-        }
-        $contact->delete();
+        $this->company->contacts()->detach($id);
     }
 
     private function emptyForm(): array

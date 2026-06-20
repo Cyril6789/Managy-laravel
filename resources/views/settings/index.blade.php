@@ -90,35 +90,12 @@
             </x-card>
         </div>
 
-        {{-- Listes métier --}}
+        {{-- Listes métier (tout en Livewire, édition sans rechargement) --}}
         <div x-show="tab==='listes'" x-cloak class="grid grid-cols-1 gap-6 lg:grid-cols-2">
-            @include('settings._reflist', ['type' => 'materiels', 'field' => 'nom', 'items' => $materiels, 'label' => 'Types de matériel', 'placeholder' => 'Ex. Ordinateur portable'])
-            @include('settings._reflist', ['type' => 'systemes', 'field' => 'nom', 'items' => $systemes, 'label' => 'Systèmes d\'exploitation', 'placeholder' => 'Ex. Windows 11'])
-            @include('settings._reflist', ['type' => 'antivirus', 'field' => 'nom', 'items' => $antivirus, 'label' => 'Antivirus', 'placeholder' => 'Ex. Bitdefender'])
-
-            {{-- Prestations (with default duration) --}}
-            <x-card title="Prestations" :padding="false">
-                <div class="divide-y divide-gray-100 dark:divide-gray-800">
-                    @foreach ($prestations as $p)
-                        <form action="{{ route('settings.reference.update', ['prestations', $p->id]) }}" method="POST" class="flex flex-wrap items-center gap-2 px-5 py-2">
-                            @csrf @method('PUT')
-                            <x-input name="designation" value="{{ $p->designation }}" class="w-full sm:flex-1 sm:w-auto" />
-                            <x-input name="duree_defaut" type="number" step="0.25" value="{{ rtrim(rtrim(number_format($p->duree_defaut,2),'0'),'.') }}" class="w-20" title="Durée par défaut (h)" />
-                            <x-input name="tarif" type="number" step="0.01" min="0" value="{{ $p->tarif !== null ? rtrim(rtrim(number_format($p->tarif,2),'0'),'.') : '' }}" class="w-24" placeholder="€" title="Tarif (€)" />
-                            <x-button variant="secondary" type="submit">OK</x-button>
-                            <button form="del-presta-{{ $p->id }}" class="px-1 text-gray-300 hover:text-red-600">&times;</button>
-                        </form>
-                        <form id="del-presta-{{ $p->id }}" action="{{ route('settings.reference.destroy', ['prestations', $p->id]) }}" method="POST" class="hidden" onsubmit="return confirm('Supprimer ?')">@csrf @method('DELETE')</form>
-                    @endforeach
-                </div>
-                <form action="{{ route('settings.reference.store', 'prestations') }}" method="POST" class="flex flex-wrap gap-2 border-t border-gray-100 p-4 dark:border-gray-800">
-                    @csrf
-                    <x-input name="designation" placeholder="Désignation" class="w-full sm:flex-1 sm:w-auto" />
-                    <x-input name="duree_defaut" type="number" step="0.25" placeholder="h" class="w-20" />
-                    <x-input name="tarif" type="number" step="0.01" min="0" placeholder="€" class="w-24" />
-                    <x-button type="submit"><x-icon name="plus" class="h-4 w-4" /></x-button>
-                </form>
-            </x-card>
+            <livewire:settings.reference-list type="materiels" title="Types de matériel" />
+            <livewire:settings.reference-list type="systemes" title="Systèmes d'exploitation" />
+            <livewire:settings.reference-list type="antivirus" title="Antivirus" />
+            <livewire:settings.reference-list type="prestations" title="Prestations" />
         </div>
 
         {{-- Statuts --}}
@@ -138,6 +115,12 @@
                             @foreach ($statuts as $s)<option value="{{ $s->id }}" @selected(($settings['statut_pret_id'] ?? null)==$s->id)>{{ $s->nom }}</option>@endforeach
                         </x-select>
                     </x-field>
+                    <x-field label="Statut « finalisée / terminée »" name="statut_finalise_id" hint="Appliqué quand le technicien finalise l'intervention (atelier).">
+                        <x-select name="statut_finalise_id">
+                            <option value="">— Automatique —</option>
+                            @foreach ($statuts as $s)<option value="{{ $s->id }}" @selected(($settings['statut_finalise_id'] ?? null)==$s->id)>{{ $s->nom }}</option>@endforeach
+                        </x-select>
+                    </x-field>
                     <x-field label="Seuil d'alerte maintenance (h)" name="maintenance_alert_threshold">
                         <x-input name="maintenance_alert_threshold" type="number" step="0.5" min="0" value="{{ $settings['maintenance_alert_threshold'] ?? '2' }}" />
                     </x-field>
@@ -145,28 +128,7 @@
                 </form>
             </x-card>
 
-            <x-card title="Statuts d'intervention" :padding="false">
-                <div class="divide-y divide-gray-100 dark:divide-gray-800">
-                    @foreach ($statuts as $s)
-                        <form action="{{ route('settings.reference.update', ['statuts', $s->id]) }}" method="POST" class="flex flex-wrap items-center gap-2 px-5 py-2">
-                            @csrf @method('PUT')
-                            <input type="color" name="couleur" value="{{ $s->couleur }}" class="h-9 w-10 rounded border-gray-300">
-                            <x-input name="nom" value="{{ $s->nom }}" class="flex-1 min-w-40" />
-                            <label class="flex items-center gap-1 text-xs"><input type="checkbox" name="verrouille" value="1" @checked($s->verrouille) class="rounded border-gray-300 text-brand-600"> Verrouille</label>
-                            <label class="flex items-center gap-1 text-xs"><input type="checkbox" name="est_cloture" value="1" @checked($s->est_cloture) class="rounded border-gray-300 text-brand-600"> Clôture</label>
-                            <x-button variant="secondary" type="submit">OK</x-button>
-                            <button form="del-statut-{{ $s->id }}" class="px-1 text-gray-300 hover:text-red-600">&times;</button>
-                        </form>
-                        <form id="del-statut-{{ $s->id }}" action="{{ route('settings.reference.destroy', ['statuts', $s->id]) }}" method="POST" class="hidden" onsubmit="return confirm('Supprimer ?')">@csrf @method('DELETE')</form>
-                    @endforeach
-                </div>
-                <form action="{{ route('settings.reference.store', 'statuts') }}" method="POST" class="flex gap-2 border-t border-gray-100 p-4 dark:border-gray-800">
-                    @csrf
-                    <input type="color" name="couleur" value="#64748b" class="h-9 w-10 rounded border-gray-300">
-                    <x-input name="nom" placeholder="Nouveau statut" class="flex-1" />
-                    <x-button type="submit"><x-icon name="plus" class="h-4 w-4" /></x-button>
-                </form>
-            </x-card>
+            <livewire:settings.reference-list type="statuts" title="Statuts d'intervention" />
         </div>
 
         {{-- Facturation / déplacement --}}
@@ -199,33 +161,10 @@
             </x-card>
         </div>
 
-        {{-- Modèles (rapports / commentaires / matériels ajoutés) --}}
+        {{-- Modèles (rapports / commentaires) — Livewire --}}
         <div x-show="tab==='modeles'" x-cloak class="grid grid-cols-1 gap-6 lg:grid-cols-2">
-            @foreach ([['rapport-types', $rapportTypes, 'Rapports types'], ['commentaire-types', $commentaireTypes, 'Commentaires types'], ['materiel-ajoute-types', $materielAjouteTypes, 'Matériels ajoutés types']] as [$type, $items, $label])
-                @php $field = $type === 'materiel-ajoute-types' ? 'nom' : 'titre'; @endphp
-                <x-card :title="$label" :padding="false">
-                    <div class="divide-y divide-gray-100 dark:divide-gray-800">
-                        @foreach ($items as $item)
-                            <form action="{{ route('settings.reference.update', [$type, $item->id]) }}" method="POST" class="space-y-2 px-5 py-3">
-                                @csrf @method('PUT')
-                                <div class="flex items-center gap-2">
-                                    <x-input name="{{ $field }}" value="{{ $item->{$field} }}" class="flex-1" />
-                                    <x-button variant="secondary" type="submit">OK</x-button>
-                                    <button form="del-{{ $type }}-{{ $item->id }}" class="px-1 text-gray-300 hover:text-red-600">&times;</button>
-                                </div>
-                                <x-textarea name="texte" rows="2">{{ $item->texte }}</x-textarea>
-                            </form>
-                            <form id="del-{{ $type }}-{{ $item->id }}" action="{{ route('settings.reference.destroy', [$type, $item->id]) }}" method="POST" class="hidden" onsubmit="return confirm('Supprimer ?')">@csrf @method('DELETE')</form>
-                        @endforeach
-                    </div>
-                    <form action="{{ route('settings.reference.store', $type) }}" method="POST" class="space-y-2 border-t border-gray-100 p-4 dark:border-gray-800">
-                        @csrf
-                        <x-input name="{{ $field }}" placeholder="Titre" />
-                        <x-textarea name="texte" rows="2" placeholder="Contenu du modèle…" />
-                        <div class="flex justify-end"><x-button type="submit">Ajouter</x-button></div>
-                    </form>
-                </x-card>
-            @endforeach
+            <livewire:settings.reference-list type="rapport-types" title="Rapports types" />
+            <livewire:settings.reference-list type="commentaire-types" title="Commentaires types" />
         </div>
     </div>
 @endsection

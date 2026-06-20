@@ -205,7 +205,7 @@ class InterventionPanel extends Component
 
     public function render()
     {
-        $this->intervention->load(['prestations', 'pieces', 'commandes', 'sousTraitances', 'clientMessages', 'statut', 'client']);
+        $this->intervention->load(['prestations', 'pieces', 'commandes', 'sousTraitances', 'clientMessages', 'statut', 'client', 'materiel', 'systemeExploitation', 'antivirus']);
 
         return view('livewire.intervention-panel', [
             'statuts' => Statut::orderBy('ordre')->get(),

@@ -33,16 +33,12 @@ class SettingsController extends Controller
     {
         $this->authorize(Permissions::SETTINGS_MANAGE);
 
+        // The reference lists are managed by Livewire components which load their
+        // own data; here we only need the settings and the statuses used by the
+        // automation selects.
         return view('settings.index', [
             'settings' => Setting::all(),
-            'materiels' => Materiel::orderBy('nom')->get(),
-            'systemes' => SystemeExploitation::orderBy('nom')->get(),
-            'antivirus' => Antivirus::orderBy('nom')->get(),
-            'prestations' => Prestation::orderBy('designation')->get(),
             'statuts' => Statut::orderBy('ordre')->get(),
-            'rapportTypes' => RapportType::orderBy('titre')->get(),
-            'commentaireTypes' => CommentaireType::orderBy('titre')->get(),
-            'materielAjouteTypes' => MaterielAjouteType::orderBy('nom')->get(),
         ]);
     }
 
@@ -108,6 +104,7 @@ class SettingsController extends Controller
             'maintenance_alert_threshold' => ['nullable', 'numeric', 'min:0'],
             'statut_attente_id' => ['nullable', 'exists:statuts,id'],
             'statut_pret_id' => ['nullable', 'exists:statuts,id'],
+            'statut_finalise_id' => ['nullable', 'exists:statuts,id'],
         ]);
         foreach ($data as $key => $value) {
             Setting::put($key, $value);

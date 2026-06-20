@@ -69,10 +69,14 @@ class LivewireTest extends TestCase
             ->assertSet('showModal', false);
 
         $this->assertDatabaseHas('clients', [
-            'parent_id' => $company->id,
             'nom' => 'Martin',
             'prenom' => 'Paul',
             'type' => 'particulier',
+        ]);
+        $contact = Client::where('nom', 'Martin')->firstOrFail();
+        $this->assertDatabaseHas('company_contact', [
+            'company_id' => $company->id,
+            'contact_id' => $contact->id,
         ]);
     }
 
@@ -88,7 +92,12 @@ class LivewireTest extends TestCase
             ->call('save')
             ->assertSet('isCompany', true);
 
-        $this->assertDatabaseHas('clients', ['parent_id' => $company->id, 'nom' => 'Lumbergh']);
+        $contact = Client::where('nom', 'Lumbergh')->firstOrFail();
+        $this->assertSame('particulier', $contact->type);
+        $this->assertDatabaseHas('company_contact', [
+            'company_id' => $company->id,
+            'contact_id' => $contact->id,
+        ]);
     }
 
     public function test_panel_adds_prestation_and_changes_status_inline(): void

@@ -14,7 +14,6 @@ class ClientController extends Controller
         $this->authorize(Permissions::CLIENTS_VIEW);
 
         $clients = Client::query()
-            ->roots()
             ->when($request->filled('q'), function ($q) use ($request) {
                 $term = '%'.$request->string('q').'%';
                 $q->where(fn ($w) => $w->where('nom', 'like', $term)
@@ -42,6 +41,7 @@ class ClientController extends Controller
         $term = '%'.$request->string('q').'%';
 
         return Client::active()
+            ->when($request->input('type'), fn ($q, $type) => $q->where('type', $type))
             ->where(fn ($w) => $w->where('nom', 'like', $term)
                 ->orWhere('prenom', 'like', $term)
                 ->orWhere('email', 'like', $term)
@@ -78,7 +78,6 @@ class ClientController extends Controller
 
         return view('clients.create', [
             'client' => new Client(['type' => 'professionnel']),
-            'parents' => Client::roots()->active()->orderBy('nom')->get(),
         ]);
     }
 
@@ -95,7 +94,7 @@ class ClientController extends Controller
     {
         $this->authorize(Permissions::CLIENTS_VIEW);
 
-        $client->load(['contacts', 'parent']);
+        $client->load(['contacts', 'companies']);
         $interventions = $client->interventions()->with('statut')->latest('opened_at')->limit(25)->get();
         $messages = $client->messages()->with('intervention')->limit(50)->get();
 
@@ -114,7 +113,6 @@ class ClientController extends Controller
 
         return view('clients.edit', [
             'client' => $client,
-            'parents' => Client::roots()->active()->where('id', '!=', $client->id)->orderBy('nom')->get(),
         ]);
     }
 
@@ -164,9 +162,13 @@ class ClientController extends Controller
             'code_postal' => ['nullable', 'string', 'max:10'],
             'ville' => ['nullable', 'string', 'max:255'],
             'siret' => ['nullable', 'string', 'max:30'],
-            'parent_id' => ['nullable', 'exists:clients,id'],
             'notes' => ['nullable', 'string'],
         ]);
+
+        // A particulier never carries a SIRET (only companies do).
+        if (($data['type'] ?? null) === 'particulier') {
+            $data['siret'] = null;
+        }
 
         // Free-travel flag and per-customer discounts require a dedicated right.
         if ($request->user()->can(Permissions::CLIENTS_REMISES)) {

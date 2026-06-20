@@ -25,7 +25,16 @@
                     <div class="flex justify-between gap-3"><dt class="text-gray-500">Mobile</dt><dd>{{ $client->telephone_mobile ?: '—' }}</dd></div>
                     <div class="flex justify-between gap-3"><dt class="text-gray-500">Adresse</dt><dd class="text-right">{{ $client->adresseComplete() ?: '—' }}</dd></div>
                     @if ($client->siret)<div class="flex justify-between gap-3"><dt class="text-gray-500">SIRET</dt><dd>{{ $client->siret }}</dd></div>@endif
-                    @if ($client->parent)<div class="flex justify-between gap-3"><dt class="text-gray-500">Société</dt><dd><a class="text-brand-600 hover:underline" href="{{ route('clients.show', $client->parent) }}">{{ $client->parent->nomComplet() }}</a></dd></div>@endif
+                    @if ($client->type === 'particulier' && $client->companies->isNotEmpty())
+                        <div class="flex justify-between gap-3">
+                            <dt class="text-gray-500">Contact de</dt>
+                            <dd class="text-right">
+                                @foreach ($client->companies as $company)
+                                    <a class="text-brand-600 hover:underline" href="{{ route('clients.show', $company) }}">{{ $company->nomComplet() }}</a>@if (! $loop->last), @endif
+                                @endforeach
+                            </dd>
+                        </div>
+                    @endif
                     @can(\App\Support\Permissions::CLIENTS_REMISES)
                         @if ($client->deplacement_gratuit)<div class="flex justify-between gap-3"><dt class="text-gray-500">Déplacement</dt><dd class="font-medium text-green-600">Gratuit</dd></div>@endif
                         @if ($client->remise_prestations)<div class="flex justify-between gap-3"><dt class="text-gray-500">Remise prestations</dt><dd>{{ rtrim(rtrim(number_format($client->remise_prestations,2),'0'),'.') }} %</dd></div>@endif
@@ -37,7 +46,7 @@
                 @endif
             </x-card>
 
-            @if ($client->type === 'professionnel' && $client->parent_id === null)
+            @if ($client->type === 'professionnel')
                 <livewire:contact-manager :company="$client" />
             @endif
 

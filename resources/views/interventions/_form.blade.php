@@ -4,9 +4,36 @@
     $clientLabel = $intervention->client?->nomComplet() ?? ($clientId ? optional(\App\Models\Client::find($clientId))->nomComplet() : '');
 @endphp
 
-<div x-data="interventionForm({ contextUrl: '{{ url('interventions/contexte-client') }}', clientId: '{{ $clientId }}' })"
+<div x-data="interventionForm({ contextUrl: '{{ url('interventions/contexte-client') }}', clientId: '{{ $clientId }}', lieu: '{{ $val('type_lieu', 'atelier') }}' })"
      @client-selected.window="onClient($event.detail.id)"
-     class="grid grid-cols-1 gap-6 lg:grid-cols-3">
+     class="space-y-6">
+
+    {{-- Type d'intervention : choix clé, fait en tout premier. --}}
+    <x-card title="Type d'intervention">
+        <input type="hidden" name="type_lieu" :value="lieu">
+        <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <button type="button" @click="lieu = 'atelier'"
+                    :class="lieu === 'atelier' ? 'border-brand-500 bg-brand-50 ring-1 ring-brand-500 dark:bg-brand-600/10' : 'border-gray-200 dark:border-gray-700'"
+                    class="flex items-start gap-3 rounded-lg border p-4 text-left transition">
+                <x-icon name="wrench" class="mt-0.5 h-5 w-5 text-brand-600" />
+                <span>
+                    <span class="block font-medium">En atelier</span>
+                    <span class="block text-xs text-gray-500">Le client dépose son matériel à la boutique.</span>
+                </span>
+            </button>
+            <button type="button" @click="lieu = 'domicile'"
+                    :class="lieu === 'domicile' ? 'border-brand-500 bg-brand-50 ring-1 ring-brand-500 dark:bg-brand-600/10' : 'border-gray-200 dark:border-gray-700'"
+                    class="flex items-start gap-3 rounded-lg border p-4 text-left transition">
+                <x-icon name="home" class="mt-0.5 h-5 w-5 text-brand-600" />
+                <span>
+                    <span class="block font-medium">Sur site / à domicile</span>
+                    <span class="block text-xs text-gray-500">Le technicien se déplace chez le client.</span>
+                </span>
+            </button>
+        </div>
+    </x-card>
+
+    <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
     <div class="space-y-5 lg:col-span-2">
         <x-card title="Client & matériel">
             <div class="grid grid-cols-1 gap-5 md:grid-cols-2">
@@ -96,20 +123,14 @@
                     <x-searchable-select name="statut_id" :selected="$val('statut_id')"
                         :options="$statuts->pluck('nom', 'id')" :allow-empty="false" />
                 </x-field>
-                <x-field label="Lieu" name="type_lieu" required>
-                    <x-select name="type_lieu">
-                        <option value="atelier" @selected($val('type_lieu')==='atelier')>Atelier</option>
-                        <option value="domicile" @selected($val('type_lieu')==='domicile')>Domicile / sur site</option>
-                    </x-select>
-                </x-field>
-                <div class="grid grid-cols-2 gap-3">
-                    <x-field label="RDV début" name="rdv_debut">
-                        <x-input name="rdv_debut" type="datetime-local" value="{{ $val('rdv_debut') ? \Illuminate\Support\Carbon::parse($val('rdv_debut'))->format('Y-m-d\TH:i') : '' }}" />
-                    </x-field>
-                    <x-field label="RDV fin" name="rdv_fin">
-                        <x-input name="rdv_fin" type="datetime-local" value="{{ $val('rdv_fin') ? \Illuminate\Support\Carbon::parse($val('rdv_fin'))->format('Y-m-d\TH:i') : '' }}" />
-                    </x-field>
-                </div>
+
+                {{-- RDV + affectation technicien selon les disponibilités --}}
+                <livewire:intervention-schedule
+                    mode="form"
+                    :rdv-debut="$val('rdv_debut') ? \Illuminate\Support\Carbon::parse($val('rdv_debut'))->format('Y-m-d\TH:i') : null"
+                    :rdv-fin="$val('rdv_fin') ? \Illuminate\Support\Carbon::parse($val('rdv_fin'))->format('Y-m-d\TH:i') : null"
+                    :selected="$intervention->exists ? $intervention->techniciens->pluck('id')->all() : []" />
+
                 <x-field label="Tarif estimatif (€)" name="tarif_estimatif">
                     <x-input name="tarif_estimatif" type="number" step="0.01" value="{{ $val('tarif_estimatif') }}" />
                 </x-field>
@@ -123,5 +144,6 @@
                 </label>
             </div>
         </x-card>
+    </div>
     </div>
 </div>
