@@ -127,6 +127,7 @@
                 {{-- RDV + affectation technicien selon les disponibilités --}}
                 <livewire:intervention-schedule
                     mode="form"
+                    :client-id="$clientId ? (int) $clientId : null"
                     :rdv-debut="$val('rdv_debut') ? \Illuminate\Support\Carbon::parse($val('rdv_debut'))->format('Y-m-d\TH:i') : null"
                     :rdv-fin="$val('rdv_fin') ? \Illuminate\Support\Carbon::parse($val('rdv_fin'))->format('Y-m-d\TH:i') : null"
                     :selected="$intervention->exists ? $intervention->techniciens->pluck('id')->all() : []" />

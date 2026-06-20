@@ -91,6 +91,9 @@ Route::middleware('auth')->group(function () {
     Route::resource('interventions.commandes', CommandeController::class)->only(['store', 'update', 'destroy'])->shallow();
     Route::resource('interventions.sous-traitances', SousTraitanceController::class)->only(['store', 'update', 'destroy'])->shallow()->parameters(['sous-traitances' => 'sousTraitance']);
 
+    // Technician availability & absences (planning board)
+    Route::get('/disponibilites', \App\Livewire\TechnicianAvailability::class)->name('disponibilites.index');
+
     // Calendar
     Route::get('/calendrier', [CalendarController::class, 'index'])->name('calendar.index');
     Route::get('/calendrier/evenements', [CalendarController::class, 'events'])->name('calendar.events');

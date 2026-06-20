@@ -1,4 +1,11 @@
-<div class="grid grid-cols-1 gap-5 md:grid-cols-2" x-data="{ type: '{{ old('type', $client->type ?: 'particulier') }}' }">
+<div class="grid grid-cols-1 gap-5 md:grid-cols-2" x-data="{ type: '{{ old('type', $client->type ?: 'particulier') }}' }"
+     @address-picked="
+        const d = $event.detail;
+        const set = (id, v) => { const el = document.getElementById(id); if (el) { el.value = v; el.dispatchEvent(new Event('input', { bubbles: true })); } };
+        set('adresse', d.adresse);
+        set('code_postal', d.code_postal);
+        set('ville', d.ville);
+     ">
     <x-field label="Type" name="type" required>
         <x-select name="type" x-model="type">
             <option value="professionnel" @selected(old('type', $client->type)==='professionnel')>Professionnel</option>
@@ -36,6 +43,9 @@
     <x-field label="Téléphone mobile" name="telephone_mobile">
         <x-input name="telephone_mobile" value="{{ old('telephone_mobile', $client->telephone_mobile) }}" />
     </x-field>
+    <div class="md:col-span-2 rounded-lg border border-dashed border-brand-300 bg-brand-50/50 p-3 dark:border-brand-700 dark:bg-brand-600/5">
+        <x-address-autocomplete />
+    </div>
     <x-field label="Adresse" name="adresse" class="md:col-span-2">
         <x-input name="adresse" value="{{ old('adresse', $client->adresse) }}" />
     </x-field>

@@ -1,4 +1,5 @@
-<div x-data @click.outside="$wire.set('open', false)" class="relative">
+<div x-data @click.outside="$wire.set('open', false)"
+     @address-picked="$wire.fillAddress($event.detail)" class="relative">
     {{-- Value submitted by the surrounding (non-Livewire) intervention form --}}
     <input type="hidden" name="client_id" value="{{ $selectedId }}">
 
@@ -86,6 +87,9 @@
                     @endif
                     <x-field label="Téléphone fixe"><x-input wire:model="form.telephone_fixe" /></x-field>
                     <x-field label="Téléphone mobile"><x-input wire:model="form.telephone_mobile" /></x-field>
+                    <div class="sm:col-span-2 rounded-lg border border-dashed border-brand-300 bg-brand-50/50 p-3 dark:border-brand-700 dark:bg-brand-600/5">
+                        <x-address-autocomplete />
+                    </div>
                     <x-field label="Adresse" class="sm:col-span-2"><x-input wire:model="form.adresse" /></x-field>
                     <x-field label="Code postal"><x-input wire:model="form.code_postal" /></x-field>
                     <x-field label="Ville"><x-input wire:model="form.ville" /></x-field>

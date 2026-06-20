@@ -7,6 +7,7 @@
         ['reception.sous_traitances', 'Sous-traitance en cours', 'truck', \App\Support\Permissions::SOUS_TRAITANCES_RECEPTION],
         ['facturation.index', 'Facturation', 'list', \App\Support\Permissions::INTERVENTIONS_FACTURATION],
         ['calendar.index', 'Calendrier', 'calendar', \App\Support\Permissions::CALENDAR_VIEW],
+        ['disponibilites.index', 'Disponibilités', 'clock', null],
         ['clients.index', 'Clients', 'users', \App\Support\Permissions::CLIENTS_VIEW],
         ['tasks.index', 'Tâches', 'check', \App\Support\Permissions::TASKS_VIEW],
         ['maintenance.index', 'Pack maintenance', 'shield', \App\Support\Permissions::MAINTENANCE_VIEW],
