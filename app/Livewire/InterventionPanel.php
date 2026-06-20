@@ -25,7 +25,7 @@ class InterventionPanel extends Component
 
     public ?int $statutId = null;
 
-    public array $presta = ['prestation_id' => '', 'designation' => '', 'duree' => ''];
+    public array $presta = ['prestation_id' => '', 'designation' => '', 'duree' => '', 'tarif' => ''];
 
     public array $commande = ['fournisseur' => '', 'numero_commande' => '', 'suivi_colis' => ''];
 
@@ -63,6 +63,7 @@ class InterventionPanel extends Component
         if ($p = Prestation::find($this->presta['prestation_id'])) {
             $this->presta['designation'] = $p->designation;
             $this->presta['duree'] = rtrim(rtrim(number_format((float) $p->duree_defaut, 2), '0'), '.');
+            $this->presta['tarif'] = $p->tarif !== null ? rtrim(rtrim(number_format((float) $p->tarif, 2), '0'), '.') : '';
         }
     }
 
@@ -73,6 +74,7 @@ class InterventionPanel extends Component
             'presta.designation' => ['nullable', 'string', 'max:255'],
             'presta.prestation_id' => ['nullable', 'exists:prestations,id'],
             'presta.duree' => ['required', 'numeric', 'min:0'],
+            'presta.tarif' => ['nullable', 'numeric', 'min:0'],
         ]);
 
         $designation = $this->presta['designation']
@@ -88,8 +90,9 @@ class InterventionPanel extends Component
             'prestation_id' => $this->presta['prestation_id'] ?: null,
             'designation' => $designation,
             'duree' => $this->presta['duree'],
+            'tarif' => $this->presta['tarif'] !== '' ? $this->presta['tarif'] : null,
         ]);
-        $this->presta = ['prestation_id' => '', 'designation' => '', 'duree' => ''];
+        $this->presta = ['prestation_id' => '', 'designation' => '', 'duree' => '', 'tarif' => ''];
         $this->log('a ajouté une prestation');
     }
 

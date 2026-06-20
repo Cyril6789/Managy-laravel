@@ -53,7 +53,7 @@
 
                 <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
                     <x-field label="Type">
-                        <x-select wire:model="form.type">
+                        <x-select wire:model.live="form.type">
                             <option value="professionnel">Professionnel</option>
                             <option value="particulier">Particulier</option>
                         </x-select>
@@ -69,7 +69,12 @@
                         <x-input wire:model="form.nom" />
                         @error('form.nom')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
                     </x-field>
-                    <x-field label="Prénom"><x-input wire:model="form.prenom" /></x-field>
+                    {{-- Une entreprise (professionnel) n'a pas de prénom. --}}
+                    @if (($form['type'] ?? 'particulier') !== 'professionnel')
+                        <x-field label="Prénom"><x-input wire:model="form.prenom" /></x-field>
+                    @else
+                        <div class="hidden sm:block"></div>
+                    @endif
                     <x-field label="E-mail">
                         <x-input wire:model="form.email" type="email" />
                         @error('form.email')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror

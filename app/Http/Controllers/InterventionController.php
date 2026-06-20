@@ -212,6 +212,34 @@ class InterventionController extends Controller
         return back();
     }
 
+    /**
+     * Workshop step: the technician marks the repair done ("intervention
+     * finalisée"). This unlocks the "Restituer & clôturer" action for when the
+     * customer comes to pick the device up.
+     */
+    public function finaliser(Intervention $intervention)
+    {
+        $this->authorize(Permissions::INTERVENTIONS_MANAGE);
+
+        if (! $intervention->estCloturee()) {
+            $intervention->update(['finalisee_at' => $intervention->finalisee_at ?? now()]);
+            $this->log($intervention, 'a marqué l\'intervention comme finalisée');
+            Notifier::interventionChanged($intervention, 'Intervention finalisée');
+        }
+
+        return back()->with('success', 'Intervention finalisée. Vous pouvez la restituer au client.');
+    }
+
+    public function annulerFinalisation(Intervention $intervention)
+    {
+        $this->authorize(Permissions::INTERVENTIONS_MANAGE);
+
+        $intervention->update(['finalisee_at' => null]);
+        $this->log($intervention, 'a annulé la finalisation');
+
+        return back();
+    }
+
     public function restituer(Request $request, Intervention $intervention)
     {
         $this->authorize(Permissions::INTERVENTIONS_MANAGE);
@@ -219,6 +247,14 @@ class InterventionController extends Controller
         $data = $request->validate([
             'signataire_nom' => ['nullable', 'string', 'max:255'],
             'signature' => ['nullable', 'string'], // PNG data URL
+            'facturee' => ['nullable', 'boolean'],
+            'payee' => ['nullable', 'boolean'],
+            'paiement_mode' => ['nullable', Rule::in(['especes', 'cb', 'cheque', 'virement', 'autre'])],
+            'montant_prestations' => ['nullable', 'numeric', 'min:0'],
+            'montant_deplacement' => ['nullable', 'numeric', 'min:0'],
+            'deplacement_km' => ['nullable', 'numeric', 'min:0'],
+            'montant_paye' => ['nullable', 'numeric', 'min:0'],
+            'montant_total' => ['nullable', 'numeric', 'min:0'],
         ]);
 
         // The report itself is saved separately (saveRapport); here we only close.
@@ -226,14 +262,34 @@ class InterventionController extends Controller
 
         $signaturePath = $this->storeSignature($data['signature'] ?? null, $intervention);
 
+        // Billing snapshot (prestations + déplacement) captured at restitution.
+        $montantPresta = isset($data['montant_prestations'])
+            ? (float) $data['montant_prestations']
+            : $intervention->montantPrestations();
+        $montantDepl = $intervention->estDomicile() ? (float) ($data['montant_deplacement'] ?? 0) : 0.0;
+        $montantTotal = $data['montant_total'] ?? ($montantPresta + $montantDepl);
+
+        $payee = $request->boolean('payee');
+
         $intervention->update([
             'closed_at' => now(),
             'restituted_at' => now(),
             'restituted_by' => Auth::id(),
+            'finalisee_at' => $intervention->finalisee_at ?? now(),
             'statut_id' => $statutCloture?->id ?? $intervention->statut_id,
             'signataire_nom' => $data['signataire_nom'] ?? null,
             'signature_path' => $signaturePath ?? $intervention->signature_path,
             'signed_at' => $signaturePath ? now() : $intervention->signed_at,
+            // Billing
+            'montant_prestations' => $montantPresta,
+            'montant_deplacement' => $montantDepl,
+            'deplacement_km' => $data['deplacement_km'] ?? null,
+            'montant_total' => $montantTotal,
+            'payee' => $payee,
+            'montant_paye' => $payee ? ($data['montant_paye'] ?? $montantTotal) : null,
+            'paiement_mode' => $payee ? ($data['paiement_mode'] ?? null) : null,
+            // Workshop interventions can be flagged "facturée" straight from the modal.
+            'facturee' => $request->boolean('facturee'),
         ]);
 
         $this->log($intervention, 'a restitué et clôturé l\'intervention'.($signaturePath ? ' (signée)' : ''));

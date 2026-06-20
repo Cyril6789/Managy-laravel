@@ -1,6 +1,6 @@
-<div class="grid grid-cols-1 gap-5 md:grid-cols-2">
+<div class="grid grid-cols-1 gap-5 md:grid-cols-2" x-data="{ type: '{{ old('type', $client->type ?: 'particulier') }}' }">
     <x-field label="Type" name="type" required>
-        <x-select name="type">
+        <x-select name="type" x-model="type">
             <option value="professionnel" @selected(old('type', $client->type)==='professionnel')>Professionnel</option>
             <option value="particulier" @selected(old('type', $client->type)==='particulier')>Particulier</option>
         </x-select>
@@ -15,9 +15,12 @@
     <x-field label="Nom / Raison sociale" name="nom" required>
         <x-input name="nom" value="{{ old('nom', $client->nom) }}" />
     </x-field>
-    <x-field label="Prénom" name="prenom">
-        <x-input name="prenom" value="{{ old('prenom', $client->prenom) }}" />
-    </x-field>
+    {{-- Une entreprise (professionnel) n'a pas de prénom. --}}
+    <div x-show="type !== 'professionnel'" x-cloak>
+        <x-field label="Prénom" name="prenom">
+            <x-input name="prenom" value="{{ old('prenom', $client->prenom) }}" />
+        </x-field>
+    </div>
     <x-field label="E-mail" name="email">
         <x-input name="email" type="email" value="{{ old('email', $client->email) }}" />
     </x-field>

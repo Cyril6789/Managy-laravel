@@ -72,6 +72,8 @@ Route::middleware('auth')->group(function () {
     Route::post('interventions/{intervention}/statut', [InterventionController::class, 'updateStatut'])->name('interventions.statut');
     Route::post('interventions/{intervention}/rdv', [InterventionController::class, 'updateRdv'])->name('interventions.rdv');
     Route::post('interventions/{intervention}/prise-en-charge', [InterventionController::class, 'togglePriseEnCharge'])->name('interventions.pec');
+    Route::post('interventions/{intervention}/finaliser', [InterventionController::class, 'finaliser'])->name('interventions.finaliser');
+    Route::post('interventions/{intervention}/annuler-finalisation', [InterventionController::class, 'annulerFinalisation'])->name('interventions.annuler_finalisation');
     Route::post('interventions/{intervention}/restituer', [InterventionController::class, 'restituer'])->name('interventions.restituer');
     Route::post('interventions/{intervention}/decloturer', [InterventionController::class, 'decloturer'])->name('interventions.decloturer');
     Route::post('interventions/{intervention}/facturation', [InterventionController::class, 'toggleFacturation'])->name('interventions.facturation');
@@ -122,6 +124,7 @@ Route::middleware('auth')->group(function () {
     Route::put('/parametres/sms', [SettingsController::class, 'updateSms'])->name('settings.sms');
     Route::put('/parametres/smtp', [SettingsController::class, 'updateSmtp'])->name('settings.smtp');
     Route::put('/parametres/automatisation', [SettingsController::class, 'updateAutomation'])->name('settings.automation');
+    Route::put('/parametres/facturation', [SettingsController::class, 'updateBilling'])->name('settings.billing');
     // Generic reference-list CRUD (materiels, systemes, antivirus, prestations, statuts, modeles...)
     Route::post('/parametres/{type}', [SettingsController::class, 'storeReference'])->name('settings.reference.store');
     Route::put('/parametres/{type}/{id}', [SettingsController::class, 'updateReference'])->name('settings.reference.update');

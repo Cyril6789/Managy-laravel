@@ -116,6 +116,24 @@ class SettingsController extends Controller
         return back()->with('success', 'Automatisations enregistrées.');
     }
 
+    public function updateBilling(Request $request)
+    {
+        $this->authorize(Permissions::SETTINGS_MANAGE);
+
+        $data = $request->validate([
+            'deplacement_mode' => ['required', 'in:aucun,forfait,km'],
+            'deplacement_forfait' => ['nullable', 'numeric', 'min:0'],
+            'deplacement_prix_km' => ['nullable', 'numeric', 'min:0'],
+            'deplacement_villes_gratuites' => ['nullable', 'string'],
+        ]);
+
+        foreach ($data as $key => $value) {
+            Setting::put($key, $value);
+        }
+
+        return back()->with('success', 'Paramètres de facturation enregistrés.');
+    }
+
     private function deleteLogo(): void
     {
         if ($current = Setting::get('company_logo')) {

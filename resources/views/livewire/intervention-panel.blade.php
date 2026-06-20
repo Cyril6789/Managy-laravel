@@ -55,6 +55,7 @@
                             <tr wire:key="presta-{{ $p->id }}">
                                 <td class="py-2">{{ $p->designation }}</td>
                                 <td class="py-2 text-right text-gray-500">{{ rtrim(rtrim(number_format($p->duree, 2), '0'), '.') }} h</td>
+                                <td class="py-2 pl-3 text-right text-gray-500">{{ $p->tarif !== null ? number_format($p->tarif, 2, ',', ' ').' €' : '—' }}</td>
                                 <td class="py-2 pl-3 text-right">
                                     @if ($peutGerer)
                                         <button wire:click="deletePrestation({{ $p->id }})" wire:confirm="Supprimer ?" class="text-gray-400 hover:text-red-600">&times;</button>
@@ -62,11 +63,16 @@
                                 </td>
                             </tr>
                         @empty
-                            <tr><td class="py-4 text-center text-gray-400">Aucune prestation</td></tr>
+                            <tr><td colspan="4" class="py-4 text-center text-gray-400">Aucune prestation</td></tr>
                         @endforelse
                     </tbody>
                     @if ($i->prestations->count())
-                        <tfoot><tr class="border-t border-gray-200 font-semibold dark:border-gray-700"><td class="py-2">Total</td><td class="py-2 text-right">{{ rtrim(rtrim(number_format($i->tempsTotal(), 2), '0'), '.') }} h</td><td></td></tr></tfoot>
+                        <tfoot><tr class="border-t border-gray-200 font-semibold dark:border-gray-700">
+                            <td class="py-2">Total</td>
+                            <td class="py-2 text-right">{{ rtrim(rtrim(number_format($i->tempsTotal(), 2), '0'), '.') }} h</td>
+                            <td class="py-2 pl-3 text-right">{{ number_format($i->montantPrestations(), 2, ',', ' ') }} €</td>
+                            <td></td>
+                        </tr></tfoot>
                     @endif
                 </table>
 
@@ -80,10 +86,12 @@
                         </x-field>
                         <x-field label="Désignation" class="flex-1 min-w-40"><x-input wire:model="presta.designation" /></x-field>
                         <x-field label="Durée (h)" class="w-24"><x-input wire:model="presta.duree" type="number" step="0.25" /></x-field>
+                        <x-field label="Tarif (€)" class="w-24"><x-input wire:model="presta.tarif" type="number" step="0.01" min="0" /></x-field>
                         <x-button type="submit">Ajouter</x-button>
                     </form>
                     @error('presta.designation')<p class="text-xs text-red-600">{{ $message }}</p>@enderror
                     @error('presta.duree')<p class="text-xs text-red-600">{{ $message }}</p>@enderror
+                    @error('presta.tarif')<p class="text-xs text-red-600">{{ $message }}</p>@enderror
                 @endif
             </div>
 

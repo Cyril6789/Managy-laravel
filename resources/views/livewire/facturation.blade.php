@@ -34,7 +34,9 @@
                         <th class="px-5 py-3 font-medium">Client</th>
                         <th class="px-5 py-3 font-medium">Clôturée le</th>
                         <th class="px-5 py-3 text-right font-medium">Heures</th>
-                        <th class="px-5 py-3 text-right font-medium">Tarif est.</th>
+                        <th class="px-5 py-3 text-right font-medium">Déplac.</th>
+                        <th class="px-5 py-3 text-right font-medium">Total</th>
+                        <th class="px-5 py-3 font-medium">Paiement</th>
                         <th class="px-5 py-3"></th>
                     </tr>
                 </thead>
@@ -44,10 +46,24 @@
                             <td class="whitespace-nowrap px-5 py-3">
                                 <a href="{{ route('interventions.show', $i) }}" class="font-medium text-brand-600 hover:underline">{{ $i->reference }}</a>
                             </td>
-                            <td class="px-5 py-3">{{ $i->client?->nomComplet() }}</td>
+                            <td class="px-5 py-3">
+                                {{ $i->client?->nomComplet() }}
+                                <span class="ml-1 rounded bg-gray-100 px-1.5 py-0.5 text-[10px] uppercase text-gray-500 dark:bg-gray-700 dark:text-gray-300">{{ $i->type_lieu === 'domicile' ? 'Domicile' : 'Atelier' }}</span>
+                            </td>
                             <td class="whitespace-nowrap px-5 py-3 text-gray-400">{{ $i->closed_at?->format('d/m/Y') }}</td>
                             <td class="px-5 py-3 text-right">{{ rtrim(rtrim(number_format($i->tempsTotal(), 2), '0'), '.') }} h</td>
-                            <td class="px-5 py-3 text-right">{{ $i->tarif_estimatif ? number_format($i->tarif_estimatif, 2, ',', ' ').' €' : '—' }}</td>
+                            <td class="px-5 py-3 text-right text-gray-500">{{ $i->montant_deplacement ? number_format($i->montant_deplacement, 2, ',', ' ').' €' : '—' }}</td>
+                            <td class="px-5 py-3 text-right">{{ ($i->montant_total ?? $i->tarif_estimatif) ? number_format($i->montant_total ?? $i->tarif_estimatif, 2, ',', ' ').' €' : '—' }}</td>
+                            <td class="px-5 py-3">
+                                @if ($i->payee)
+                                    @php $modes = ['especes' => 'Espèces', 'cb' => 'CB', 'cheque' => 'Chèque', 'virement' => 'Virement', 'autre' => 'Autre']; @endphp
+                                    <span class="inline-flex items-center gap-1 rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700 dark:bg-green-900/40 dark:text-green-300">
+                                        Payé{{ $i->paiement_mode ? ' · '.($modes[$i->paiement_mode] ?? $i->paiement_mode) : '' }}
+                                    </span>
+                                @else
+                                    <span class="inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-700 dark:bg-amber-900/40 dark:text-amber-300">À encaisser</span>
+                                @endif
+                            </td>
                             <td class="px-5 py-3 text-right">
                                 @if ($filtre === 'a_facturer')
                                     <x-button wire:click="facturer({{ $i->id }})" wire:loading.attr="disabled">Marquer facturée</x-button>
@@ -57,7 +73,7 @@
                             </td>
                         </tr>
                     @empty
-                        <tr><td colspan="6"><x-empty-state icon="check" :title="$filtre === 'a_facturer' ? 'Rien à facturer 🎉' : 'Aucune intervention facturée'" /></td></tr>
+                        <tr><td colspan="8"><x-empty-state icon="check" :title="$filtre === 'a_facturer' ? 'Rien à facturer 🎉' : 'Aucune intervention facturée'" /></td></tr>
                     @endforelse
                 </tbody>
             </table>

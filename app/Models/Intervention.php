@@ -20,8 +20,10 @@ class Intervention extends Model
         'rdv_debut', 'rdv_fin', 'rdv_annule', 'priorite', 'urgente', 'garantie',
         'materiel_depose', 'panne', 'diagnostic', 'materiel_ajoute', 'message_client',
         'message_interne', 'mdp', 'tarif_estimatif', 'note', 'facturee', 'payee',
+        'montant_prestations', 'montant_deplacement', 'deplacement_km',
+        'montant_total', 'montant_paye', 'paiement_mode',
         'public_token', 'signature_path', 'signataire_nom', 'signed_at',
-        'opened_at', 'closed_at', 'restituted_at',
+        'opened_at', 'closed_at', 'restituted_at', 'finalisee_at',
     ];
 
     protected function casts(): array
@@ -35,9 +37,15 @@ class Intervention extends Model
             'facturee' => 'boolean',
             'payee' => 'boolean',
             'tarif_estimatif' => 'decimal:2',
+            'montant_prestations' => 'decimal:2',
+            'montant_deplacement' => 'decimal:2',
+            'deplacement_km' => 'decimal:2',
+            'montant_total' => 'decimal:2',
+            'montant_paye' => 'decimal:2',
             'opened_at' => 'datetime',
             'closed_at' => 'datetime',
             'restituted_at' => 'datetime',
+            'finalisee_at' => 'datetime',
             'signed_at' => 'datetime',
         ];
     }
@@ -159,9 +167,25 @@ class Intervention extends Model
         return (bool) ($this->statut?->verrouille);
     }
 
+    public function estFinalisee(): bool
+    {
+        return $this->finalisee_at !== null;
+    }
+
+    public function estDomicile(): bool
+    {
+        return $this->type_lieu === 'domicile';
+    }
+
     public function tempsTotal(): float
     {
         return (float) $this->prestations->sum('duree');
+    }
+
+    /** Sum of the priced services (uses the per-line tarif, falling back to 0). */
+    public function montantPrestations(): float
+    {
+        return (float) $this->prestations->sum('tarif');
     }
 
     /** Who actually gets the SMS / e-mail: the selected contact, else the client. */
