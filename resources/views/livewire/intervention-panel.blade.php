@@ -186,6 +186,7 @@
                         <div class="flex items-center justify-between gap-2">
                             <p class="font-medium">{{ $s->nom ?: 'Sous-traitance' }}</p>
                             <div class="flex items-center gap-2">
+                                <a href="{{ route('interventions.sst_sheet', [$i, $s]) }}" target="_blank" class="text-xs text-gray-500 hover:text-brand-600 hover:underline">Feuille</a>
                                 @if ($s->retournee)<x-badge color="#16a34a">Retournée</x-badge>
                                 @elseif ($peutGerer)<button wire:click="returnSousTraitance({{ $s->id }})" class="text-xs text-brand-600 hover:underline">Marquer retournée</button>@endif
                                 @if ($peutGerer)<button wire:click="deleteSousTraitance({{ $s->id }})" wire:confirm="Supprimer ?" class="text-gray-300 hover:text-red-600">&times;</button>@endif

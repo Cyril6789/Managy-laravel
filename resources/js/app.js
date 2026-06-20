@@ -137,6 +137,10 @@ document.addEventListener('alpine:init', () => {
         deplPrixKm: Number(cfg.deplPrixKm || 0),
         deplDefault: Number(cfg.deplDefault || 0),
         canRistourne: !!cfg.canRistourne,
+        // When true, the technician first sets the amounts (ristourne / travel)
+        // out of the customer's sight, then reveals the signature screen.
+        needsPrepare: !!cfg.needsPrepare,
+        signing: false,
 
         // Billing state
         km: 0,
@@ -168,6 +172,8 @@ document.addEventListener('alpine:init', () => {
             this.ctx.lineCap = 'round';
             this.ctx.strokeStyle = '#111827';
             this.deplacement = this.deplDefault;
+            // Atelier / warranty jobs have no amounts to set: go straight to signing.
+            this.signing = !this.needsPrepare;
         },
         get isDomicile() {
             return this.lieu === 'domicile';

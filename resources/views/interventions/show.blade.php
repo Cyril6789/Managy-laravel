@@ -130,9 +130,15 @@
                                   deplPrixKm: {{ $deplPrixKm ?: 0 }},
                                   deplDefault: {{ $breakdown['deplacement'] }},
                                   canRistourne: {{ ($peutRistourne && $i->estDomicile() && ! $i->garantie) ? 'true' : 'false' }},
+                                  needsPrepare: {{ ($i->estDomicile() && ! $i->garantie) ? 'true' : 'false' }},
                               })" class="space-y-4">
                             @csrf
                             <input type="hidden" name="signature" :value="value">
+                            {{-- Montants (toujours soumis, jamais montrés au client) --}}
+                            <input type="hidden" name="remise_type" :value="remiseType">
+                            <input type="hidden" name="remise_valeur" :value="canRistourne ? remiseValeur : 0">
+                            <input type="hidden" name="deplacement_km" :value="waiveDepl ? 0 : km">
+                            <input type="hidden" name="montant_deplacement" :value="effectiveDepl">
 
                             @if ($i->garantie)
                                 <div class="rounded-lg border border-green-200 bg-green-50 px-3 py-2 text-sm text-green-700 dark:border-green-900 dark:bg-green-900/30 dark:text-green-300">
@@ -140,109 +146,123 @@
                                 </div>
                             @endif
 
-                            {{-- 1. Ristourne technicien (domicile uniquement, hors garantie) --}}
-                            @if ($i->estDomicile() && $peutRistourne && ! $i->garantie)
-                                <div>
-                                    <span class="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Ristourne (facultatif)</span>
-                                    <div class="flex gap-2">
-                                        <input type="number" step="0.01" min="0" x-model.number="remiseValeur" placeholder="0"
-                                               class="block w-full rounded-lg border-gray-300 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:border-gray-700 dark:bg-gray-800">
-                                        <select x-model="remiseType" class="rounded-lg border-gray-300 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:border-gray-700 dark:bg-gray-800">
-                                            <option value="euro">€</option>
-                                            <option value="pourcent">%</option>
-                                        </select>
-                                    </div>
-                                </div>
-                            @endif
-                            <input type="hidden" name="remise_type" :value="remiseType">
-                            <input type="hidden" name="remise_valeur" :value="canRistourne ? remiseValeur : 0">
-
-                            {{-- 2. Déplacement + possibilité de l'offrir (domicile, hors garantie) --}}
+                            {{-- ÉTAPE 1 — Réglage des montants par le technicien (hors de la vue du client) --}}
                             @if ($i->estDomicile() && ! $i->garantie)
-                                <div class="space-y-3">
-                                    <label class="flex items-center gap-2 text-sm">
-                                        <input type="checkbox" x-model="waiveDepl" class="rounded border-gray-300 text-brand-600">
-                                        Offrir le déplacement (faire sauter les frais)
-                                    </label>
-                                    <div x-show="!waiveDepl" x-cloak class="space-y-3">
-                                        <template x-if="deplMode === 'km' && !deplGratuit">
-                                            <x-field label="Distance (km)">
-                                                <x-input type="number" step="0.1" min="0" x-model.number="km" @input="onKm()" />
+                                <div x-show="!signing" class="space-y-4">
+                                    <p class="text-sm text-gray-500">Réglez les montants <strong>avant</strong> de présenter l'écran de signature au client : la ristourne et l'offre du déplacement ne lui seront pas affichées.</p>
+
+                                    @if ($peutRistourne)
+                                        <div>
+                                            <span class="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Ristourne (facultatif)</span>
+                                            <div class="flex gap-2">
+                                                <input type="number" step="0.01" min="0" x-model.number="remiseValeur" placeholder="0"
+                                                       class="block w-full rounded-lg border-gray-300 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:border-gray-700 dark:bg-gray-800">
+                                                <select x-model="remiseType" class="rounded-lg border-gray-300 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:border-gray-700 dark:bg-gray-800">
+                                                    <option value="euro">€</option>
+                                                    <option value="pourcent">%</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                    @endif
+
+                                    <div class="space-y-3">
+                                        <label class="flex items-center gap-2 text-sm">
+                                            <input type="checkbox" x-model="waiveDepl" class="rounded border-gray-300 text-brand-600">
+                                            Offrir le déplacement
+                                        </label>
+                                        <div x-show="!waiveDepl" x-cloak class="space-y-3">
+                                            <template x-if="deplMode === 'km' && !deplGratuit">
+                                                <x-field label="Distance (km)">
+                                                    <x-input type="number" step="0.1" min="0" x-model.number="km" @input="onKm()" />
+                                                </x-field>
+                                            </template>
+                                            <x-field label="Déplacement (€)">
+                                                <x-input type="number" step="0.01" min="0" x-model.number="deplacement" />
+                                                <p class="mt-1 text-xs text-gray-400" x-show="deplGratuit" x-cloak>Déplacement gratuit pour ce client / cette ville.</p>
                                             </x-field>
-                                        </template>
-                                        <x-field label="Déplacement (€)">
-                                            <x-input type="number" step="0.01" min="0" x-model.number="deplacement" />
-                                            <p class="mt-1 text-xs text-gray-400" x-show="deplGratuit" x-cloak>Déplacement gratuit pour ce client / cette ville.</p>
-                                        </x-field>
+                                        </div>
                                     </div>
-                                    <input type="hidden" name="deplacement_km" :value="waiveDepl ? 0 : km">
+
+                                    {{-- Récap détaillé réservé au technicien (avec la ristourne) --}}
+                                    <div class="rounded-lg border border-gray-200 p-3 text-sm dark:border-gray-700">
+                                        <div class="flex justify-between"><span class="text-gray-500">Sous-total</span><span x-text="fmt(sousTotal)"></span></div>
+                                        <div class="flex justify-between" x-show="remiseMontant > 0" x-cloak><span class="text-gray-500">Ristourne</span><span x-text="'− ' + fmt(remiseMontant)"></span></div>
+                                        <div class="flex justify-between" x-show="effectiveDepl > 0" x-cloak><span class="text-gray-500">Déplacement</span><span x-text="fmt(effectiveDepl)"></span></div>
+                                        <div class="mt-1 flex items-center justify-between border-t border-gray-100 pt-2 text-base font-semibold dark:border-gray-800"><span>Total</span><span x-text="fmt(total)"></span></div>
+                                    </div>
+
+                                    <div class="flex justify-end">
+                                        <x-button type="button" @click="signing = true">Continuer vers la signature →</x-button>
+                                    </div>
                                 </div>
                             @endif
-                            <input type="hidden" name="montant_deplacement" :value="effectiveDepl">
 
-                            {{-- 3. Récapitulatif affiché au-dessus de la signature --}}
-                            <div class="rounded-lg border border-gray-200 p-3 text-sm dark:border-gray-700">
-                                <div class="flex justify-between"><span class="text-gray-500">Prestations</span><span x-text="fmt(prestaNet)"></span></div>
-                                <div class="flex justify-between" x-show="piecesNet > 0" x-cloak><span class="text-gray-500">Pièces</span><span x-text="fmt(piecesNet)"></span></div>
-                                <div class="flex justify-between" x-show="isDomicile && effectiveDepl > 0" x-cloak><span class="text-gray-500">Déplacement</span><span x-text="fmt(effectiveDepl)"></span></div>
-                                {{-- La ristourne n'apparaît que si le technicien en a accordé une --}}
-                                <div class="flex justify-between" x-show="remiseMontant > 0" x-cloak><span class="text-gray-500">Ristourne</span><span x-text="'− ' + fmt(remiseMontant)"></span></div>
-                                <div class="mt-1 flex items-center justify-between border-t border-gray-100 pt-2 text-base font-semibold dark:border-gray-800">
-                                    <span>Total</span><span x-text="fmt(total)"></span>
-                                </div>
-                            </div>
+                            {{-- ÉTAPE 2 — Écran de signature présenté au client --}}
+                            <div x-show="signing" class="space-y-4">
+                                @if ($i->estDomicile() && ! $i->garantie)
+                                    <button type="button" @click="signing = false" class="text-xs text-gray-500 hover:text-brand-600">← Modifier les montants</button>
+                                @endif
 
-                            {{-- 4. Signature du client --}}
-                            <x-field label="Nom du signataire" name="signataire_nom">
-                                <x-input name="signataire_nom" value="{{ $i->client?->nomComplet() }}" />
-                            </x-field>
-                            <div>
-                                <div class="mb-1 flex items-center justify-between">
-                                    <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Signature du client</span>
-                                    <button type="button" @click="clear()" class="text-xs text-gray-500 hover:text-red-600">Effacer</button>
-                                </div>
-                                <canvas x-ref="canvas"
-                                        @mousedown="start($event)" @mousemove="move($event)" @mouseup="end()" @mouseleave="end()"
-                                        @touchstart="start($event)" @touchmove="move($event)" @touchend="end()"
-                                        class="h-40 w-full touch-none rounded-lg border-2 border-dashed border-gray-300 bg-white dark:border-gray-600"></canvas>
-                                <p class="mt-1 text-xs text-gray-400">Signez ci-dessus avec le doigt ou la souris (facultatif).</p>
-                            </div>
-
-                            {{-- 5. Paiement (domicile) --}}
-                            @if ($i->estDomicile())
-                                <div class="space-y-3">
-                                    <label class="flex items-center gap-2 text-sm">
-                                        <input type="checkbox" x-model="payee" class="rounded border-gray-300 text-brand-600">
-                                        Le client a déjà payé
-                                    </label>
-                                    <input type="hidden" name="payee" :value="payee ? 1 : 0">
-                                    <div x-show="payee" x-cloak class="grid grid-cols-2 gap-3">
-                                        <x-field label="Montant payé (€)">
-                                            <x-input type="number" step="0.01" min="0" name="montant_paye" x-model.number="montantPaye" />
-                                        </x-field>
-                                        <x-field label="Moyen de paiement">
-                                            <x-select name="paiement_mode" x-model="paiementMode">
-                                                @foreach (['especes' => 'Espèces', 'cb' => 'Carte bancaire', 'cheque' => 'Chèque', 'virement' => 'Virement', 'autre' => 'Autre'] as $v => $l)
-                                                    <option value="{{ $v }}">{{ $l }}</option>
-                                                @endforeach
-                                            </x-select>
-                                        </x-field>
+                                {{-- Récapitulatif client : prestations, pièces, déplacement et total — aucune mention de ristourne --}}
+                                <div class="rounded-lg border border-gray-200 p-3 text-sm dark:border-gray-700">
+                                    <div class="flex justify-between"><span class="text-gray-500">Prestations</span><span x-text="fmt(prestaNet)"></span></div>
+                                    <div class="flex justify-between" x-show="piecesNet > 0" x-cloak><span class="text-gray-500">Pièces</span><span x-text="fmt(piecesNet)"></span></div>
+                                    <div class="flex justify-between" x-show="isDomicile && effectiveDepl > 0" x-cloak><span class="text-gray-500">Déplacement</span><span x-text="fmt(effectiveDepl)"></span></div>
+                                    <div class="mt-1 flex items-center justify-between border-t border-gray-100 pt-2 text-base font-semibold dark:border-gray-800">
+                                        <span>Total</span><span x-text="fmt(total)"></span>
                                     </div>
                                 </div>
-                            @else
-                                {{-- Atelier : pas de ristourne, simple indication de facturation --}}
+
+                                <x-field label="Nom du signataire" name="signataire_nom">
+                                    <x-input name="signataire_nom" value="{{ $i->client?->nomComplet() }}" />
+                                </x-field>
                                 <div>
-                                    <label class="flex items-center gap-2 text-sm">
-                                        <input type="checkbox" x-model="facturee" class="rounded border-gray-300 text-brand-600">
-                                        L'intervention a déjà été facturée
-                                    </label>
-                                    <input type="hidden" name="facturee" :value="facturee ? 1 : 0">
-                                    <p class="mt-1 text-xs text-gray-400">Sinon, elle apparaîtra dans la page « À facturer ».</p>
+                                    <div class="mb-1 flex items-center justify-between">
+                                        <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Signature du client</span>
+                                        <button type="button" @click="clear()" class="text-xs text-gray-500 hover:text-red-600">Effacer</button>
+                                    </div>
+                                    <canvas x-ref="canvas"
+                                            @mousedown="start($event)" @mousemove="move($event)" @mouseup="end()" @mouseleave="end()"
+                                            @touchstart="start($event)" @touchmove="move($event)" @touchend="end()"
+                                            class="h-40 w-full touch-none rounded-lg border-2 border-dashed border-gray-300 bg-white dark:border-gray-600"></canvas>
+                                    <p class="mt-1 text-xs text-gray-400">Signez ci-dessus avec le doigt ou la souris (facultatif).</p>
                                 </div>
-                            @endif
 
-                            <div class="flex justify-end">
-                                <x-button type="submit">Restituer &amp; clôturer</x-button>
+                                @if ($i->estDomicile())
+                                    <div class="space-y-3">
+                                        <label class="flex items-center gap-2 text-sm">
+                                            <input type="checkbox" x-model="payee" class="rounded border-gray-300 text-brand-600">
+                                            Le client a déjà payé
+                                        </label>
+                                        <input type="hidden" name="payee" :value="payee ? 1 : 0">
+                                        <div x-show="payee" x-cloak class="grid grid-cols-2 gap-3">
+                                            <x-field label="Montant payé (€)">
+                                                <x-input type="number" step="0.01" min="0" name="montant_paye" x-model.number="montantPaye" />
+                                            </x-field>
+                                            <x-field label="Moyen de paiement">
+                                                <x-select name="paiement_mode" x-model="paiementMode">
+                                                    @foreach (['especes' => 'Espèces', 'cb' => 'Carte bancaire', 'cheque' => 'Chèque', 'virement' => 'Virement', 'autre' => 'Autre'] as $v => $l)
+                                                        <option value="{{ $v }}">{{ $l }}</option>
+                                                    @endforeach
+                                                </x-select>
+                                            </x-field>
+                                        </div>
+                                    </div>
+                                @else
+                                    {{-- Atelier : pas de ristourne, simple indication de facturation --}}
+                                    <div>
+                                        <label class="flex items-center gap-2 text-sm">
+                                            <input type="checkbox" x-model="facturee" class="rounded border-gray-300 text-brand-600">
+                                            L'intervention a déjà été facturée
+                                        </label>
+                                        <input type="hidden" name="facturee" :value="facturee ? 1 : 0">
+                                        <p class="mt-1 text-xs text-gray-400">Sinon, elle apparaîtra dans la page « À facturer ».</p>
+                                    </div>
+                                @endif
+
+                                <div class="flex justify-end">
+                                    <x-button type="submit">Restituer &amp; clôturer</x-button>
+                                </div>
                             </div>
                         </form>
                     </x-card>

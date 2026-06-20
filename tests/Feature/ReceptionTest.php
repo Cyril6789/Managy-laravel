@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Livewire\PendingCommandes;
 use App\Livewire\PendingSousTraitances;
+use App\Models\Client;
 use App\Models\Intervention;
 use App\Models\User;
 use App\Support\Permissions;
@@ -81,6 +82,40 @@ class ReceptionTest extends TestCase
 
         $this->get(route('reception.commandes'))->assertForbidden();
         $this->get(route('reception.sous_traitances'))->assertForbidden();
+    }
+
+    public function test_subcontracting_sheet_shows_password_without_client_data(): void
+    {
+        $this->actingAs($this->admin());
+
+        $client = Client::create(['type' => 'professionnel', 'nom' => 'ClientSecretXYZ']);
+        $intervention = Intervention::create([
+            'client_id' => $client->id,
+            'mdp' => 'SECRET-PW-42',
+            'opened_by' => $this->admin()->id,
+        ]);
+        $sst = $intervention->sousTraitances()->create(['nom' => 'Labo Réparation', 'numero_commande' => 'ST-100']);
+
+        $this->get(route('interventions.sst_sheet', [$intervention, $sst]))
+            ->assertOk()
+            ->assertSee('SECRET-PW-42')          // password is shown
+            ->assertSee('Labo Réparation')       // subcontractor name
+            ->assertSee('ST-100')                // subcontracting number
+            ->assertSee($intervention->reference)// intervention number
+            ->assertDontSee('ClientSecretXYZ');  // no client data
+    }
+
+    public function test_subcontracting_sheet_is_scoped_to_its_intervention(): void
+    {
+        $this->actingAs($this->admin());
+
+        $client = Client::create(['type' => 'professionnel', 'nom' => 'Scope SARL']);
+        $a = Intervention::create(['client_id' => $client->id, 'opened_by' => $this->admin()->id]);
+        $b = Intervention::create(['client_id' => $client->id, 'opened_by' => $this->admin()->id]);
+        $sst = $a->sousTraitances()->create(['nom' => 'Labo']);
+
+        // Asking for the slip under the wrong intervention 404s.
+        $this->get(route('interventions.sst_sheet', [$b, $sst]))->assertNotFound();
     }
 
     public function test_permission_catalog_exposes_reception_rights(): void
