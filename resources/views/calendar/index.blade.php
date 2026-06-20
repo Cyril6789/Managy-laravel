@@ -21,9 +21,18 @@
                                     <x-field label="Fin" name="fin"><x-input name="fin" type="datetime-local" /></x-field>
                                 </div>
                                 <x-field label="Client" name="client_id">
-                                    <x-select name="client_id"><option value="">—</option>
-                                        @foreach ($clients as $c)<option value="{{ $c->id }}">{{ $c->nomComplet() }}</option>@endforeach
-                                    </x-select>
+                                    {{-- Recherche client en Ajax (au lieu d'une liste de tous les clients). --}}
+                                    <livewire:client-picker />
+                                </x-field>
+                                <x-field label="Couleur" name="couleur">
+                                    <div class="flex flex-wrap items-center gap-2" x-data="{ couleur: '#16a34a' }">
+                                        <input type="hidden" name="couleur" :value="couleur">
+                                        @foreach (['#16a34a' => 'Vert', '#2563eb' => 'Bleu', '#7c3aed' => 'Violet', '#ea580c' => 'Orange', '#db2777' => 'Rose', '#0891b2' => 'Cyan'] as $hex => $nom)
+                                            <button type="button" @click="couleur = '{{ $hex }}'"
+                                                    :class="couleur === '{{ $hex }}' ? 'ring-2 ring-offset-1 ring-gray-500' : ''"
+                                                    class="h-6 w-6 rounded-full border border-black/10" style="background-color: {{ $hex }};" title="{{ $nom }}"></button>
+                                        @endforeach
+                                    </div>
                                 </x-field>
                                 <x-field label="Description" name="description"><x-textarea name="description" rows="2" /></x-field>
                                 <div class="flex justify-end gap-2">
@@ -37,6 +46,14 @@
             @endcan
         </x-slot:actions>
     </x-page-header>
+
+    {{-- Légende des couleurs --}}
+    <div class="mb-3 flex flex-wrap items-center gap-x-5 gap-y-2 text-xs text-gray-600 dark:text-gray-300">
+        <span class="font-medium text-gray-400">Légende :</span>
+        <span class="inline-flex items-center gap-1.5"><span class="h-3 w-3 rounded-full" style="background-color:#2563eb;"></span> Intervention</span>
+        <span class="inline-flex items-center gap-1.5"><span class="h-3 w-3 rounded-full" style="background-color:#ef4444;"></span> Intervention urgente</span>
+        <span class="inline-flex items-center gap-1.5"><span class="h-3 w-3 rounded-full" style="background-color:#16a34a;"></span> Rendez-vous / événement</span>
+    </div>
 
     <x-card :padding="false">
         <div class="grid grid-cols-7 border-b border-gray-100 text-center text-xs font-medium uppercase text-gray-400 dark:border-gray-800">

@@ -31,8 +31,8 @@
     </button>
 
     <div x-show="open" x-cloak @click.outside="open = false" x-transition.opacity
-         class="absolute z-40 mt-1 flex w-full flex-col rounded-lg border border-gray-200 bg-white shadow-lg dark:border-gray-700 dark:bg-gray-800">
-        <div class="shrink-0 border-b border-gray-100 p-2 dark:border-gray-700">
+         class="absolute z-40 mt-1 w-full rounded-lg border border-gray-200 bg-white shadow-lg dark:border-gray-700 dark:bg-gray-800">
+        <div class="border-b border-gray-100 p-2 dark:border-gray-700">
             <input x-ref="search" x-model="query" type="text" placeholder="{{ $searchPlaceholder }}"
                    class="w-full rounded-md border-gray-300 text-sm focus:border-brand-500 focus:ring-brand-500 dark:border-gray-600 dark:bg-gray-900">
         </div>
