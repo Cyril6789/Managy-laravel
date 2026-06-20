@@ -11,6 +11,7 @@ use App\Livewire\InterventionPanel;
 use App\Livewire\InterventionReport;
 use App\Models\Client;
 use App\Models\Intervention;
+use App\Models\Prestation;
 use App\Models\Setting;
 use App\Models\Statut;
 use App\Models\User;
@@ -107,6 +108,43 @@ class LivewireTest extends TestCase
             'designation' => 'Changement disque SSD',
         ]);
         $this->assertSame($statut->id, $intervention->fresh()->statut_id);
+    }
+
+    public function test_prestation_price_comes_from_catalogue(): void
+    {
+        $intervention = Intervention::ouvertes()->first();
+        $catalogue = Prestation::create(['designation' => 'Forfait diag', 'duree_defaut' => 1, 'tarif' => 49]);
+
+        Livewire::test(InterventionPanel::class, ['intervention' => $intervention])
+            ->set('presta.prestation_id', $catalogue->id)
+            ->call('selectPrestation')
+            ->call('addPrestation');
+
+        // The stored price is the catalogue tarif, not a technician-typed amount.
+        $this->assertDatabaseHas('intervention_prestations', [
+            'intervention_id' => $intervention->id,
+            'designation' => 'Forfait diag',
+            'tarif' => 49,
+        ]);
+    }
+
+    public function test_panel_adds_and_removes_a_part(): void
+    {
+        $intervention = Intervention::ouvertes()->first();
+
+        Livewire::test(InterventionPanel::class, ['intervention' => $intervention])
+            ->set('piece.designation', 'Disque SSD 1 To')
+            ->set('piece.prix', '80')
+            ->set('piece.quantite', '2')
+            ->call('addPiece');
+
+        $this->assertDatabaseHas('intervention_pieces', [
+            'intervention_id' => $intervention->id,
+            'designation' => 'Disque SSD 1 To',
+            'prix' => 80,
+            'quantite' => 2,
+        ]);
+        $this->assertEqualsWithDelta(160.0, $intervention->fresh()->montantPieces(), 0.01);
     }
 
     public function test_pending_order_moves_status_to_waiting(): void

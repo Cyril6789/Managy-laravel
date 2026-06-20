@@ -16,11 +16,17 @@ class Client extends Model
         'type', 'civilite', 'nom', 'prenom', 'email',
         'telephone_fixe', 'telephone_mobile', 'adresse', 'adresse_complement',
         'code_postal', 'ville', 'siret', 'parent_id', 'notes', 'archived_at',
+        'deplacement_gratuit', 'remise_prestations', 'remise_pieces',
     ];
 
     protected function casts(): array
     {
-        return ['archived_at' => 'datetime'];
+        return [
+            'archived_at' => 'datetime',
+            'deplacement_gratuit' => 'boolean',
+            'remise_prestations' => 'decimal:2',
+            'remise_pieces' => 'decimal:2',
+        ];
     }
 
     protected static function booted(): void

@@ -20,8 +20,8 @@ class Intervention extends Model
         'rdv_debut', 'rdv_fin', 'rdv_annule', 'priorite', 'urgente', 'garantie',
         'materiel_depose', 'panne', 'diagnostic', 'materiel_ajoute', 'message_client',
         'message_interne', 'mdp', 'tarif_estimatif', 'note', 'facturee', 'payee',
-        'montant_prestations', 'montant_deplacement', 'deplacement_km',
-        'montant_total', 'montant_paye', 'paiement_mode',
+        'montant_prestations', 'montant_pieces', 'montant_deplacement', 'deplacement_km',
+        'montant_total', 'remise_type', 'remise_valeur', 'remise_montant', 'montant_paye', 'paiement_mode',
         'public_token', 'signature_path', 'signataire_nom', 'signed_at',
         'opened_at', 'closed_at', 'restituted_at', 'finalisee_at',
     ];
@@ -38,9 +38,12 @@ class Intervention extends Model
             'payee' => 'boolean',
             'tarif_estimatif' => 'decimal:2',
             'montant_prestations' => 'decimal:2',
+            'montant_pieces' => 'decimal:2',
             'montant_deplacement' => 'decimal:2',
             'deplacement_km' => 'decimal:2',
             'montant_total' => 'decimal:2',
+            'remise_valeur' => 'decimal:2',
+            'remise_montant' => 'decimal:2',
             'montant_paye' => 'decimal:2',
             'opened_at' => 'datetime',
             'closed_at' => 'datetime',
@@ -108,6 +111,11 @@ class Intervention extends Model
     public function prestations(): HasMany
     {
         return $this->hasMany(InterventionPrestation::class);
+    }
+
+    public function pieces(): HasMany
+    {
+        return $this->hasMany(InterventionPiece::class);
     }
 
     public function commandes(): HasMany
@@ -182,10 +190,16 @@ class Intervention extends Model
         return (float) $this->prestations->sum('duree');
     }
 
-    /** Sum of the priced services (uses the per-line tarif, falling back to 0). */
+    /** Gross sum of the priced services (per-line tarif from the catalogue). */
     public function montantPrestations(): float
     {
         return (float) $this->prestations->sum('tarif');
+    }
+
+    /** Gross sum of the replaced parts (unit price × quantity). */
+    public function montantPieces(): float
+    {
+        return (float) $this->pieces->sum(fn (InterventionPiece $p) => $p->total());
     }
 
     /** Who actually gets the SMS / e-mail: the selected contact, else the client. */

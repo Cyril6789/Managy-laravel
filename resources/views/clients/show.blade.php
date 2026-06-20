@@ -26,6 +26,11 @@
                     <div class="flex justify-between gap-3"><dt class="text-gray-500">Adresse</dt><dd class="text-right">{{ $client->adresseComplete() ?: '—' }}</dd></div>
                     @if ($client->siret)<div class="flex justify-between gap-3"><dt class="text-gray-500">SIRET</dt><dd>{{ $client->siret }}</dd></div>@endif
                     @if ($client->parent)<div class="flex justify-between gap-3"><dt class="text-gray-500">Société</dt><dd><a class="text-brand-600 hover:underline" href="{{ route('clients.show', $client->parent) }}">{{ $client->parent->nomComplet() }}</a></dd></div>@endif
+                    @can(\App\Support\Permissions::CLIENTS_REMISES)
+                        @if ($client->deplacement_gratuit)<div class="flex justify-between gap-3"><dt class="text-gray-500">Déplacement</dt><dd class="font-medium text-green-600">Gratuit</dd></div>@endif
+                        @if ($client->remise_prestations)<div class="flex justify-between gap-3"><dt class="text-gray-500">Remise prestations</dt><dd>{{ rtrim(rtrim(number_format($client->remise_prestations,2),'0'),'.') }} %</dd></div>@endif
+                        @if ($client->remise_pieces)<div class="flex justify-between gap-3"><dt class="text-gray-500">Remise pièces</dt><dd>{{ rtrim(rtrim(number_format($client->remise_pieces,2),'0'),'.') }} %</dd></div>@endif
+                    @endcan
                 </dl>
                 @if ($client->notes)
                     <div class="mt-4 rounded-lg bg-gray-50 p-3 text-sm text-gray-600 dark:bg-gray-800 dark:text-gray-300">{{ $client->notes }}</div>

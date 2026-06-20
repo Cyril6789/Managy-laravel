@@ -5,6 +5,7 @@ namespace App\Livewire;
 use App\Models\Commande;
 use App\Models\Intervention;
 use App\Models\InterventionLog;
+use App\Models\InterventionPiece;
 use App\Models\InterventionPrestation;
 use App\Models\Prestation;
 use App\Models\SousTraitance;
@@ -25,7 +26,9 @@ class InterventionPanel extends Component
 
     public ?int $statutId = null;
 
-    public array $presta = ['prestation_id' => '', 'designation' => '', 'duree' => '', 'tarif' => ''];
+    public array $presta = ['prestation_id' => '', 'designation' => '', 'duree' => ''];
+
+    public array $piece = ['designation' => '', 'prix' => '', 'quantite' => '1'];
 
     public array $commande = ['fournisseur' => '', 'numero_commande' => '', 'suivi_colis' => ''];
 
@@ -63,7 +66,6 @@ class InterventionPanel extends Component
         if ($p = Prestation::find($this->presta['prestation_id'])) {
             $this->presta['designation'] = $p->designation;
             $this->presta['duree'] = rtrim(rtrim(number_format((float) $p->duree_defaut, 2), '0'), '.');
-            $this->presta['tarif'] = $p->tarif !== null ? rtrim(rtrim(number_format((float) $p->tarif, 2), '0'), '.') : '';
         }
     }
 
@@ -74,11 +76,12 @@ class InterventionPanel extends Component
             'presta.designation' => ['nullable', 'string', 'max:255'],
             'presta.prestation_id' => ['nullable', 'exists:prestations,id'],
             'presta.duree' => ['required', 'numeric', 'min:0'],
-            'presta.tarif' => ['nullable', 'numeric', 'min:0'],
         ]);
 
-        $designation = $this->presta['designation']
-            ?: Prestation::find($this->presta['prestation_id'])?->designation;
+        // The price always comes from the catalogue (Paramètres), not from the
+        // technician. Free-text lines have no price.
+        $prestation = $this->presta['prestation_id'] ? Prestation::find($this->presta['prestation_id']) : null;
+        $designation = $this->presta['designation'] ?: $prestation?->designation;
 
         if (! $designation) {
             $this->addError('presta.designation', 'Désignation requise.');
@@ -87,12 +90,12 @@ class InterventionPanel extends Component
         }
 
         $this->intervention->prestations()->create([
-            'prestation_id' => $this->presta['prestation_id'] ?: null,
+            'prestation_id' => $prestation?->id,
             'designation' => $designation,
             'duree' => $this->presta['duree'],
-            'tarif' => $this->presta['tarif'] !== '' ? $this->presta['tarif'] : null,
+            'tarif' => $prestation?->tarif,
         ]);
-        $this->presta = ['prestation_id' => '', 'designation' => '', 'duree' => '', 'tarif' => ''];
+        $this->presta = ['prestation_id' => '', 'designation' => '', 'duree' => ''];
         $this->log('a ajouté une prestation');
     }
 
@@ -100,6 +103,28 @@ class InterventionPanel extends Component
     {
         Gate::authorize(Permissions::INTERVENTIONS_MANAGE);
         InterventionPrestation::where('intervention_id', $this->intervention->id)->findOrFail($id)->delete();
+    }
+
+    // ----- Pièces (replaced parts, ad-hoc) -----------------------------------
+
+    public function addPiece(): void
+    {
+        Gate::authorize(Permissions::INTERVENTIONS_MANAGE);
+        $this->validate([
+            'piece.designation' => ['required', 'string', 'max:255'],
+            'piece.prix' => ['required', 'numeric', 'min:0'],
+            'piece.quantite' => ['required', 'numeric', 'min:0.01'],
+        ]);
+
+        $this->intervention->pieces()->create($this->piece);
+        $this->piece = ['designation' => '', 'prix' => '', 'quantite' => '1'];
+        $this->log('a ajouté une pièce');
+    }
+
+    public function deletePiece(int $id): void
+    {
+        Gate::authorize(Permissions::INTERVENTIONS_MANAGE);
+        InterventionPiece::where('intervention_id', $this->intervention->id)->findOrFail($id)->delete();
     }
 
     // ----- Commandes ---------------------------------------------------------
@@ -180,7 +205,7 @@ class InterventionPanel extends Component
 
     public function render()
     {
-        $this->intervention->load(['prestations', 'commandes', 'sousTraitances', 'clientMessages', 'statut']);
+        $this->intervention->load(['prestations', 'pieces', 'commandes', 'sousTraitances', 'clientMessages', 'statut', 'client']);
 
         return view('livewire.intervention-panel', [
             'statuts' => Statut::orderBy('ordre')->get(),

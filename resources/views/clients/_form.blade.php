@@ -58,4 +58,23 @@
     <x-field label="Notes internes" name="notes" class="md:col-span-2">
         <x-textarea name="notes" rows="3">{{ old('notes', $client->notes) }}</x-textarea>
     </x-field>
+
+    @can(\App\Support\Permissions::CLIENTS_REMISES)
+        <div class="md:col-span-2 mt-2 rounded-lg border border-gray-200 p-4 dark:border-gray-700">
+            <p class="mb-3 text-sm font-medium text-gray-700 dark:text-gray-300">Tarification du client</p>
+            <label class="flex items-center gap-2 text-sm">
+                <input type="hidden" name="deplacement_gratuit" value="0">
+                <input type="checkbox" name="deplacement_gratuit" value="1" @checked(old('deplacement_gratuit', $client->deplacement_gratuit)) class="rounded border-gray-300 text-brand-600">
+                Déplacement toujours gratuit pour ce client
+            </label>
+            <div class="mt-4 grid grid-cols-1 gap-5 sm:grid-cols-2">
+                <x-field label="Remise sur les prestations (%)" name="remise_prestations" hint="Appliquée automatiquement à toutes les prestations.">
+                    <x-input name="remise_prestations" type="number" step="0.01" min="0" max="100" value="{{ old('remise_prestations', $client->remise_prestations) }}" />
+                </x-field>
+                <x-field label="Remise sur les pièces (%)" name="remise_pieces" hint="Appliquée automatiquement à toutes les pièces.">
+                    <x-input name="remise_pieces" type="number" step="0.01" min="0" max="100" value="{{ old('remise_pieces', $client->remise_pieces) }}" />
+                </x-field>
+            </div>
+        </div>
+    @endcan
 </div>

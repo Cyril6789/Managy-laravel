@@ -20,13 +20,14 @@
         @php
             $counts = [
                 'prestations' => $i->prestations->count(),
+                'pieces' => $i->pieces->count(),
                 'commandes' => $i->commandes->count(),
                 'sst' => $i->sousTraitances->count(),
                 'contact' => $i->clientMessages->count(),
             ];
         @endphp
         <div class="flex gap-1 overflow-x-auto border-b border-gray-100 px-3 pt-2 dark:border-gray-800">
-            @foreach (['details' => 'Détails', 'prestations' => 'Prestations', 'commandes' => 'Commandes', 'sst' => 'Sous-traitance', 'contact' => 'Contact', 'tchat' => 'Tchat'] as $key => $label)
+            @foreach (['details' => 'Détails', 'prestations' => 'Prestations', 'pieces' => 'Pièces', 'commandes' => 'Commandes', 'sst' => 'Sous-traitance', 'contact' => 'Contact', 'tchat' => 'Tchat'] as $key => $label)
                 <button type="button" @click="tab = '{{ $key }}'"
                         :class="tab === '{{ $key }}' ? 'border-brand-600 text-brand-600' : 'border-transparent text-gray-500 hover:text-gray-700'"
                         class="whitespace-nowrap border-b-2 px-3 py-2 text-sm font-medium">{{ $label }}@if (! empty($counts[$key]))<span class="ml-1 text-xs text-gray-400">({{ $counts[$key] }})</span>@endif</button>
@@ -86,12 +87,52 @@
                         </x-field>
                         <x-field label="Désignation" class="flex-1 min-w-40"><x-input wire:model="presta.designation" /></x-field>
                         <x-field label="Durée (h)" class="w-24"><x-input wire:model="presta.duree" type="number" step="0.25" /></x-field>
-                        <x-field label="Tarif (€)" class="w-24"><x-input wire:model="presta.tarif" type="number" step="0.01" min="0" /></x-field>
                         <x-button type="submit">Ajouter</x-button>
                     </form>
+                    <p class="text-xs text-gray-400">Le tarif est défini dans les paramètres (catalogue de prestations).</p>
                     @error('presta.designation')<p class="text-xs text-red-600">{{ $message }}</p>@enderror
                     @error('presta.duree')<p class="text-xs text-red-600">{{ $message }}</p>@enderror
-                    @error('presta.tarif')<p class="text-xs text-red-600">{{ $message }}</p>@enderror
+                @endif
+            </div>
+
+            {{-- Pièces remplacées (saisie à la volée) --}}
+            <div x-show="tab === 'pieces'" x-cloak class="space-y-4">
+                <table class="min-w-full text-sm">
+                    <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
+                        @forelse ($i->pieces as $p)
+                            <tr wire:key="piece-{{ $p->id }}">
+                                <td class="py-2">{{ $p->designation }}</td>
+                                <td class="py-2 text-right text-gray-500">{{ rtrim(rtrim(number_format($p->quantite, 2), '0'), '.') }} × {{ number_format($p->prix, 2, ',', ' ') }} €</td>
+                                <td class="py-2 pl-3 text-right">{{ number_format($p->total(), 2, ',', ' ') }} €</td>
+                                <td class="py-2 pl-3 text-right">
+                                    @if ($peutGerer)
+                                        <button wire:click="deletePiece({{ $p->id }})" wire:confirm="Supprimer ?" class="text-gray-400 hover:text-red-600">&times;</button>
+                                    @endif
+                                </td>
+                            </tr>
+                        @empty
+                            <tr><td colspan="4" class="py-4 text-center text-gray-400">Aucune pièce</td></tr>
+                        @endforelse
+                    </tbody>
+                    @if ($i->pieces->count())
+                        <tfoot><tr class="border-t border-gray-200 font-semibold dark:border-gray-700">
+                            <td class="py-2" colspan="2">Total pièces</td>
+                            <td class="py-2 pl-3 text-right">{{ number_format($i->montantPieces(), 2, ',', ' ') }} €</td>
+                            <td></td>
+                        </tr></tfoot>
+                    @endif
+                </table>
+
+                @if ($peutGerer && ! $i->estCloturee())
+                    <form wire:submit="addPiece" class="flex flex-wrap items-end gap-2 border-t border-gray-100 pt-4 dark:border-gray-800">
+                        <x-field label="Pièce remplacée" class="flex-1 min-w-48"><x-input wire:model="piece.designation" placeholder="Ex. Disque SSD 500 Go" /></x-field>
+                        <x-field label="Qté" class="w-20"><x-input wire:model="piece.quantite" type="number" step="0.01" min="0.01" /></x-field>
+                        <x-field label="Prix unit. (€)" class="w-28"><x-input wire:model="piece.prix" type="number" step="0.01" min="0" /></x-field>
+                        <x-button type="submit">Ajouter</x-button>
+                    </form>
+                    @error('piece.designation')<p class="text-xs text-red-600">{{ $message }}</p>@enderror
+                    @error('piece.prix')<p class="text-xs text-red-600">{{ $message }}</p>@enderror
+                    @error('piece.quantite')<p class="text-xs text-red-600">{{ $message }}</p>@enderror
                 @endif
             </div>
 

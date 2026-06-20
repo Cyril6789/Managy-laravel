@@ -58,11 +58,12 @@ final class Deplacement
 
     /**
      * Compute the travel fee for a customer city (and a distance in km when the
-     * mode is per-kilometre).
+     * mode is per-kilometre). A customer flagged "déplacement gratuit", or a city
+     * in the free list, always yields 0.
      */
-    public static function montant(?string $ville, ?float $km = null): float
+    public static function montant(?string $ville, ?float $km = null, bool $gratuitClient = false): float
     {
-        if (self::villeEstGratuite($ville)) {
+        if ($gratuitClient || self::villeEstGratuite($ville)) {
             return 0.0;
         }
 

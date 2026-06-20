@@ -13,6 +13,7 @@ use App\Models\SystemeExploitation;
 use App\Models\User;
 use App\Services\AutomatismeRunner;
 use App\Services\Notifier;
+use App\Support\Billing;
 use App\Support\Permissions;
 use App\Support\Qr;
 use Illuminate\Http\Request;
@@ -250,11 +251,11 @@ class InterventionController extends Controller
             'facturee' => ['nullable', 'boolean'],
             'payee' => ['nullable', 'boolean'],
             'paiement_mode' => ['nullable', Rule::in(['especes', 'cb', 'cheque', 'virement', 'autre'])],
-            'montant_prestations' => ['nullable', 'numeric', 'min:0'],
             'montant_deplacement' => ['nullable', 'numeric', 'min:0'],
             'deplacement_km' => ['nullable', 'numeric', 'min:0'],
             'montant_paye' => ['nullable', 'numeric', 'min:0'],
-            'montant_total' => ['nullable', 'numeric', 'min:0'],
+            'remise_type' => ['nullable', Rule::in(['euro', 'pourcent'])],
+            'remise_valeur' => ['nullable', 'numeric', 'min:0'],
         ]);
 
         // The report itself is saved separately (saveRapport); here we only close.
@@ -262,12 +263,21 @@ class InterventionController extends Controller
 
         $signaturePath = $this->storeSignature($data['signature'] ?? null, $intervention);
 
-        // Billing snapshot (prestations + déplacement) captured at restitution.
-        $montantPresta = isset($data['montant_prestations'])
-            ? (float) $data['montant_prestations']
-            : $intervention->montantPrestations();
-        $montantDepl = $intervention->estDomicile() ? (float) ($data['montant_deplacement'] ?? 0) : 0.0;
-        $montantTotal = $data['montant_total'] ?? ($montantPresta + $montantDepl);
+        // The technician discount only applies when the user is allowed to grant one.
+        $peutRistourne = $request->user()->can(Permissions::INTERVENTIONS_RISTOURNE);
+        $remiseType = $peutRistourne ? ($data['remise_type'] ?? null) : null;
+        $remiseValeur = $peutRistourne ? (float) ($data['remise_valeur'] ?? 0) : 0.0;
+
+        // Travel: defaults to the configured rule, but the technician may override
+        // the amount on-site (e.g. a goodwill waiver). Atelier jobs have no travel.
+        $deplacement = $intervention->estDomicile()
+            ? (isset($data['montant_deplacement']) ? (float) $data['montant_deplacement'] : null)
+            : 0.0;
+
+        // Prices come from the catalogue + entered parts; never from a free amount.
+        $intervention->loadMissing(['prestations', 'pieces', 'client']);
+        $intervention->deplacement_km = $data['deplacement_km'] ?? null; // used by km-mode fallback
+        $breakdown = Billing::compute($intervention, $deplacement, $remiseType, $remiseValeur);
 
         $payee = $request->boolean('payee');
 
@@ -280,13 +290,17 @@ class InterventionController extends Controller
             'signataire_nom' => $data['signataire_nom'] ?? null,
             'signature_path' => $signaturePath ?? $intervention->signature_path,
             'signed_at' => $signaturePath ? now() : $intervention->signed_at,
-            // Billing
-            'montant_prestations' => $montantPresta,
-            'montant_deplacement' => $montantDepl,
+            // Billing breakdown (authoritative, recomputed server-side)
+            'montant_prestations' => $breakdown['prestations_net'],
+            'montant_pieces' => $breakdown['pieces_net'],
+            'montant_deplacement' => $breakdown['deplacement'],
             'deplacement_km' => $data['deplacement_km'] ?? null,
-            'montant_total' => $montantTotal,
+            'remise_type' => $breakdown['ristourne_type'],
+            'remise_valeur' => $breakdown['ristourne_type'] ? $breakdown['ristourne_valeur'] : null,
+            'remise_montant' => $breakdown['ristourne_montant'] ?: null,
+            'montant_total' => $breakdown['total'],
             'payee' => $payee,
-            'montant_paye' => $payee ? ($data['montant_paye'] ?? $montantTotal) : null,
+            'montant_paye' => $payee ? ($data['montant_paye'] ?? $breakdown['total']) : null,
             'paiement_mode' => $payee ? ($data['paiement_mode'] ?? null) : null,
             // Workshop interventions can be flagged "facturée" straight from the modal.
             'facturee' => $request->boolean('facturee'),
@@ -332,7 +346,7 @@ class InterventionController extends Controller
             return;
         }
 
-        $intervention->loadMissing(['client', 'materiel', 'prestations', 'statut']);
+        $intervention->loadMissing(['client', 'materiel', 'prestations', 'pieces', 'statut']);
         $html = view('interventions.print.rapport', [
             'intervention' => $intervention,
             'qr' => Qr::svg(route('public.intervention', $intervention->public_token), 120),
@@ -433,7 +447,7 @@ class InterventionController extends Controller
     {
         $this->authorize(Permissions::INTERVENTIONS_VIEW);
 
-        $intervention->load(['client', 'materiel', 'prestations', 'statut']);
+        $intervention->load(['client', 'materiel', 'prestations', 'pieces', 'statut']);
 
         return view("interventions.print.{$type}", [
             'intervention' => $intervention,

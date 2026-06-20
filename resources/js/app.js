@@ -120,23 +120,29 @@ document.addEventListener('alpine:init', () => {
     }));
 
     /**
-     * Restitution & closing: a signature pad plus a billing modal asking whether
-     * the job was invoiced (workshop) or paid on the spot (on-site), computing the
-     * services total + travel fee.
+     * Restitution & closing: a signature pad plus a billing modal. Prices come
+     * from the server (catalogue services net of the customer's discount + parts);
+     * the modal lets the technician apply an optional ristourne, set the travel fee
+     * (on-site) and record whether the job was invoiced / paid.
      */
     window.Alpine.data('restitution', (cfg = {}) => ({
-        // Config (from the server)
+        // Config (from the server) — already net of the customer's % discounts.
         lieu: cfg.lieu || 'atelier',
-        montantPresta: Number(cfg.montantPresta || 0),
+        prestaNet: Number(cfg.prestaNet || 0),
+        piecesNet: Number(cfg.piecesNet || 0),
         deplMode: cfg.deplMode || 'aucun',
         deplGratuit: !!cfg.deplGratuit,
         deplForfait: Number(cfg.deplForfait || 0),
         deplPrixKm: Number(cfg.deplPrixKm || 0),
+        deplDefault: Number(cfg.deplDefault || 0),
+        canRistourne: !!cfg.canRistourne,
 
         // Modal + billing state
         open: false,
         km: 0,
         deplacement: 0,
+        remiseType: 'euro',
+        remiseValeur: 0,
         payee: false,
         montantPaye: 0,
         paiementMode: 'especes',
@@ -160,10 +166,13 @@ document.addEventListener('alpine:init', () => {
             this.ctx.lineWidth = 2;
             this.ctx.lineCap = 'round';
             this.ctx.strokeStyle = '#111827';
-            this.deplacement = this.computeDeplacement();
+            this.deplacement = this.deplDefault;
         },
         get isDomicile() {
             return this.lieu === 'domicile';
+        },
+        fmt(n) {
+            return (Number(n) || 0).toFixed(2).replace('.', ',') + ' €';
         },
         computeDeplacement() {
             if (this.deplGratuit) return 0;
@@ -174,9 +183,18 @@ document.addEventListener('alpine:init', () => {
         onKm() {
             this.deplacement = this.computeDeplacement();
         },
+        get sousTotal() {
+            return Math.round((this.prestaNet + this.piecesNet) * 100) / 100;
+        },
+        get remiseMontant() {
+            if (!this.canRistourne || !(Number(this.remiseValeur) > 0)) return 0;
+            const v = Number(this.remiseValeur) || 0;
+            const m = this.remiseType === 'pourcent' ? (this.sousTotal * v) / 100 : Math.min(v, this.sousTotal);
+            return Math.round(m * 100) / 100;
+        },
         get total() {
             const depl = this.isDomicile ? Number(this.deplacement) || 0 : 0;
-            return Math.round((this.montantPresta + depl) * 100) / 100;
+            return Math.round((this.sousTotal - this.remiseMontant + depl) * 100) / 100;
         },
         openModal() {
             this.end(); // capture any in-progress stroke
