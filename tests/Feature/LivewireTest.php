@@ -9,6 +9,8 @@ use App\Livewire\ContactPicker;
 use App\Livewire\Facturation;
 use App\Livewire\InterventionPanel;
 use App\Livewire\InterventionReport;
+use App\Livewire\Tasks;
+use App\Models\Task;
 use App\Models\Client;
 use App\Models\Intervention;
 use App\Models\Prestation;
@@ -257,5 +259,44 @@ class LivewireTest extends TestCase
             'author' => 'client',
             'message' => 'Bonjour, est-ce prêt ?',
         ]);
+    }
+
+    public function test_tasks_component_creates_toggles_and_deletes(): void
+    {
+        $admin = User::where('pseudo', 'admin')->firstOrFail();
+
+        $component = Livewire::test(Tasks::class)
+            ->set('form.titre', 'Rappeler le client')
+            ->set('form.heures_estimees', '1,5')   // virgule décimale acceptée
+            ->call('create')
+            ->assertHasNoErrors()
+            ->assertSet('showModal', false);
+
+        $this->assertDatabaseHas('tasks', [
+            'titre' => 'Rappeler le client',
+            'statut' => 'a_faire',
+            'heures_estimees' => 1.5,
+            'created_by' => $admin->id,
+        ]);
+
+        $task = Task::where('titre', 'Rappeler le client')->firstOrFail();
+
+        $component->call('toggle', $task->id);
+        $this->assertSame('terminee', $task->fresh()->statut);
+        $this->assertNotNull($task->fresh()->completed_at);
+
+        $component->call('toggle', $task->id);
+        $this->assertSame('a_faire', $task->fresh()->statut);
+
+        $component->call('delete', $task->id);
+        $this->assertDatabaseMissing('tasks', ['id' => $task->id]);
+    }
+
+    public function test_tasks_component_requires_a_title(): void
+    {
+        Livewire::test(Tasks::class)
+            ->set('form.titre', '')
+            ->call('create')
+            ->assertHasErrors(['form.titre' => 'required']);
     }
 }
