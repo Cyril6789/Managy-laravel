@@ -72,6 +72,7 @@ Route::middleware('auth')->group(function () {
     Route::get('interventions/contexte-client/{client}', [InterventionController::class, 'clientContext'])->name('interventions.client_context');
     Route::resource('interventions', InterventionController::class);
     Route::get('interventions/{intervention}/impression/{type}', [InterventionController::class, 'print'])->name('interventions.print')->where('type', 'depot|rapport');
+    Route::get('interventions/{intervention}/sous-traitance/{sousTraitance}/feuille', [InterventionController::class, 'sousTraitanceSheet'])->name('interventions.sst_sheet');
     Route::patch('interventions/{intervention}/rapport', [InterventionController::class, 'saveRapport'])->name('interventions.rapport');
     Route::post('interventions/{intervention}/affectation', [InterventionController::class, 'assign'])->name('interventions.assign');
     Route::post('interventions/{intervention}/statut', [InterventionController::class, 'updateStatut'])->name('interventions.statut');

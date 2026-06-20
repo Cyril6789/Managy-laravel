@@ -8,6 +8,7 @@ use App\Models\Intervention;
 use App\Models\InterventionLog;
 use App\Models\Materiel;
 use App\Models\Setting;
+use App\Models\SousTraitance;
 use App\Models\Statut;
 use App\Models\SystemeExploitation;
 use App\Models\User;
@@ -488,6 +489,24 @@ class InterventionController extends Controller
             'qr' => Qr::svg(route('public.intervention', $intervention->public_token), 150),
             'soldeMaintenance' => $intervention->client?->maintenanceMovements()->exists()
                 ? $intervention->client->soldeMaintenance() : null,
+        ]);
+    }
+
+    /**
+     * Printable subcontracting slip: intervention & subcontracting numbers, OUR
+     * company name/address (from the print header), the subcontractor name and
+     * the access password — no customer data.
+     */
+    public function sousTraitanceSheet(Intervention $intervention, SousTraitance $sousTraitance)
+    {
+        $this->authorize(Permissions::INTERVENTIONS_VIEW);
+        abort_unless($sousTraitance->intervention_id === $intervention->id, 404);
+
+        $intervention->loadMissing('materiel');
+
+        return view('interventions.print.sous-traitance', [
+            'intervention' => $intervention,
+            'sousTraitance' => $sousTraitance,
         ]);
     }
 
