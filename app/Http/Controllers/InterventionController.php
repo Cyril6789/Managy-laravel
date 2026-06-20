@@ -13,6 +13,7 @@ use App\Models\SystemeExploitation;
 use App\Models\User;
 use App\Services\AutomatismeRunner;
 use App\Services\Notifier;
+use App\Support\Billing;
 use App\Support\Permissions;
 use App\Support\Qr;
 use Illuminate\Http\Request;
@@ -212,6 +213,34 @@ class InterventionController extends Controller
         return back();
     }
 
+    /**
+     * Workshop step: the technician marks the repair done ("intervention
+     * finalisée"). This unlocks the "Restituer & clôturer" action for when the
+     * customer comes to pick the device up.
+     */
+    public function finaliser(Intervention $intervention)
+    {
+        $this->authorize(Permissions::INTERVENTIONS_MANAGE);
+
+        if (! $intervention->estCloturee()) {
+            $intervention->update(['finalisee_at' => $intervention->finalisee_at ?? now()]);
+            $this->log($intervention, 'a marqué l\'intervention comme finalisée');
+            Notifier::interventionChanged($intervention, 'Intervention finalisée');
+        }
+
+        return back()->with('success', 'Intervention finalisée. Vous pouvez la restituer au client.');
+    }
+
+    public function annulerFinalisation(Intervention $intervention)
+    {
+        $this->authorize(Permissions::INTERVENTIONS_MANAGE);
+
+        $intervention->update(['finalisee_at' => null]);
+        $this->log($intervention, 'a annulé la finalisation');
+
+        return back();
+    }
+
     public function restituer(Request $request, Intervention $intervention)
     {
         $this->authorize(Permissions::INTERVENTIONS_MANAGE);
@@ -219,6 +248,14 @@ class InterventionController extends Controller
         $data = $request->validate([
             'signataire_nom' => ['nullable', 'string', 'max:255'],
             'signature' => ['nullable', 'string'], // PNG data URL
+            'facturee' => ['nullable', 'boolean'],
+            'payee' => ['nullable', 'boolean'],
+            'paiement_mode' => ['nullable', Rule::in(['especes', 'cb', 'cheque', 'virement', 'autre'])],
+            'montant_deplacement' => ['nullable', 'numeric', 'min:0'],
+            'deplacement_km' => ['nullable', 'numeric', 'min:0'],
+            'montant_paye' => ['nullable', 'numeric', 'min:0'],
+            'remise_type' => ['nullable', Rule::in(['euro', 'pourcent'])],
+            'remise_valeur' => ['nullable', 'numeric', 'min:0'],
         ]);
 
         // The report itself is saved separately (saveRapport); here we only close.
@@ -226,14 +263,47 @@ class InterventionController extends Controller
 
         $signaturePath = $this->storeSignature($data['signature'] ?? null, $intervention);
 
+        // The technician discount only applies when the user is allowed to grant one.
+        $peutRistourne = $request->user()->can(Permissions::INTERVENTIONS_RISTOURNE);
+        $remiseType = $peutRistourne ? ($data['remise_type'] ?? null) : null;
+        $remiseValeur = $peutRistourne ? (float) ($data['remise_valeur'] ?? 0) : 0.0;
+
+        // Travel: defaults to the configured rule, but the technician may override
+        // the amount on-site (e.g. a goodwill waiver). Atelier jobs have no travel.
+        $deplacement = $intervention->estDomicile()
+            ? (isset($data['montant_deplacement']) ? (float) $data['montant_deplacement'] : null)
+            : 0.0;
+
+        // Prices come from the catalogue + entered parts; never from a free amount.
+        $intervention->loadMissing(['prestations', 'pieces', 'client']);
+        $intervention->deplacement_km = $data['deplacement_km'] ?? null; // used by km-mode fallback
+        $breakdown = Billing::compute($intervention, $deplacement, $remiseType, $remiseValeur);
+
+        $payee = $request->boolean('payee');
+
         $intervention->update([
             'closed_at' => now(),
             'restituted_at' => now(),
             'restituted_by' => Auth::id(),
+            'finalisee_at' => $intervention->finalisee_at ?? now(),
             'statut_id' => $statutCloture?->id ?? $intervention->statut_id,
             'signataire_nom' => $data['signataire_nom'] ?? null,
             'signature_path' => $signaturePath ?? $intervention->signature_path,
             'signed_at' => $signaturePath ? now() : $intervention->signed_at,
+            // Billing breakdown (authoritative, recomputed server-side)
+            'montant_prestations' => $breakdown['prestations_net'],
+            'montant_pieces' => $breakdown['pieces_net'],
+            'montant_deplacement' => $breakdown['deplacement'],
+            'deplacement_km' => $data['deplacement_km'] ?? null,
+            'remise_type' => $breakdown['ristourne_type'],
+            'remise_valeur' => $breakdown['ristourne_type'] ? $breakdown['ristourne_valeur'] : null,
+            'remise_montant' => $breakdown['ristourne_montant'] ?: null,
+            'montant_total' => $breakdown['total'],
+            'payee' => $payee,
+            'montant_paye' => $payee ? ($data['montant_paye'] ?? $breakdown['total']) : null,
+            'paiement_mode' => $payee ? ($data['paiement_mode'] ?? null) : null,
+            // Workshop interventions can be flagged "facturée" straight from the modal.
+            'facturee' => $request->boolean('facturee'),
         ]);
 
         $this->log($intervention, 'a restitué et clôturé l\'intervention'.($signaturePath ? ' (signée)' : ''));
@@ -276,7 +346,7 @@ class InterventionController extends Controller
             return;
         }
 
-        $intervention->loadMissing(['client', 'materiel', 'prestations', 'statut']);
+        $intervention->loadMissing(['client', 'materiel', 'prestations', 'pieces', 'statut']);
         $html = view('interventions.print.rapport', [
             'intervention' => $intervention,
             'qr' => Qr::svg(route('public.intervention', $intervention->public_token), 120),
@@ -377,7 +447,7 @@ class InterventionController extends Controller
     {
         $this->authorize(Permissions::INTERVENTIONS_VIEW);
 
-        $intervention->load(['client', 'materiel', 'prestations', 'statut']);
+        $intervention->load(['client', 'materiel', 'prestations', 'pieces', 'statut']);
 
         return view("interventions.print.{$type}", [
             'intervention' => $intervention,

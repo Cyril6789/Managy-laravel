@@ -151,7 +151,7 @@ class ClientController extends Controller
 
     private function validated(Request $request, ?Client $client = null): array
     {
-        return $request->validate([
+        $data = $request->validate([
             'type' => ['required', Rule::in(['professionnel', 'particulier'])],
             'civilite' => ['nullable', 'string', 'max:20'],
             'nom' => ['required', 'string', 'max:255'],
@@ -167,5 +167,17 @@ class ClientController extends Controller
             'parent_id' => ['nullable', 'exists:clients,id'],
             'notes' => ['nullable', 'string'],
         ]);
+
+        // Free-travel flag and per-customer discounts require a dedicated right.
+        if ($request->user()->can(Permissions::CLIENTS_REMISES)) {
+            $data += $request->validate([
+                'deplacement_gratuit' => ['nullable', 'boolean'],
+                'remise_prestations' => ['nullable', 'numeric', 'min:0', 'max:100'],
+                'remise_pieces' => ['nullable', 'numeric', 'min:0', 'max:100'],
+            ]);
+            $data['deplacement_gratuit'] = $request->boolean('deplacement_gratuit');
+        }
+
+        return $data;
     }
 }

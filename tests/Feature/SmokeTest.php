@@ -5,7 +5,10 @@ namespace Tests\Feature;
 use App\Models\Client;
 use App\Models\Intervention;
 use App\Models\Satisfaction;
+use App\Models\Setting;
 use App\Models\User;
+use App\Support\Billing;
+use App\Support\Deplacement;
 use Database\Seeders\DatabaseSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Storage;
@@ -163,6 +166,120 @@ class SmokeTest extends TestCase
         $this->assertSame('Jean Client', $intervention->signataire_nom);
         $this->assertNotNull($intervention->signed_at);
         Storage::disk('public')->assertExists($intervention->signature_path);
+    }
+
+    public function test_finalisation_then_restitution_workflow(): void
+    {
+        $this->actingAs($this->admin());
+        $intervention = Intervention::ouvertes()->first();
+        $intervention->update(['type_lieu' => 'atelier', 'finalisee_at' => null]);
+
+        // Workshop: mark as finalised (unlocks "restituer & clôturer").
+        $this->post(route('interventions.finaliser', $intervention))->assertRedirect();
+        $this->assertNotNull($intervention->fresh()->finalisee_at);
+
+        // Restituting from the modal with the "facturée" box ticked.
+        $this->post(route('interventions.restituer', $intervention), ['facturee' => 1])->assertRedirect();
+        $intervention->refresh();
+        $this->assertTrue($intervention->estCloturee());
+        $this->assertTrue($intervention->facturee);
+    }
+
+    public function test_domicile_restitution_records_travel_and_payment(): void
+    {
+        Setting::put('deplacement_mode', 'forfait');
+        Setting::put('deplacement_forfait', '30');
+
+        $this->actingAs($this->admin());
+        $intervention = Intervention::ouvertes()->first();
+        $intervention->update(['type_lieu' => 'domicile']);
+        $intervention->prestations()->create(['designation' => 'Diagnostic', 'duree' => 1, 'tarif' => 50]);
+
+        $this->post(route('interventions.restituer', $intervention), [
+            'montant_prestations' => 50,
+            'montant_deplacement' => 30,
+            'montant_total' => 80,
+            'payee' => 1,
+            'montant_paye' => 80,
+            'paiement_mode' => 'cb',
+        ])->assertRedirect();
+
+        $intervention->refresh();
+        $this->assertTrue($intervention->estCloturee());
+        $this->assertEqualsWithDelta(30.0, (float) $intervention->montant_deplacement, 0.001);
+        $this->assertEqualsWithDelta(80.0, (float) $intervention->montant_total, 0.001);
+        $this->assertTrue($intervention->payee);
+        $this->assertSame('cb', $intervention->paiement_mode);
+        // Unpaid domicile jobs land in the "à facturer" list (facturee stays false).
+        $this->assertFalse($intervention->facturee);
+    }
+
+    public function test_billing_applies_client_discounts_and_parts(): void
+    {
+        $this->actingAs($this->admin());
+        $intervention = Intervention::ouvertes()->first();
+        $intervention->update(['type_lieu' => 'atelier']);
+        $intervention->client->update(['remise_prestations' => 10, 'remise_pieces' => 5]);
+        $intervention->prestations()->create(['designation' => 'Prestation', 'duree' => 1, 'tarif' => 100]);
+        $intervention->pieces()->create(['designation' => 'SSD', 'prix' => 200, 'quantite' => 1]);
+
+        $b = Billing::compute($intervention->fresh()->load(['prestations', 'pieces', 'client']), 0.0);
+
+        $this->assertEqualsWithDelta(90.0, $b['prestations_net'], 0.01);  // 100 − 10 %
+        $this->assertEqualsWithDelta(190.0, $b['pieces_net'], 0.01);      // 200 − 5 %
+        $this->assertEqualsWithDelta(280.0, $b['total'], 0.01);
+    }
+
+    public function test_ristourne_applied_at_restitution(): void
+    {
+        $this->actingAs($this->admin()); // admin bypasses the ristourne gate
+        $intervention = Intervention::ouvertes()->first();
+        $intervention->update(['type_lieu' => 'atelier', 'finalisee_at' => now()]);
+        $intervention->client->update(['remise_prestations' => 0, 'remise_pieces' => 0]);
+        $intervention->prestations()->create(['designation' => 'Prestation', 'duree' => 1, 'tarif' => 100]);
+
+        $this->post(route('interventions.restituer', $intervention), [
+            'remise_type' => 'pourcent', 'remise_valeur' => 10,
+        ])->assertRedirect();
+
+        $intervention->refresh();
+        $this->assertSame('pourcent', $intervention->remise_type);
+        $this->assertEqualsWithDelta(10.0, (float) $intervention->remise_montant, 0.01);
+        $this->assertEqualsWithDelta(90.0, (float) $intervention->montant_total, 0.01);
+    }
+
+    public function test_client_free_travel_overrides_fee(): void
+    {
+        Setting::put('deplacement_mode', 'forfait');
+        Setting::put('deplacement_forfait', '40');
+
+        $this->assertEqualsWithDelta(40.0, Deplacement::montant('Paris', null, false), 0.001);
+        $this->assertEqualsWithDelta(0.0, Deplacement::montant('Paris', null, true), 0.001);
+    }
+
+    public function test_deplacement_free_city_overrides_forfait(): void
+    {
+        Setting::put('deplacement_mode', 'forfait');
+        Setting::put('deplacement_forfait', '40');
+        Setting::put('deplacement_villes_gratuites', "Lyon\nVilleurbanne");
+
+        $this->assertEqualsWithDelta(40.0, Deplacement::montant('Paris'), 0.001);
+        $this->assertEqualsWithDelta(0.0, Deplacement::montant('lyon'), 0.001);
+        $this->assertTrue(Deplacement::villeEstGratuite('VILLEURBANNE'));
+    }
+
+    public function test_billing_settings_can_be_saved(): void
+    {
+        $this->actingAs($this->admin());
+
+        $this->put(route('settings.billing'), [
+            'deplacement_mode' => 'km',
+            'deplacement_prix_km' => '0.5',
+            'deplacement_villes_gratuites' => 'Lyon',
+        ])->assertRedirect();
+
+        $this->assertSame('km', Setting::get('deplacement_mode'));
+        $this->assertEqualsWithDelta(0.5, Deplacement::prixKm(), 0.001);
     }
 
     public function test_public_intervention_link_is_accessible(): void

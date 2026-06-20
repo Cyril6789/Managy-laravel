@@ -6,7 +6,7 @@
 
     <div x-data="{ tab: 'entreprise' }">
         <div class="mb-6 flex flex-wrap gap-1 border-b border-gray-200 dark:border-gray-800">
-            @foreach (['entreprise' => 'Entreprise', 'sms' => 'SMS', 'smtp' => 'E-mail (SMTP)', 'listes' => 'Listes métier', 'statuts' => 'Statuts', 'modeles' => 'Modèles'] as $key => $label)
+            @foreach (['entreprise' => 'Entreprise', 'sms' => 'SMS', 'smtp' => 'E-mail (SMTP)', 'listes' => 'Listes métier', 'statuts' => 'Statuts', 'facturation' => 'Facturation', 'modeles' => 'Modèles'] as $key => $label)
                 <button @click="tab='{{ $key }}'" :class="tab==='{{ $key }}' ? 'border-brand-600 text-brand-600' : 'border-transparent text-gray-500'" class="border-b-2 px-4 py-2 text-sm font-medium">{{ $label }}</button>
             @endforeach
         </div>
@@ -104,6 +104,7 @@
                             @csrf @method('PUT')
                             <x-input name="designation" value="{{ $p->designation }}" class="w-full sm:flex-1 sm:w-auto" />
                             <x-input name="duree_defaut" type="number" step="0.25" value="{{ rtrim(rtrim(number_format($p->duree_defaut,2),'0'),'.') }}" class="w-20" title="Durée par défaut (h)" />
+                            <x-input name="tarif" type="number" step="0.01" min="0" value="{{ $p->tarif !== null ? rtrim(rtrim(number_format($p->tarif,2),'0'),'.') : '' }}" class="w-24" placeholder="€" title="Tarif (€)" />
                             <x-button variant="secondary" type="submit">OK</x-button>
                             <button form="del-presta-{{ $p->id }}" class="px-1 text-gray-300 hover:text-red-600">&times;</button>
                         </form>
@@ -114,6 +115,7 @@
                     @csrf
                     <x-input name="designation" placeholder="Désignation" class="w-full sm:flex-1 sm:w-auto" />
                     <x-input name="duree_defaut" type="number" step="0.25" placeholder="h" class="w-20" />
+                    <x-input name="tarif" type="number" step="0.01" min="0" placeholder="€" class="w-24" />
                     <x-button type="submit"><x-icon name="plus" class="h-4 w-4" /></x-button>
                 </form>
             </x-card>
@@ -163,6 +165,36 @@
                     <input type="color" name="couleur" value="#64748b" class="h-9 w-10 rounded border-gray-300">
                     <x-input name="nom" placeholder="Nouveau statut" class="flex-1" />
                     <x-button type="submit"><x-icon name="plus" class="h-4 w-4" /></x-button>
+                </form>
+            </x-card>
+        </div>
+
+        {{-- Facturation / déplacement --}}
+        <div x-show="tab==='facturation'" x-cloak class="space-y-6">
+            <x-card title="Frais de déplacement (interventions à domicile)">
+                <form action="{{ route('settings.billing') }}" method="POST" class="space-y-5"
+                      x-data="{ mode: '{{ $settings['deplacement_mode'] ?? 'aucun' }}' }">
+                    @csrf @method('PUT')
+                    <div class="grid grid-cols-1 gap-5 md:grid-cols-3">
+                        <x-field label="Mode de calcul" name="deplacement_mode" hint="Appliqué à la signature d'une intervention à domicile.">
+                            <x-select name="deplacement_mode" x-model="mode">
+                                @foreach (['aucun' => 'Aucun (gratuit)', 'forfait' => 'Forfait fixe', 'km' => 'Au kilomètre'] as $v => $l)
+                                    <option value="{{ $v }}" @selected(($settings['deplacement_mode'] ?? 'aucun')===$v)>{{ $l }}</option>
+                                @endforeach
+                            </x-select>
+                        </x-field>
+                        <x-field label="Forfait (€)" name="deplacement_forfait" x-show="mode==='forfait'" x-cloak>
+                            <x-input name="deplacement_forfait" type="number" step="0.01" min="0" value="{{ $settings['deplacement_forfait'] ?? '' }}" />
+                        </x-field>
+                        <x-field label="Prix au km (€)" name="deplacement_prix_km" x-show="mode==='km'" x-cloak>
+                            <x-input name="deplacement_prix_km" type="number" step="0.01" min="0" value="{{ $settings['deplacement_prix_km'] ?? '' }}" />
+                        </x-field>
+                    </div>
+                    <x-field label="Villes gratuites" name="deplacement_villes_gratuites"
+                             hint="Une ville par ligne (ou séparées par des virgules). Le déplacement est offert quand la ville du client correspond.">
+                        <x-textarea name="deplacement_villes_gratuites" rows="3" placeholder="Ex.&#10;Lyon&#10;Villeurbanne">{{ $settings['deplacement_villes_gratuites'] ?? '' }}</x-textarea>
+                    </x-field>
+                    <div class="flex justify-end"><x-button type="submit">Enregistrer</x-button></div>
                 </form>
             </x-card>
         </div>

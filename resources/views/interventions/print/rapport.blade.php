@@ -47,7 +47,32 @@
             @else
                 <p class="muted">Aucune prestation enregistrée.</p>
             @endif
-            @if ($i->tarif_estimatif)<p style="margin-top:8px"><strong>Tarif estimatif :</strong> {{ number_format($i->tarif_estimatif, 2, ',', ' ') }} €</p>@endif
+            @if ($i->pieces->isNotEmpty())
+                <h3 style="margin-top:10px">Pièces remplacées</h3>
+                <table>
+                    <thead><tr><th>Désignation</th><th class="right">Qté</th><th class="right">P.U.</th><th class="right">Total</th></tr></thead>
+                    <tbody>
+                        @foreach ($i->pieces as $p)
+                            <tr><td>{{ $p->designation }}</td><td class="right">{{ rtrim(rtrim(number_format($p->quantite, 2), '0'), '.') }}</td><td class="right">{{ number_format($p->prix, 2, ',', ' ') }} €</td><td class="right">{{ number_format($p->total(), 2, ',', ' ') }} €</td></tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            @endif
+
+            @if ($i->montant_total !== null)
+                <table style="margin-top:10px">
+                    <tbody>
+                        @if ($i->montant_prestations !== null)<tr><td>Prestations</td><td class="right">{{ number_format($i->montant_prestations, 2, ',', ' ') }} €</td></tr>@endif
+                        @if ($i->montant_pieces)<tr><td>Pièces</td><td class="right">{{ number_format($i->montant_pieces, 2, ',', ' ') }} €</td></tr>@endif
+                        @if ($i->remise_montant)<tr><td>Ristourne</td><td class="right">− {{ number_format($i->remise_montant, 2, ',', ' ') }} €</td></tr>@endif
+                        @if ($i->montant_deplacement)<tr><td>Déplacement</td><td class="right">{{ number_format($i->montant_deplacement, 2, ',', ' ') }} €</td></tr>@endif
+                        <tr><th>Total</th><th class="right">{{ number_format($i->montant_total, 2, ',', ' ') }} €</th></tr>
+                        @if ($i->payee)<tr><td>Réglé{{ $i->paiement_mode ? ' ('.$i->paiement_mode.')' : '' }}</td><td class="right">{{ number_format($i->montant_paye ?? $i->montant_total, 2, ',', ' ') }} €</td></tr>@endif
+                    </tbody>
+                </table>
+            @elseif ($i->tarif_estimatif)
+                <p style="margin-top:8px"><strong>Tarif estimatif :</strong> {{ number_format($i->tarif_estimatif, 2, ',', ' ') }} €</p>
+            @endif
         </div>
 
         @if (($soldeMaintenance ?? null) !== null)

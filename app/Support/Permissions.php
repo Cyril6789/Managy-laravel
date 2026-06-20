@@ -13,6 +13,8 @@ final class Permissions
 
     public const CLIENTS_MANAGE = 'clients.manage';
 
+    public const CLIENTS_REMISES = 'clients.remises';     // free travel + per-client discounts
+
     // Interventions
     public const INTERVENTIONS_VIEW = 'interventions.view';
 
@@ -27,6 +29,8 @@ final class Permissions
     public const INTERVENTIONS_FACTURATION = 'interventions.facturation';
 
     public const INTERVENTIONS_ASSIGN = 'interventions.assign';
+
+    public const INTERVENTIONS_RISTOURNE = 'interventions.ristourne';     // grant a discount at restitution
 
     // Calendar / tasks
     public const CALENDAR_VIEW = 'calendar.view';
@@ -70,6 +74,7 @@ final class Permissions
             'Clients' => [
                 self::CLIENTS_VIEW => 'Voir les clients',
                 self::CLIENTS_MANAGE => 'Créer / modifier les clients',
+                self::CLIENTS_REMISES => 'Gérer la gratuité de déplacement et les remises client',
             ],
             'Interventions' => [
                 self::INTERVENTIONS_VIEW => 'Voir les interventions',
@@ -79,6 +84,7 @@ final class Permissions
                 self::INTERVENTIONS_DECLOTURE => 'Déclôturer une intervention',
                 self::INTERVENTIONS_FACTURATION => 'Gérer la facturation',
                 self::INTERVENTIONS_ASSIGN => 'Affecter des techniciens aux interventions',
+                self::INTERVENTIONS_RISTOURNE => 'Accorder une ristourne sur une intervention',
             ],
             'Agenda & tâches' => [
                 self::CALENDAR_VIEW => 'Voir le calendrier',
