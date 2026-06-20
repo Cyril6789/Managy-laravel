@@ -41,11 +41,11 @@ class SmokeTest extends TestCase
 
         foreach ([
             '/', '/clients', '/clients/create', '/interventions', '/interventions/create',
-            '/calendrier', '/tasks', '/maintenance', '/statistiques', '/journaux',
+            '/calendrier', '/disponibilites', '/tasks', '/maintenance', '/statistiques', '/journaux',
             '/satisfaction', '/staff', '/staff/create', '/automatismes', '/automatismes/create',
             '/facturation', '/parametres', '/profil', '/recherche?q=dup',
         ] as $url) {
-            $this->get($url)->assertOk();
+            $this->get($url)->assertOk()->assertDontSee('Vite manifest', false);
         }
     }
 
