@@ -73,6 +73,7 @@ class InterventionPanel extends Component
     public function addPrestation(): void
     {
         Gate::authorize(Permissions::INTERVENTIONS_MANAGE);
+        $this->presta['duree'] = $this->normaliserDecimale($this->presta['duree']);
         $this->validate([
             'presta.designation' => ['nullable', 'string', 'max:255'],
             'presta.prestation_id' => ['nullable', 'exists:prestations,id'],
@@ -111,6 +112,8 @@ class InterventionPanel extends Component
     public function addPiece(): void
     {
         Gate::authorize(Permissions::INTERVENTIONS_MANAGE);
+        $this->piece['prix'] = $this->normaliserDecimale($this->piece['prix']);
+        $this->piece['quantite'] = $this->normaliserDecimale($this->piece['quantite']);
         $this->validate([
             'piece.designation' => ['required', 'string', 'max:255'],
             'piece.prix' => ['required', 'numeric', 'min:0'],
@@ -182,6 +185,19 @@ class InterventionPanel extends Component
         Gate::authorize(Permissions::INTERVENTIONS_MANAGE);
         SousTraitance::where('intervention_id', $this->intervention->id)->findOrFail($id)->delete();
         $this->syncStatut();
+    }
+
+    /**
+     * Accept French-style decimals (comma separator, optional thousands spaces)
+     * so a technician can type "1,5" for a duration or "12,50" for a price.
+     */
+    private function normaliserDecimale($valeur)
+    {
+        if (! is_string($valeur)) {
+            return $valeur;
+        }
+
+        return str_replace([' ', ','], ['', '.'], trim($valeur));
     }
 
     private function syncStatut(): void

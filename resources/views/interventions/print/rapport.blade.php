@@ -27,14 +27,19 @@
             <h3>Prestations réalisées</h3>
             @if ($i->prestations->isNotEmpty())
                 <table>
-                    <thead><tr><th>Désignation</th><th class="right">Durée (h)</th></tr></thead>
+                    <thead><tr><th>Désignation</th><th class="right">Durée (h)</th><th class="right">Tarif horaire</th><th class="right">Montant</th></tr></thead>
                     <tbody>
                         @foreach ($i->prestations as $p)
-                            <tr><td>{{ $p->designation }}</td><td class="right">{{ rtrim(rtrim(number_format($p->duree, 2), '0'), '.') }}</td></tr>
+                            <tr>
+                                <td>{{ $p->designation }}</td>
+                                <td class="right">{{ rtrim(rtrim(number_format($p->duree, 2), '0'), '.') }}</td>
+                                <td class="right">{{ $p->tarif !== null ? number_format($p->tarif, 2, ',', ' ').' €' : '—' }}</td>
+                                <td class="right">{{ $p->tarif !== null ? number_format($p->montant(), 2, ',', ' ').' €' : '—' }}</td>
+                            </tr>
                         @endforeach
                     </tbody>
                     <tfoot>
-                        <tr><th>Total</th><th class="right">{{ rtrim(rtrim(number_format($i->tempsTotal(), 2), '0'), '.') }} h</th></tr>
+                        <tr><th>Total</th><th class="right">{{ rtrim(rtrim(number_format($i->tempsTotal(), 2), '0'), '.') }} h</th><th></th><th class="right">{{ number_format($i->montantPrestations(), 2, ',', ' ') }} €</th></tr>
                     </tfoot>
                 </table>
             @else

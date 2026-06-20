@@ -155,7 +155,7 @@
                                         <div>
                                             <span class="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Ristourne (facultatif)</span>
                                             <div class="flex gap-2">
-                                                <input type="number" step="0.01" min="0" x-model.number="remiseValeur" placeholder="0"
+                                                <input type="text" inputmode="decimal" x-model="remiseValeur" placeholder="0"
                                                        class="block w-full rounded-lg border-gray-300 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:border-gray-700 dark:bg-gray-800">
                                                 <select x-model="remiseType" class="rounded-lg border-gray-300 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:border-gray-700 dark:bg-gray-800">
                                                     <option value="euro">€</option>
@@ -173,11 +173,11 @@
                                         <div x-show="!waiveDepl" x-cloak class="space-y-3">
                                             <template x-if="deplMode === 'km' && !deplGratuit">
                                                 <x-field label="Distance (km)">
-                                                    <x-input type="number" step="0.1" min="0" x-model.number="km" @input="onKm()" />
+                                                    <x-input type="text" inputmode="decimal" x-model="km" @input="onKm()" />
                                                 </x-field>
                                             </template>
                                             <x-field label="Déplacement (€)">
-                                                <x-input type="number" step="0.01" min="0" x-model.number="deplacement" />
+                                                <x-input type="text" inputmode="decimal" x-model="deplacement" />
                                                 <p class="mt-1 text-xs text-gray-400" x-show="deplGratuit" x-cloak>Déplacement gratuit pour ce client / cette ville.</p>
                                             </x-field>
                                         </div>
@@ -237,7 +237,8 @@
                                         <input type="hidden" name="payee" :value="payee ? 1 : 0">
                                         <div x-show="payee" x-cloak class="grid grid-cols-2 gap-3">
                                             <x-field label="Montant payé (€)">
-                                                <x-input type="number" step="0.01" min="0" name="montant_paye" x-model.number="montantPaye" />
+                                                <x-input type="text" inputmode="decimal" x-model="montantPaye" />
+                                                <input type="hidden" name="montant_paye" :value="payee ? montantPayeNet : ''">
                                             </x-field>
                                             <x-field label="Moyen de paiement">
                                                 <x-select name="paiement_mode" x-model="paiementMode">

@@ -119,6 +119,33 @@ class LivewireTest extends TestCase
         $this->assertSame($statut->id, $intervention->fresh()->statut_id);
     }
 
+    public function test_panel_accepts_comma_decimals_for_duration_and_price(): void
+    {
+        $intervention = Intervention::ouvertes()->first();
+
+        Livewire::test(InterventionPanel::class, ['intervention' => $intervention])
+            ->set('presta.designation', 'Diagnostic')
+            ->set('presta.duree', '1,5')          // virgule décimale
+            ->call('addPrestation')
+            ->set('piece.designation', 'Câble HDMI')
+            ->set('piece.prix', '12,50')          // virgule décimale
+            ->set('piece.quantite', '2')
+            ->call('addPiece')
+            ->assertHasNoErrors();
+
+        $this->assertDatabaseHas('intervention_prestations', [
+            'intervention_id' => $intervention->id,
+            'designation' => 'Diagnostic',
+            'duree' => 1.5,
+        ]);
+        $this->assertDatabaseHas('intervention_pieces', [
+            'intervention_id' => $intervention->id,
+            'designation' => 'Câble HDMI',
+            'prix' => 12.5,
+            'quantite' => 2,
+        ]);
+    }
+
     public function test_prestation_price_comes_from_catalogue(): void
     {
         $intervention = Intervention::ouvertes()->first();

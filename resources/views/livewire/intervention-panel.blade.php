@@ -70,8 +70,8 @@
                         @forelse ($i->prestations as $p)
                             <tr wire:key="presta-{{ $p->id }}">
                                 <td class="py-2">{{ $p->designation }}</td>
-                                <td class="py-2 text-right text-gray-500">{{ rtrim(rtrim(number_format($p->duree, 2), '0'), '.') }} h</td>
-                                <td class="py-2 pl-3 text-right text-gray-500">{{ $p->tarif !== null ? number_format($p->tarif, 2, ',', ' ').' €' : '—' }}</td>
+                                <td class="py-2 text-right text-gray-500">{{ rtrim(rtrim(number_format($p->duree, 2), '0'), '.') }} h{{ $p->tarif !== null ? ' × '.number_format($p->tarif, 2, ',', ' ').' €/h' : '' }}</td>
+                                <td class="py-2 pl-3 text-right text-gray-500">{{ $p->tarif !== null ? number_format($p->montant(), 2, ',', ' ').' €' : '—' }}</td>
                                 <td class="py-2 pl-3 text-right">
                                     @if ($peutGerer)
                                         <button wire:click="deletePrestation({{ $p->id }})" wire:confirm="Supprimer ?" class="text-gray-400 hover:text-red-600">&times;</button>
@@ -101,10 +101,10 @@
                             </x-select>
                         </x-field>
                         <x-field label="Désignation" class="flex-1 min-w-40"><x-input wire:model="presta.designation" /></x-field>
-                        <x-field label="Durée (h)" class="w-24"><x-input wire:model="presta.duree" type="number" step="0.25" /></x-field>
+                        <x-field label="Durée (h)" class="w-24"><x-input wire:model="presta.duree" type="text" inputmode="decimal" /></x-field>
                         <x-button type="submit">Ajouter</x-button>
                     </form>
-                    <p class="text-xs text-gray-400">Le tarif est défini dans les paramètres (catalogue de prestations).</p>
+                    <p class="text-xs text-gray-400">Le tarif horaire est défini dans les paramètres (catalogue de prestations) ; le montant facturé est ce tarif × la durée saisie.</p>
                     @error('presta.designation')<p class="text-xs text-red-600">{{ $message }}</p>@enderror
                     @error('presta.duree')<p class="text-xs text-red-600">{{ $message }}</p>@enderror
                 @endif
@@ -141,8 +141,8 @@
                 @if ($peutGerer && ! $i->estCloturee())
                     <form wire:submit="addPiece" class="flex flex-wrap items-end gap-2 border-t border-gray-100 pt-4 dark:border-gray-800">
                         <x-field label="Pièce remplacée" class="flex-1 min-w-48"><x-input wire:model="piece.designation" placeholder="Ex. Disque SSD 500 Go" /></x-field>
-                        <x-field label="Qté" class="w-20"><x-input wire:model="piece.quantite" type="number" step="0.01" min="0.01" /></x-field>
-                        <x-field label="Prix unit. (€)" class="w-28"><x-input wire:model="piece.prix" type="number" step="0.01" min="0" /></x-field>
+                        <x-field label="Qté" class="w-20"><x-input wire:model="piece.quantite" type="text" inputmode="decimal" /></x-field>
+                        <x-field label="Prix unit. (€)" class="w-28"><x-input wire:model="piece.prix" type="text" inputmode="decimal" /></x-field>
                         <x-button type="submit">Ajouter</x-button>
                     </form>
                     @error('piece.designation')<p class="text-xs text-red-600">{{ $message }}</p>@enderror
