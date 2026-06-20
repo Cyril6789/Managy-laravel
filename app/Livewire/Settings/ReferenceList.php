@@ -50,7 +50,7 @@ class ReferenceList extends Component
         'prestations' => [Prestation::class, 'designation', [
             ['key' => 'designation', 'kind' => 'text', 'placeholder' => 'Désignation', 'class' => 'flex-1 min-w-40'],
             ['key' => 'duree_defaut', 'kind' => 'number', 'placeholder' => 'h', 'class' => 'w-20', 'step' => '0.25'],
-            ['key' => 'tarif', 'kind' => 'number', 'placeholder' => '€', 'class' => 'w-24', 'step' => '0.01'],
+            ['key' => 'tarif', 'kind' => 'number', 'placeholder' => '€/h', 'class' => 'w-24', 'step' => '0.01'],
         ]],
         'statuts' => [Statut::class, 'ordre', [
             ['key' => 'couleur', 'kind' => 'color', 'default' => '#64748b'],

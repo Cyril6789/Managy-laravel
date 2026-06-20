@@ -190,10 +190,10 @@ class Intervention extends Model
         return (float) $this->prestations->sum('duree');
     }
 
-    /** Gross sum of the priced services (per-line tarif from the catalogue). */
+    /** Gross sum of the priced services (hourly catalogue rate × hours per line). */
     public function montantPrestations(): float
     {
-        return (float) $this->prestations->sum('tarif');
+        return (float) $this->prestations->sum(fn (InterventionPrestation $p) => $p->montant());
     }
 
     /** Gross sum of the replaced parts (unit price × quantity). */

@@ -243,10 +243,17 @@ document.addEventListener('alpine:init', () => {
         fmt(n) {
             return (Number(n) || 0).toFixed(2).replace('.', ',') + ' €';
         },
+        // Parse a user-typed decimal, tolerating the French comma separator
+        // (and stray spaces used as thousands separators), e.g. "1 234,50".
+        num(v) {
+            if (typeof v === 'number') return isNaN(v) ? 0 : v;
+            const n = parseFloat(String(v ?? '').replace(/\s/g, '').replace(',', '.'));
+            return isNaN(n) ? 0 : n;
+        },
         computeDeplacement() {
             if (this.deplGratuit) return 0;
             if (this.deplMode === 'forfait') return Math.round(this.deplForfait * 100) / 100;
-            if (this.deplMode === 'km') return Math.round(this.deplPrixKm * (Number(this.km) || 0) * 100) / 100;
+            if (this.deplMode === 'km') return Math.round(this.deplPrixKm * this.num(this.km) * 100) / 100;
             return 0;
         },
         onKm() {
@@ -254,14 +261,18 @@ document.addEventListener('alpine:init', () => {
         },
         get effectiveDepl() {
             if (!this.isDomicile || this.waiveDepl) return 0;
-            return Number(this.deplacement) || 0;
+            return this.num(this.deplacement);
+        },
+        // Amount actually recorded as paid (comma-aware, fed to the hidden field).
+        get montantPayeNet() {
+            return this.num(this.montantPaye);
         },
         get sousTotal() {
             return Math.round((this.prestaNet + this.piecesNet) * 100) / 100;
         },
         get remiseMontant() {
-            if (!this.canRistourne || !(Number(this.remiseValeur) > 0)) return 0;
-            const v = Number(this.remiseValeur) || 0;
+            const v = this.num(this.remiseValeur);
+            if (!this.canRistourne || !(v > 0)) return 0;
             const m = this.remiseType === 'pourcent' ? (this.sousTotal * v) / 100 : Math.min(v, this.sousTotal);
             return Math.round(m * 100) / 100;
         },
@@ -270,7 +281,7 @@ document.addEventListener('alpine:init', () => {
         },
         beforeSubmit() {
             this.end(); // capture any in-progress stroke
-            if (this.payee && !this.montantPaye) this.montantPaye = this.total;
+            if (this.payee && !this.montantPayeNet) this.montantPaye = this.total;
         },
         // --- signature pad ---
         pos(e) {

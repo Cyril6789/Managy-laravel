@@ -26,4 +26,10 @@ class InterventionPrestation extends Model
     {
         return $this->belongsTo(Prestation::class);
     }
+
+    /** Line total = hourly rate × hours. Free-text lines (no tarif) stay unpriced. */
+    public function montant(): float
+    {
+        return (float) $this->tarif * (float) $this->duree;
+    }
 }

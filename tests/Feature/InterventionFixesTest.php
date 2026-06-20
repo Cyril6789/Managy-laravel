@@ -91,6 +91,23 @@ class InterventionFixesTest extends TestCase
         $this->assertEqualsWithDelta(10.0, $client->fresh()->soldeMaintenance(), 0.01);
     }
 
+    public function test_prestations_are_billed_hourly_rate_times_duration(): void
+    {
+        $intervention = Intervention::ouvertes()->first();
+        $intervention->update(['type_lieu' => 'atelier', 'finalisee_at' => now(), 'garantie' => false]);
+        $intervention->client->update(['remise_prestations' => 0, 'remise_pieces' => 0]);
+
+        // 60 €/h × 1,5 h = 90 € ; 80 €/h × 0,5 h = 40 € → 130 €.
+        $intervention->prestations()->create(['designation' => 'Diagnostic', 'duree' => 1.5, 'tarif' => 60]);
+        $intervention->prestations()->create(['designation' => 'Nettoyage', 'duree' => 0.5, 'tarif' => 80]);
+
+        $this->assertEqualsWithDelta(130.0, $intervention->fresh()->montantPrestations(), 0.01);
+
+        $this->post(route('interventions.restituer', $intervention))->assertRedirect();
+
+        $this->assertEqualsWithDelta(130.0, (float) $intervention->fresh()->montant_total, 0.01);
+    }
+
     public function test_ristourne_is_ignored_on_workshop_jobs(): void
     {
         $intervention = Intervention::ouvertes()->first();
