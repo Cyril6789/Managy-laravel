@@ -36,7 +36,7 @@
             <input x-ref="search" x-model="query" type="text" placeholder="{{ $searchPlaceholder }}"
                    class="w-full rounded-md border-gray-300 text-sm focus:border-brand-500 focus:ring-brand-500 dark:border-gray-600 dark:bg-gray-900">
         </div>
-        <ul class="rounded-b-lg py-1 text-sm" style="max-height:15rem;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;">
+        <ul class="rounded-b-lg py-1 text-sm" style="max-height:15rem;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;touch-action:pan-y;">
             <template x-if="allowEmpty">
                 <li @click="pick('')" class="cursor-pointer px-3 py-2 text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700">{{ $placeholder }}</li>
             </template>

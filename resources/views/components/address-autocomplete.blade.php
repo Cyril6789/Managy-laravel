@@ -31,7 +31,7 @@
 
     <ul x-show="open && results.length" x-cloak @click.outside="open = false"
         class="absolute z-40 mt-1 w-full rounded-lg border border-gray-200 bg-white shadow-lg dark:border-gray-700 dark:bg-gray-800"
-        style="max-height:15rem;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;">
+        style="max-height:15rem;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;touch-action:pan-y;">
         <template x-for="(r, i) in results" :key="i">
             <li @click="pick(r)" @mouseenter="active = i"
                 :class="active === i ? 'bg-brand-50 dark:bg-brand-600/10' : ''"

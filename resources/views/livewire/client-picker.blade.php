@@ -24,7 +24,7 @@
                        placeholder="Nom, e-mail, ville… (2 caractères min.)"
                        class="w-full rounded-md border-gray-300 text-sm focus:border-brand-500 focus:ring-brand-500 dark:border-gray-600 dark:bg-gray-900">
             </div>
-            <ul class="py-1 text-sm" style="max-height:14rem;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;">
+            <ul class="py-1 text-sm" style="max-height:14rem;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;touch-action:pan-y;">
                 @forelse ($results as $c)
                     <li wire:key="res-{{ $c['id'] }}" wire:click="choose({{ $c['id'] }}, @js($c['label']))"
                         class="cursor-pointer px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-700">

@@ -24,7 +24,12 @@ document.addEventListener('alpine:init', () => {
         query: '',
         toggle() {
             this.open = !this.open;
-            if (this.open) this.$nextTick(() => this.$refs.search && this.$refs.search.focus());
+            // Auto-focusing the search field pops the on-screen keyboard, which on
+            // tablets (iPad) covers the options list and makes it feel impossible to
+            // scroll. Only steal focus when a precise pointer (desktop) is present.
+            if (this.open && window.matchMedia('(pointer: fine)').matches) {
+                this.$nextTick(() => this.$refs.search && this.$refs.search.focus());
+            }
         },
         pick(v) {
             this.value = String(v);
