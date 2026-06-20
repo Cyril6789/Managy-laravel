@@ -46,7 +46,7 @@
                 </div>
                 <div class="max-h-80 divide-y divide-gray-100 overflow-y-auto dark:divide-gray-800">
                     @forelse ($user?->appNotifications()->limit(8)->get() ?? [] as $n)
-                        <a href="{{ $n->url ?? '#' }}" class="block px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-800 {{ $n->read_at ? '' : 'bg-brand-50/50 dark:bg-brand-600/10' }}">
+                        <a href="{{ route('notifications.read', $n) }}" class="block px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-800 {{ $n->read_at ? '' : 'bg-brand-50/50 dark:bg-brand-600/10' }}">
                             <p class="text-sm font-medium">{{ $n->titre }}</p>
                             @if ($n->message)<p class="text-xs text-gray-500">{{ $n->message }}</p>@endif
                             <p class="mt-0.5 text-[11px] text-gray-400">{{ $n->created_at?->diffForHumans() }}</p>

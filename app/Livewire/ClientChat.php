@@ -3,7 +3,9 @@
 namespace App\Livewire;
 
 use App\Models\Intervention;
+use App\Models\Notification;
 use App\Services\Notifier;
+use App\Support\ChatPresence;
 use App\Support\Permissions;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
@@ -63,7 +65,9 @@ class ClientChat extends Component
         ]);
 
         if ($this->author === 'client') {
-            Notifier::interventionChanged($intervention, 'Nouveau message du client (suivi)');
+            // Staff members currently watching this chat are not notified
+            // (they already see the message live).
+            Notifier::clientChatMessage($intervention, 'Nouveau message du client (suivi)');
         }
 
         $this->body = '';
@@ -72,6 +76,19 @@ class ClientChat extends Component
 
     public function render()
     {
+        // The staff side refreshes every 10s (wire:poll): keep presence alive and
+        // clear this intervention's chat notifications while the user is watching.
+        if ($this->author === 'staff' && Auth::id()) {
+            ChatPresence::mark($this->interventionId, Auth::id());
+
+            // Clear any chat notifications for this intervention while watching.
+            Notification::where('user_id', Auth::id())
+                ->where('intervention_id', $this->interventionId)
+                ->whereNull('read_at')
+                ->where('message', 'like', '%message du client%')
+                ->update(['read_at' => now()]);
+        }
+
         return view('livewire.client-chat', [
             'messages' => $this->intervention->publicMessages()->with('user')->get(),
         ]);

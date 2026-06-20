@@ -79,7 +79,11 @@
                         <x-input wire:model="form.email" type="email" />
                         @error('form.email')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
                     </x-field>
-                    <x-field label="SIRET"><x-input wire:model="form.siret" /></x-field>
+                    @if (($form['type'] ?? 'particulier') === 'professionnel')
+                        <x-field label="SIRET"><x-input wire:model="form.siret" /></x-field>
+                    @else
+                        <div class="hidden sm:block"></div>
+                    @endif
                     <x-field label="Téléphone fixe"><x-input wire:model="form.telephone_fixe" /></x-field>
                     <x-field label="Téléphone mobile"><x-input wire:model="form.telephone_mobile" /></x-field>
                     <x-field label="Adresse" class="sm:col-span-2"><x-input wire:model="form.adresse" /></x-field>

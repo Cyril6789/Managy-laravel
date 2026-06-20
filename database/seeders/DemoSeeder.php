@@ -53,13 +53,14 @@ class DemoSeeder extends Seeder
             'code_postal' => '67000',
             'ville' => 'Strasbourg',
         ]);
-        Client::firstOrCreate(['nom' => 'Dupont', 'parent_id' => $societe->id], [
+        $contactDupont = Client::firstOrCreate(['nom' => 'Dupont', 'prenom' => 'Jean'], [
             'type' => 'particulier',
             'civilite' => 'M.',
-            'prenom' => 'Jean',
             'email' => 'jean@boulangerie-dupont.fr',
             'telephone_mobile' => '0600000000',
         ]);
+        // The contact is a particulier linked to the company via the pivot.
+        $societe->contacts()->syncWithoutDetaching([$contactDupont->id]);
         $particulier = Client::firstOrCreate(['nom' => 'Schmitt'], [
             'type' => 'particulier',
             'civilite' => 'Mme',

@@ -51,7 +51,7 @@ class ContactPicker extends Component
     {
         $client = Client::find($id);
         $this->clientId = $id;
-        $this->isCompany = $client && $client->type === 'professionnel' && $client->parent_id === null;
+        $this->isCompany = $client && $client->type === 'professionnel';
         $this->contacts = $this->isCompany
             ? $client->contacts()->orderBy('nom')->get()
                 ->map(fn (Client $c) => ['id' => $c->id, 'label' => $c->nomComplet()])->all()
@@ -100,10 +100,10 @@ class ContactPicker extends Component
             $contact = Client::findOrFail($this->editingId);
             $contact->update($this->form);
         } else {
-            $contact = Client::create($this->form + [
-                'type' => 'particulier',
-                'parent_id' => $this->clientId,
-            ]);
+            $contact = Client::create($this->form + ['type' => 'particulier']);
+            if ($this->clientId) {
+                Client::find($this->clientId)?->contacts()->syncWithoutDetaching([$contact->id]);
+            }
         }
 
         $this->showModal = false;

@@ -35,6 +35,7 @@
                 <thead class="bg-gray-50 text-left text-xs uppercase tracking-wide text-gray-500 dark:bg-gray-800/50">
                     <tr>
                         <th class="px-5 py-3 font-medium">Réf.</th>
+                        <th class="px-5 py-3 font-medium">Lieu</th>
                         <th class="px-5 py-3 font-medium">Client</th>
                         <th class="px-5 py-3 font-medium">Panne</th>
                         <th class="px-5 py-3 font-medium">Techniciens</th>
@@ -49,6 +50,13 @@
                                 {{ $i->reference }}
                                 @if ($i->urgente)<span class="ml-1 inline-block h-2 w-2 rounded-full bg-red-500" title="Urgent"></span>@endif
                             </td>
+                            <td class="px-5 py-3">
+                                @if ($i->type_lieu === 'domicile')
+                                    <span class="inline-flex items-center gap-1 rounded-full bg-purple-50 px-2 py-0.5 text-xs font-medium text-purple-700 dark:bg-purple-900/30 dark:text-purple-300"><x-icon name="home" class="h-3 w-3" /> Domicile</span>
+                                @else
+                                    <span class="inline-flex items-center gap-1 rounded-full bg-sky-50 px-2 py-0.5 text-xs font-medium text-sky-700 dark:bg-sky-900/30 dark:text-sky-300"><x-icon name="wrench" class="h-3 w-3" /> Atelier</span>
+                                @endif
+                            </td>
                             <td class="px-5 py-3">{{ $i->client?->nomComplet() }}</td>
                             <td class="px-5 py-3 text-gray-500">{{ \Illuminate\Support\Str::limit($i->panne, 50) ?: '—' }}</td>
                             <td class="px-5 py-3">
@@ -62,7 +70,7 @@
                             <td class="whitespace-nowrap px-5 py-3 text-gray-400">{{ $i->opened_at?->format('d/m/Y') }}</td>
                         </tr>
                     @empty
-                        <tr><td colspan="6"><x-empty-state icon="wrench" title="Aucune intervention" /></td></tr>
+                        <tr><td colspan="7"><x-empty-state icon="wrench" title="Aucune intervention" /></td></tr>
                     @endforelse
                 </tbody>
             </table>

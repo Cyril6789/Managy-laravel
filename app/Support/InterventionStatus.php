@@ -54,4 +54,23 @@ final class InterventionStatus
             ?: (int) (Statut::where('est_cloture', false)->where('nom', 'like', '%cours%')->orderBy('ordre')->value('id')
                 ?: Statut::where('est_defaut', true)->value('id'));
     }
+
+    /**
+     * Status applied when a workshop intervention is marked "finalisée"
+     * (repair done, awaiting pick-up). Configured "statut_finalise_id", else a
+     * non-closing status named like "terminé…" / "finalisé…" / "prêt…".
+     */
+    public static function finaliseStatusId(): ?int
+    {
+        $id = (int) Setting::get('statut_finalise_id')
+            ?: (int) Statut::where('est_cloture', false)
+                ->where(fn ($q) => $q->where('nom', 'like', '%termin%')
+                    ->orWhere('nom', 'like', '%finalis%')
+                    ->orWhere('nom', 'like', '%prêt%')
+                    ->orWhere('nom', 'like', '%pret%'))
+                ->orderBy('ordre')
+                ->value('id');
+
+        return $id ?: null;
+    }
 }

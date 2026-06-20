@@ -37,7 +37,22 @@
         <div class="p-5">
             {{-- Détails --}}
             <div x-show="tab === 'details'" class="space-y-4 text-sm">
-                @foreach ([['Matériel déposé', $i->materiel_depose], ['Panne signalée', $i->panne], ['Diagnostic / rapport', $i->diagnostic], ['Matériel ajouté', $i->materiel_ajoute], ['Message au client', $i->message_client], ['Note interne', $i->message_interne]] as [$label, $value])
+                {{-- Équipement (matériel, OS, antivirus) --}}
+                <div class="grid grid-cols-2 gap-3 rounded-lg border border-gray-100 p-3 dark:border-gray-800 sm:grid-cols-3">
+                    <div>
+                        <p class="mb-0.5 text-xs font-medium uppercase tracking-wide text-gray-400">Type de matériel</p>
+                        <p class="text-gray-700 dark:text-gray-300">{{ $i->materiel?->nom ?: '—' }}</p>
+                    </div>
+                    <div>
+                        <p class="mb-0.5 text-xs font-medium uppercase tracking-wide text-gray-400">Système d'exploitation</p>
+                        <p class="text-gray-700 dark:text-gray-300">{{ $i->systemeExploitation?->nom ?: '—' }}</p>
+                    </div>
+                    <div>
+                        <p class="mb-0.5 text-xs font-medium uppercase tracking-wide text-gray-400">Antivirus</p>
+                        <p class="text-gray-700 dark:text-gray-300">{{ $i->antivirus?->nom ?: '—' }}</p>
+                    </div>
+                </div>
+                @foreach ([['Matériel déposé', $i->materiel_depose], ['Panne signalée', $i->panne], ['Diagnostic / rapport', $i->diagnostic], ['Message au client', $i->message_client], ['Note interne', $i->message_interne]] as [$label, $value])
                     <div>
                         <p class="mb-0.5 text-xs font-medium uppercase tracking-wide text-gray-400">{{ $label }}</p>
                         <p class="whitespace-pre-line text-gray-700 dark:text-gray-300">{{ $value ?: '—' }}</p>

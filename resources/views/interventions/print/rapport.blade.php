@@ -16,13 +16,6 @@
             <div class="pre">{{ $i->diagnostic ?: '—' }}</div>
         </div>
 
-        @if ($i->materiel_ajoute)
-            <div class="box">
-                <h3>Matériel ajouté / remplacé</h3>
-                <div class="pre">{{ $i->materiel_ajoute }}</div>
-            </div>
-        @endif
-
         @if ($i->message_client)
             <div class="box">
                 <h3>Message au client</h3>

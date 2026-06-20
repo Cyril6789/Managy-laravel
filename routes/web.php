@@ -19,6 +19,7 @@ use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\Public\PublicInterventionController;
 use App\Http\Controllers\Public\PublicSatisfactionController;
+use App\Http\Controllers\ReceptionController;
 use App\Http\Controllers\SatisfactionController;
 use App\Http\Controllers\SearchController;
 use App\Http\Controllers\SettingsController;
@@ -62,6 +63,10 @@ Route::middleware('auth')->group(function () {
     Route::resource('clients', ClientController::class);
     Route::patch('clients/{client}/archive', [ClientController::class, 'archive'])->name('clients.archive');
 
+    // Réception (commandes / sous-traitances en cours) — handled without opening the intervention
+    Route::get('/commandes-en-cours', [ReceptionController::class, 'commandes'])->name('reception.commandes');
+    Route::get('/sous-traitances-en-cours', [ReceptionController::class, 'sousTraitances'])->name('reception.sous_traitances');
+
     // Interventions
     Route::get('/facturation', [InterventionController::class, 'facturationIndex'])->name('facturation.index');
     Route::get('interventions/contexte-client/{client}', [InterventionController::class, 'clientContext'])->name('interventions.client_context');
@@ -103,6 +108,7 @@ Route::middleware('auth')->group(function () {
 
     // Notifications
     Route::post('/notifications/lire-tout', [NotificationController::class, 'readAll'])->name('notifications.read_all');
+    Route::get('/notifications/{notification}/lire', [NotificationController::class, 'read'])->name('notifications.read');
 
     // Maintenance pack
     Route::get('/maintenance', [MaintenanceController::class, 'index'])->name('maintenance.index');

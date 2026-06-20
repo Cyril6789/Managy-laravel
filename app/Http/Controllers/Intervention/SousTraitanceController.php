@@ -7,6 +7,7 @@ use App\Models\Intervention;
 use App\Models\InterventionLog;
 use App\Models\SousTraitance;
 use App\Services\AutomatismeRunner;
+use App\Services\Notifier;
 use App\Support\InterventionStatus;
 use App\Support\Permissions;
 use Illuminate\Http\Request;
@@ -38,6 +39,7 @@ class SousTraitanceController extends Controller
             $sousTraitance->forceFill(['retour_le' => $sousTraitance->retour_le ?? now()])->save();
             $this->log($sousTraitance->intervention, 'a réceptionné le retour de sous-traitance');
             $this->automatismes->fire('sous_traitance_retour', $sousTraitance->intervention);
+            Notifier::interventionChanged($sousTraitance->intervention, 'Retour de sous-traitance reçu'.($sousTraitance->nom ? ' ('.$sousTraitance->nom.')' : ''));
         }
 
         InterventionStatus::syncFromDependencies($sousTraitance->intervention->refresh());

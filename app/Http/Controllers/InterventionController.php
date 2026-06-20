@@ -14,6 +14,7 @@ use App\Models\User;
 use App\Services\AutomatismeRunner;
 use App\Services\Notifier;
 use App\Support\Billing;
+use App\Support\InterventionStatus;
 use App\Support\Permissions;
 use App\Support\Qr;
 use Illuminate\Http\Request;
@@ -75,8 +76,13 @@ class InterventionController extends Controller
         $data = $this->validateData($request);
         $data['opened_by'] = Auth::id();
 
+        // The creator is NOT automatically in charge: the intervention stays
+        // "nouvelle" until a technician is explicitly assigned.
+        $techIds = collect($data['technicien_ids'] ?? [])->map('intval')->unique()->all();
+        unset($data['technicien_ids']);
+
         $intervention = Intervention::create($data);
-        $intervention->techniciens()->attach(Auth::id(), ['assigned_at' => now()]);
+        $this->syncTechniciens($intervention, $techIds);
 
         $this->log($intervention, "a créé l'intervention");
         $this->automatismes->fire('intervention_creee', $intervention);
@@ -146,7 +152,12 @@ class InterventionController extends Controller
     {
         $this->authorize(Permissions::INTERVENTIONS_MANAGE);
 
-        $intervention->update($this->validateData($request));
+        $data = $this->validateData($request);
+        $techIds = collect($data['technicien_ids'] ?? [])->map('intval')->unique()->all();
+        unset($data['technicien_ids']);
+
+        $intervention->update($data);
+        $this->syncTechniciens($intervention, $techIds);
         $this->log($intervention, 'a modifié les détails');
         Notifier::interventionChanged($intervention, 'Détails modifiés');
 
@@ -222,13 +233,31 @@ class InterventionController extends Controller
     {
         $this->authorize(Permissions::INTERVENTIONS_MANAGE);
 
-        if (! $intervention->estCloturee()) {
-            $intervention->update(['finalisee_at' => $intervention->finalisee_at ?? now()]);
-            $this->log($intervention, 'a marqué l\'intervention comme finalisée');
-            Notifier::interventionChanged($intervention, 'Intervention finalisée');
+        if ($intervention->estCloturee()) {
+            return back();
         }
 
+        // Cannot finalise while a supplier order / subcontracting is still pending.
+        if ($this->hasPendingDependencies($intervention)) {
+            return back()->with('error', 'Impossible de finaliser : une commande ou une sous-traitance est encore en cours.');
+        }
+
+        $statutFinalise = InterventionStatus::finaliseStatusId();
+        $intervention->update([
+            'finalisee_at' => $intervention->finalisee_at ?? now(),
+            'statut_id' => $statutFinalise ?: $intervention->statut_id,
+        ]);
+        $this->log($intervention, 'a marqué l\'intervention comme finalisée');
+        Notifier::interventionChanged($intervention, 'Intervention finalisée');
+
         return back()->with('success', 'Intervention finalisée. Vous pouvez la restituer au client.');
+    }
+
+    /** True while a supplier order is not received or a subcontracting not returned. */
+    private function hasPendingDependencies(Intervention $intervention): bool
+    {
+        return $intervention->commandes()->where('recue', false)->exists()
+            || $intervention->sousTraitances()->where('retournee', false)->exists();
     }
 
     public function annulerFinalisation(Intervention $intervention)
@@ -244,6 +273,11 @@ class InterventionController extends Controller
     public function restituer(Request $request, Intervention $intervention)
     {
         $this->authorize(Permissions::INTERVENTIONS_MANAGE);
+
+        // Cannot close while a supplier order / subcontracting is still pending.
+        if ($this->hasPendingDependencies($intervention)) {
+            return back()->with('error', 'Impossible de clôturer : une commande ou une sous-traitance est encore en cours.');
+        }
 
         $data = $request->validate([
             'signataire_nom' => ['nullable', 'string', 'max:255'],
@@ -263,8 +297,9 @@ class InterventionController extends Controller
 
         $signaturePath = $this->storeSignature($data['signature'] ?? null, $intervention);
 
-        // The technician discount only applies when the user is allowed to grant one.
-        $peutRistourne = $request->user()->can(Permissions::INTERVENTIONS_RISTOURNE);
+        // The technician discount only applies on-site (never for workshop jobs)
+        // and only when the user is allowed to grant one.
+        $peutRistourne = $request->user()->can(Permissions::INTERVENTIONS_RISTOURNE) && $intervention->estDomicile();
         $remiseType = $peutRistourne ? ($data['remise_type'] ?? null) : null;
         $remiseValeur = $peutRistourne ? (float) ($data['remise_valeur'] ?? 0) : 0.0;
 
@@ -402,7 +437,6 @@ class InterventionController extends Controller
         $intervention->update($request->validate([
             'diagnostic' => ['nullable', 'string'],
             'message_client' => ['nullable', 'string'],
-            'materiel_ajoute' => ['nullable', 'string'],
             'message_interne' => ['nullable', 'string'],
             'mdp' => ['nullable', 'string', 'max:255'],
             'tarif_estimatif' => ['nullable', 'numeric', 'min:0'],
@@ -483,6 +517,8 @@ class InterventionController extends Controller
             'type_lieu' => ['required', Rule::in(['atelier', 'domicile'])],
             'rdv_debut' => ['nullable', 'date'],
             'rdv_fin' => ['nullable', 'date', 'after_or_equal:rdv_debut'],
+            'technicien_ids' => ['nullable', 'array'],
+            'technicien_ids.*' => ['integer', 'exists:users,id'],
             'priorite' => ['nullable', 'integer', 'between:0,3'],
             'urgente' => ['nullable', 'boolean'],
             'garantie' => ['nullable', 'boolean'],
@@ -501,6 +537,11 @@ class InterventionController extends Controller
      */
     private function debitMaintenancePack(Intervention $intervention): void
     {
+        // Under warranty nothing is consumed from the maintenance pack.
+        if ($intervention->garantie) {
+            return;
+        }
+
         $client = $intervention->client;
         $heures = $intervention->prestations()->sum('duree');
 
@@ -529,5 +570,22 @@ class InterventionController extends Controller
             'texte' => $texte,
             'created_at' => now(),
         ]);
+    }
+
+    /**
+     * Sync the assigned technicians to exactly $techIds, notifying newly added
+     * ones. Used at creation and on update from the intervention form.
+     */
+    private function syncTechniciens(Intervention $intervention, array $techIds): void
+    {
+        $before = $intervention->techniciens()->pluck('users.id')->all();
+
+        $pivot = collect($techIds)->mapWithKeys(fn ($id) => [$id => ['assigned_at' => now()]])->all();
+        $intervention->techniciens()->sync($pivot);
+
+        foreach (array_diff($techIds, $before) as $newId) {
+            Notifier::toUser($newId, 'Intervention '.($intervention->reference ?? '#'.$intervention->id),
+                'Vous avez été affecté à cette intervention.', route('interventions.show', $intervention));
+        }
     }
 }

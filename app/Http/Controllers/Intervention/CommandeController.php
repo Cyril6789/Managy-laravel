@@ -7,6 +7,7 @@ use App\Models\Commande;
 use App\Models\Intervention;
 use App\Models\InterventionLog;
 use App\Services\AutomatismeRunner;
+use App\Services\Notifier;
 use App\Support\InterventionStatus;
 use App\Support\Permissions;
 use Illuminate\Http\Request;
@@ -38,6 +39,7 @@ class CommandeController extends Controller
             $commande->forceFill(['recue_le' => $commande->recue_le ?? now()])->save();
             $this->log($commande->intervention, 'a réceptionné la commande '.($commande->numero_commande ?? ''));
             $this->automatismes->fire('commande_recue', $commande->intervention);
+            Notifier::interventionChanged($commande->intervention, 'Commande reçue'.($commande->numero_commande ? ' ('.$commande->numero_commande.')' : ''));
         }
 
         InterventionStatus::syncFromDependencies($commande->intervention->refresh());

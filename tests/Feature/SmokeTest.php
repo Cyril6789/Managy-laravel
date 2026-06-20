@@ -234,12 +234,14 @@ class SmokeTest extends TestCase
     {
         $this->actingAs($this->admin()); // admin bypasses the ristourne gate
         $intervention = Intervention::ouvertes()->first();
-        $intervention->update(['type_lieu' => 'atelier', 'finalisee_at' => now()]);
+        // Ristourne only applies on-site (domicile), never in the workshop.
+        $intervention->update(['type_lieu' => 'domicile']);
         $intervention->client->update(['remise_prestations' => 0, 'remise_pieces' => 0]);
         $intervention->prestations()->create(['designation' => 'Prestation', 'duree' => 1, 'tarif' => 100]);
 
         $this->post(route('interventions.restituer', $intervention), [
             'remise_type' => 'pourcent', 'remise_valeur' => 10,
+            'montant_deplacement' => 0,
         ])->assertRedirect();
 
         $intervention->refresh();

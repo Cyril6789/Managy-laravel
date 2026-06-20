@@ -24,9 +24,12 @@
     <x-field label="E-mail" name="email">
         <x-input name="email" type="email" value="{{ old('email', $client->email) }}" />
     </x-field>
-    <x-field label="SIRET" name="siret">
-        <x-input name="siret" value="{{ old('siret', $client->siret) }}" />
-    </x-field>
+    {{-- Un particulier n'a pas de SIRET (réservé aux professionnels). --}}
+    <div x-show="type === 'professionnel'" x-cloak>
+        <x-field label="SIRET" name="siret">
+            <x-input name="siret" value="{{ old('siret', $client->siret) }}" />
+        </x-field>
+    </div>
     <x-field label="Téléphone fixe" name="telephone_fixe">
         <x-input name="telephone_fixe" value="{{ old('telephone_fixe', $client->telephone_fixe) }}" />
     </x-field>
@@ -45,16 +48,12 @@
     <x-field label="Ville" name="ville">
         <x-input name="ville" value="{{ old('ville', $client->ville) }}" />
     </x-field>
-    @isset($parents)
-        <x-field label="Rattaché à (contact d'une société)" name="parent_id" class="md:col-span-2" hint="Laisser vide pour un client principal.">
-            <x-select name="parent_id">
-                <option value="">— Aucun (client principal) —</option>
-                @foreach ($parents as $parent)
-                    <option value="{{ $parent->id }}" @selected(old('parent_id', $client->parent_id)==$parent->id)>{{ $parent->nomComplet() }}</option>
-                @endforeach
-            </x-select>
-        </x-field>
-    @endisset
+    {{-- Sociétés rattachées : uniquement à l'édition d'un particulier existant. --}}
+    @if ($client->exists && $client->type === 'particulier')
+        <div x-show="type === 'particulier'" x-cloak class="md:col-span-2">
+            <livewire:client-companies :contact="$client" />
+        </div>
+    @endif
     <x-field label="Notes internes" name="notes" class="md:col-span-2">
         <x-textarea name="notes" rows="3">{{ old('notes', $client->notes) }}</x-textarea>
     </x-field>
