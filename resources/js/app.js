@@ -49,7 +49,8 @@ document.addEventListener('alpine:init', () => {
      * `address-picked` event whose detail carries the parsed street / postcode /
      * city, letting the surrounding form fill its fields.
      */
-    Alpine.data('addressAutocomplete', () => ({
+    Alpine.data('addressAutocomplete', (cfg = {}) => ({
+        url: cfg.url || '/adresse/recherche',
         query: '',
         results: [],
         open: false,
@@ -67,20 +68,14 @@ document.addEventListener('alpine:init', () => {
             if (this.controller) this.controller.abort();
             this.controller = new AbortController();
             try {
-                const url = `https://api-adresse.data.gouv.fr/search/?limit=6&autocomplete=1&q=${encodeURIComponent(q)}`;
-                const r = await fetch(url, { signal: this.controller.signal });
-                if (!r.ok) throw new Error('ban');
-                const d = await r.json();
-                this.results = (d.features || []).map((f) => {
-                    const p = f.properties;
-                    const street = [p.housenumber, p.street].filter(Boolean).join(' ');
-                    return {
-                        label: p.label,
-                        adresse: street || (p.type === 'municipality' ? '' : p.name) || '',
-                        code_postal: p.postcode || '',
-                        ville: p.city || '',
-                    };
+                // Same-origin proxy to the Base Adresse Nationale (avoids CORS / CSP).
+                const sep = this.url.includes('?') ? '&' : '?';
+                const r = await fetch(`${this.url}${sep}q=${encodeURIComponent(q)}`, {
+                    signal: this.controller.signal,
+                    headers: { Accept: 'application/json' },
                 });
+                if (!r.ok) throw new Error('address');
+                this.results = await r.json();
                 this.open = true;
                 this.active = -1;
             } catch (e) {

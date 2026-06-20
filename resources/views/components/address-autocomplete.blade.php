@@ -8,7 +8,7 @@
     event (detail = { adresse, code_postal, ville, label }) that bubbles up to
     the surrounding form, which is responsible for filling its own fields.
 --}}
-<div x-data="addressAutocomplete()" class="relative" @keydown.escape="open = false">
+<div x-data="addressAutocomplete({ url: '{{ route('adresse.search') }}' })" class="relative" @keydown.escape="open = false">
     <label class="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
         {{ $label }}
     </label>

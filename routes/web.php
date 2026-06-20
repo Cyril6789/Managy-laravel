@@ -58,6 +58,7 @@ Route::middleware('auth')->group(function () {
     Route::put('/profil/mot-de-passe', [ProfileController::class, 'updatePassword'])->name('profile.password');
 
     // Clients
+    Route::get('adresse/recherche', [\App\Http\Controllers\AddressController::class, 'search'])->name('adresse.search');
     Route::get('clients/recherche', [ClientController::class, 'search'])->name('clients.search');
     Route::post('clients/rapide', [ClientController::class, 'quickStore'])->name('clients.quick-store');
     Route::resource('clients', ClientController::class);
