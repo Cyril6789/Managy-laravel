@@ -80,6 +80,14 @@
                 </ul>
             </div>
         @endif
+
+        {{-- Photos partagées par l'atelier (les photos « privées » ne sont jamais exposées) --}}
+        @if ($i->photos()->where('prive', false)->exists())
+            <div class="mt-5">
+                <p class="mb-2 text-xs font-medium uppercase tracking-wide text-gray-400">Photos</p>
+                <livewire:intervention-photos :token="$intervention->public_token" :key="'photos-pub-'.$i->id" />
+            </div>
+        @endif
     </div>
 
     @if ($i->estCloturee())

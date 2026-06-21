@@ -72,6 +72,12 @@
         <div class="space-y-6 lg:col-span-2">
             <livewire:intervention-panel :intervention="$i" :key="'panel-'.$i->id" />
 
+            {{-- Photos (galerie ou appareil photo, live upload — Livewire). Les photos
+                 sont visibles côté client sur la page de suivi, sauf si « privée ». --}}
+            <x-card title="Photos">
+                <livewire:intervention-photos :intervention="$i" :key="'photos-'.$i->id" />
+            </x-card>
+
             {{-- Technical report (live auto-save, no page reload — Livewire) --}}
             @if ($peutGerer && ! $i->estCloturee())
                 <x-card title="Rapport technique">

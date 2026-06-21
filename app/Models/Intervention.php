@@ -153,6 +153,11 @@ class Intervention extends Model
         return $this->belongsTo(Satisfaction::class);
     }
 
+    public function photos(): HasMany
+    {
+        return $this->hasMany(InterventionPhoto::class)->latest();
+    }
+
     // ----- Scopes / helpers --------------------------------------------------
 
     public function scopeOuvertes(Builder $query): Builder
