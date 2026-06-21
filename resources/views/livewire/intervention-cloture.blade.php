@@ -106,15 +106,19 @@
 
                         {{-- Pack maintenance : règle tout ou partie des HEURES de prestations
                              (jamais les pièces ni le déplacement). Facultatif. --}}
-                        <div x-show="hasPack && totalHeures > 0" x-cloak>
+                        <div class="rounded-lg border border-gray-200 p-3 dark:border-gray-700">
                             <span class="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Régler des prestations avec le pack maintenance (facultatif)</span>
-                            <div class="flex items-center gap-2">
-                                <input type="text" inputmode="decimal" x-model="packHeures" @input="clampPack()" @blur="clampPack()"
-                                       class="block w-28 rounded-lg border-gray-300 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:border-gray-700 dark:bg-gray-800">
-                                <span class="text-sm text-gray-500">h <span x-text="'/ ' + fmtH(packMax) + ' dispo'"></span></span>
+                            <p class="text-xs text-gray-400" x-show="!hasPack" x-cloak>Ce client n'a pas de pack maintenance.</p>
+                            <p class="text-xs text-gray-400" x-show="hasPack && totalHeures <= 0" x-cloak>Ajoutez des prestations (heures) dans l'onglet « Prestations &amp; pièces » pour pouvoir les régler depuis le pack.</p>
+                            <div x-show="hasPack && totalHeures > 0" x-cloak>
+                                <div class="flex items-center gap-2">
+                                    <input type="text" inputmode="decimal" x-model="packHeures" @input="clampPack()" @blur="clampPack()"
+                                           class="block w-28 rounded-lg border-gray-300 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:border-gray-700 dark:bg-gray-800">
+                                    <span class="text-sm text-gray-500">h <span x-text="'/ ' + fmtH(packMax) + ' dispo'"></span></span>
+                                </div>
+                                <p class="mt-1 text-xs text-gray-400" x-show="packCovered > 0" x-cloak x-text="'− ' + fmt(packCovered) + ' déduits des prestations (réglés par le pack).'"></p>
+                                <p class="mt-1 text-xs text-gray-400" x-show="packCovered <= 0" x-cloak>Laissez à 0 pour que le client règle tout en argent (le pack ne sera pas débité).</p>
                             </div>
-                            <p class="mt-1 text-xs text-gray-400" x-show="packCovered > 0" x-cloak x-text="'− ' + fmt(packCovered) + ' déduits des prestations (réglés par le pack).'"></p>
-                            <p class="mt-1 text-xs text-gray-400" x-show="packCovered <= 0" x-cloak>Laissez à 0 pour que le client règle tout en argent (le pack ne sera pas débité).</p>
                         </div>
 
                         {{-- Récap détaillé réservé au technicien (avec la ristourne) --}}
@@ -187,15 +191,19 @@
                         </div>
                     @else
                         {{-- Pack maintenance (atelier) : règle tout ou partie des HEURES de prestations. --}}
-                        <div x-show="hasPack && totalHeures > 0" x-cloak>
+                        <div class="rounded-lg border border-gray-200 p-3 dark:border-gray-700">
                             <span class="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Régler des prestations avec le pack maintenance (facultatif)</span>
-                            <div class="flex items-center gap-2">
-                                <input type="text" inputmode="decimal" x-model="packHeures" @input="clampPack()" @blur="clampPack()"
-                                       class="block w-28 rounded-lg border-gray-300 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:border-gray-700 dark:bg-gray-800">
-                                <span class="text-sm text-gray-500">h <span x-text="'/ ' + fmtH(packMax) + ' dispo'"></span></span>
+                            <p class="text-xs text-gray-400" x-show="!hasPack" x-cloak>Ce client n'a pas de pack maintenance.</p>
+                            <p class="text-xs text-gray-400" x-show="hasPack && totalHeures <= 0" x-cloak>Ajoutez des prestations (heures) dans l'onglet « Prestations &amp; pièces » pour pouvoir les régler depuis le pack.</p>
+                            <div x-show="hasPack && totalHeures > 0" x-cloak>
+                                <div class="flex items-center gap-2">
+                                    <input type="text" inputmode="decimal" x-model="packHeures" @input="clampPack()" @blur="clampPack()"
+                                           class="block w-28 rounded-lg border-gray-300 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:border-gray-700 dark:bg-gray-800">
+                                    <span class="text-sm text-gray-500">h <span x-text="'/ ' + fmtH(packMax) + ' dispo'"></span></span>
+                                </div>
+                                <p class="mt-1 text-xs text-gray-400" x-show="packCovered > 0" x-cloak x-text="'− ' + fmt(packCovered) + ' réglés par le pack.'"></p>
+                                <p class="mt-1 text-xs text-gray-400" x-show="packCovered <= 0" x-cloak>Laissez à 0 pour ne pas débiter le pack.</p>
                             </div>
-                            <p class="mt-1 text-xs text-gray-400" x-show="packCovered > 0" x-cloak x-text="'− ' + fmt(packCovered) + ' réglés par le pack.'"></p>
-                            <p class="mt-1 text-xs text-gray-400" x-show="packCovered <= 0" x-cloak>Laissez à 0 pour ne pas débiter le pack.</p>
                         </div>
 
                         {{-- Atelier : pas de ristourne, simple indication de facturation --}}
