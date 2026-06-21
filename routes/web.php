@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AddressController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\PasswordResetController;
 use App\Http\Controllers\AutomatismeController;
@@ -11,6 +12,7 @@ use App\Http\Controllers\Intervention\InterventionPrestationController;
 use App\Http\Controllers\Intervention\MessageController as InterventionChatController;
 use App\Http\Controllers\Intervention\SousTraitanceController;
 use App\Http\Controllers\InterventionController;
+use App\Http\Controllers\InterventionPhotoController;
 use App\Http\Controllers\LogController;
 use App\Http\Controllers\MaintenanceController;
 use App\Http\Controllers\MediaController;
@@ -32,6 +34,7 @@ use Illuminate\Support\Facades\Route;
 // ----- Public (no auth) ------------------------------------------------------
 Route::get('/logo-entreprise', [MediaController::class, 'logo'])->name('company.logo');
 Route::get('/suivi/{token}', [PublicInterventionController::class, 'show'])->name('public.intervention');
+Route::get('/suivi/{token}/photos/{photo}', [InterventionPhotoController::class, 'showPublic'])->name('public.intervention.photo');
 Route::get('/satisfaction/{token}', [PublicSatisfactionController::class, 'show'])->name('public.satisfaction');
 Route::post('/satisfaction/{token}', [PublicSatisfactionController::class, 'store'])->name('public.satisfaction.store');
 
@@ -58,7 +61,7 @@ Route::middleware('auth')->group(function () {
     Route::put('/profil/mot-de-passe', [ProfileController::class, 'updatePassword'])->name('profile.password');
 
     // Clients
-    Route::get('adresse/recherche', [\App\Http\Controllers\AddressController::class, 'search'])->name('adresse.search');
+    Route::get('adresse/recherche', [AddressController::class, 'search'])->name('adresse.search');
     Route::get('clients/recherche', [ClientController::class, 'search'])->name('clients.search');
     Route::post('clients/rapide', [ClientController::class, 'quickStore'])->name('clients.quick-store');
     Route::resource('clients', ClientController::class);
@@ -73,6 +76,7 @@ Route::middleware('auth')->group(function () {
     Route::get('interventions/contexte-client/{client}', [InterventionController::class, 'clientContext'])->name('interventions.client_context');
     Route::resource('interventions', InterventionController::class);
     Route::get('interventions/{intervention}/impression/{type}', [InterventionController::class, 'print'])->name('interventions.print')->where('type', 'depot|rapport');
+    Route::get('interventions/{intervention}/photos/{photo}', [InterventionPhotoController::class, 'show'])->name('interventions.photos.show');
     Route::get('interventions/{intervention}/sous-traitance/{sousTraitance}/feuille', [InterventionController::class, 'sousTraitanceSheet'])->name('interventions.sst_sheet');
     Route::patch('interventions/{intervention}/rapport', [InterventionController::class, 'saveRapport'])->name('interventions.rapport');
     Route::post('interventions/{intervention}/affectation', [InterventionController::class, 'assign'])->name('interventions.assign');
