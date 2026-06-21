@@ -38,6 +38,8 @@ class InterventionCloture extends Component
         $i = $this->intervention->load(['prestations', 'pieces', 'client']);
         $breakdown = Billing::compute($i, $i->estDomicile() ? null : 0.0);
 
+        $hasPack = (bool) $i->client?->maintenanceMovements()->exists();
+
         return view('livewire.intervention-cloture', [
             'i' => $i,
             'breakdown' => $breakdown,
@@ -46,6 +48,9 @@ class InterventionCloture extends Component
             'deplForfait' => Deplacement::forfait(),
             'deplPrixKm' => Deplacement::prixKm(),
             'peutRistourne' => Auth::user()->can(Permissions::INTERVENTIONS_RISTOURNE),
+            'maintenanceHasPack' => $hasPack,
+            'maintenanceSolde' => $hasPack ? max(0.0, $i->client->soldeMaintenance()) : 0.0,
+            'totalHeures' => (float) $i->prestations->sum('duree'),
         ]);
     }
 }

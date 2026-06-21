@@ -63,6 +63,7 @@
                         @if ($i->montant_prestations !== null)<tr><td>Prestations</td><td class="right">{{ number_format($i->montant_prestations, 2, ',', ' ') }} €</td></tr>@endif
                         @if ($i->montant_pieces)<tr><td>Pièces</td><td class="right">{{ number_format($i->montant_pieces, 2, ',', ' ') }} €</td></tr>@endif
                         @if ($i->remise_montant)<tr><td>Ristourne</td><td class="right">− {{ number_format($i->remise_montant, 2, ',', ' ') }} €</td></tr>@endif
+                        @if ($i->montant_maintenance)<tr><td>Pack maintenance{{ $i->maintenance_heures ? ' (−'.rtrim(rtrim(number_format($i->maintenance_heures, 2), '0'), '.').' h)' : '' }}</td><td class="right">− {{ number_format($i->montant_maintenance, 2, ',', ' ') }} €</td></tr>@endif
                         @if ($i->montant_deplacement)<tr><td>Déplacement</td><td class="right">{{ number_format($i->montant_deplacement, 2, ',', ' ') }} €</td></tr>@endif
                         <tr><th>Total</th><th class="right">{{ number_format($i->montant_total, 2, ',', ' ') }} €</th></tr>
                         @if ($i->payee)<tr><td>Réglé{{ $i->paiement_mode ? ' ('.$i->paiement_mode.')' : '' }}</td><td class="right">{{ number_format($i->montant_paye ?? $i->montant_total, 2, ',', ' ') }} €</td></tr>@endif

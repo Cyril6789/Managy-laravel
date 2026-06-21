@@ -17,13 +17,15 @@
         </div>
 
         {{-- SMS --}}
-        <div x-show="tab==='sms'" x-cloak>
+        <div x-show="tab==='sms'" x-cloak class="space-y-6">
             <livewire:settings.general-settings section="sms" />
+            <livewire:settings.reference-list type="sms-types" title="SMS types" />
         </div>
 
         {{-- SMTP / E-mail --}}
-        <div x-show="tab==='smtp'" x-cloak>
+        <div x-show="tab==='smtp'" x-cloak class="space-y-6">
             <livewire:settings.general-settings section="smtp" />
+            <livewire:settings.reference-list type="mail-types" title="Mails types" />
         </div>
 
         {{-- Listes métier (tout en Livewire, édition sans rechargement) --}}

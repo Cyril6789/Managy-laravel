@@ -172,6 +172,10 @@ document.addEventListener('alpine:init', () => {
         deplPrixKm: Number(cfg.deplPrixKm || 0),
         deplDefault: Number(cfg.deplDefault || 0),
         canRistourne: !!cfg.canRistourne,
+        // Maintenance pack: how many SERVICE hours are settled from the pack.
+        hasPack: !!cfg.hasPack,
+        packSolde: Number(cfg.packSolde || 0),
+        totalHeures: Number(cfg.totalHeures || 0),
         // When true, the technician first sets the amounts (ristourne / travel)
         // out of the customer's sight, then reveals the signature screen.
         needsPrepare: !!cfg.needsPrepare,
@@ -183,6 +187,7 @@ document.addEventListener('alpine:init', () => {
         waiveDepl: false,
         remiseType: 'euro',
         remiseValeur: 0,
+        packHeures: 0,
         payee: false,
         montantPaye: 0,
         paiementMode: 'especes',
@@ -207,6 +212,10 @@ document.addEventListener('alpine:init', () => {
             this.ctx.lineCap = 'round';
             this.ctx.strokeStyle = '#111827';
             this.deplacement = this.deplDefault;
+            // Pre-fill the pack with the available service hours (capped): the
+            // prepaid pack is normally used, but the technician can lower it to 0
+            // so the customer pays everything in money instead.
+            this.packHeures = this.packMax;
             // Atelier / warranty jobs have no amounts to set: go straight to signing.
             this.signing = !this.needsPrepare;
         },
@@ -215,6 +224,10 @@ document.addEventListener('alpine:init', () => {
         },
         fmt(n) {
             return (Number(n) || 0).toFixed(2).replace('.', ',') + ' €';
+        },
+        // Hours, trimmed of trailing zeros (e.g. "1,5 h", "2 h").
+        fmtH(n) {
+            return (Number(n) || 0).toFixed(2).replace(/\.?0+$/, '').replace('.', ',') + ' h';
         },
         // Parse a user-typed decimal, tolerating the French comma separator
         // (and stray spaces used as thousands separators), e.g. "1 234,50".
@@ -249,8 +262,26 @@ document.addEventListener('alpine:init', () => {
             const m = this.remiseType === 'pourcent' ? (this.sousTotal * v) / 100 : Math.min(v, this.sousTotal);
             return Math.round(m * 100) / 100;
         },
+        // Maximum service hours that can be drawn from the pack: capped at the
+        // hours logged on the job and the available balance.
+        get packMax() {
+            if (!this.hasPack) return 0;
+            return Math.round(Math.min(this.totalHeures, this.packSolde) * 100) / 100;
+        },
+        // Euro value covered by the pack, prorated on the net service amount.
+        get packCovered() {
+            if (!this.hasPack || this.totalHeures <= 0) return 0;
+            const h = Math.max(0, Math.min(this.num(this.packHeures), this.packMax));
+            const v = (this.prestaNet * h) / this.totalHeures;
+            return Math.round(Math.min(v, this.prestaNet) * 100) / 100;
+        },
+        clampPack() {
+            const h = Math.max(0, Math.min(this.num(this.packHeures), this.packMax));
+            this.packHeures = h;
+        },
         get total() {
-            return Math.round((this.sousTotal - this.remiseMontant + this.effectiveDepl) * 100) / 100;
+            const t = this.sousTotal - this.remiseMontant - this.packCovered + this.effectiveDepl;
+            return Math.round(Math.max(0, t) * 100) / 100;
         },
         beforeSubmit() {
             this.end(); // capture any in-progress stroke
@@ -287,6 +318,29 @@ document.addEventListener('alpine:init', () => {
             this.ctx.clearRect(0, 0, this.$refs.canvas.width, this.$refs.canvas.height);
             this.hasSignature = false;
             this.value = '';
+        },
+    }));
+
+    // Customer message composer: a channel selector (SMS / e-mail) plus a
+    // template picker that prefills the body (and the subject for e-mails).
+    window.Alpine.data('messageComposer', (cfg = {}) => ({
+        canal: 'sms',
+        typeId: '',
+        sujet: '',
+        corps: '',
+        sources: { sms: cfg.sms || [], email: cfg.email || [] },
+        init() {
+            // Switching channel clears the (now irrelevant) template choice.
+            this.$watch('canal', () => { this.typeId = ''; });
+        },
+        get templates() {
+            return this.sources[this.canal] || [];
+        },
+        applyType() {
+            const t = this.templates.find((x) => String(x.id) === String(this.typeId));
+            if (!t) return;
+            this.corps = t.corps || '';
+            if (this.canal === 'email') this.sujet = t.sujet || '';
         },
     }));
 });

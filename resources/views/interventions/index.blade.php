@@ -16,13 +16,19 @@
                 <x-icon name="search" class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
                 <x-input name="q" value="{{ request('q') }}" placeholder="Référence, panne, client…" class="pl-9" />
             </div>
-            <x-select name="etat" onchange="this.form.submit()">
-                <option value="ouvertes" @selected(request('etat','ouvertes')==='ouvertes')>Ouvertes</option>
-                <option value="cloturees" @selected(request('etat')==='cloturees')>Clôturées</option>
-            </x-select>
+            @php $statutFiltre = (string) request('statut', 'ouvertes'); @endphp
             <x-select name="statut" onchange="this.form.submit()">
-                <option value="">Tous les statuts</option>
-                @foreach ($statuts as $s)<option value="{{ $s->id }}" @selected(request('statut')==$s->id)>{{ $s->nom }}</option>@endforeach
+                <option value="ouvertes" @selected($statutFiltre==='ouvertes')>Non clôturées</option>
+                <option value="cloturees" @selected($statutFiltre==='cloturees')>Clôturées</option>
+                <option value="toutes" @selected($statutFiltre==='toutes')>Toutes</option>
+                <optgroup label="Par statut">
+                    @foreach ($statuts as $s)<option value="{{ $s->id }}" @selected($statutFiltre===(string)$s->id)>{{ $s->nom }}</option>@endforeach
+                </optgroup>
+            </x-select>
+            <x-select name="type" onchange="this.form.submit()">
+                <option value="">Tous les lieux</option>
+                <option value="atelier" @selected(request('type')==='atelier')>Atelier</option>
+                <option value="domicile" @selected(request('type')==='domicile')>Domicile</option>
             </x-select>
             <x-select name="technicien" onchange="this.form.submit()">
                 <option value="">Tous les techniciens</option>
