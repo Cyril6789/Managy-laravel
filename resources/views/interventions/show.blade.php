@@ -74,20 +74,14 @@
     <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
         {{-- Main panel --}}
         <div class="space-y-6 lg:col-span-2">
+            {{-- Tout est désormais regroupé dans les onglets du panneau (Détails, Rapport,
+                 Prestations & pièces, Photos, Approvisionnement, Communication) : changer
+                 d'onglet remplace toute la zone de travail, plus de cards « fantômes ». --}}
             <livewire:intervention-panel :intervention="$i" :key="'panel-'.$i->id" />
 
-            {{-- Photos (galerie ou appareil photo, live upload — Livewire). Les photos
-                 sont visibles côté client sur la page de suivi, sauf si « privée ». --}}
-            <x-card title="Photos">
-                <livewire:intervention-photos :intervention="$i" :key="'photos-'.$i->id" />
-            </x-card>
-
-            {{-- Technical report (live auto-save, no page reload — Livewire) --}}
+            {{-- Clôture : la seule action qui reste hors des onglets, car c'est le bouton
+                 de fin d'intervention (finalisation puis restitution & signature). --}}
             @if ($peutGerer && ! $i->estCloturee())
-                <x-card title="Rapport technique">
-                    <livewire:intervention-report :intervention="$i" :key="'report-'.$i->id" />
-                </x-card>
-
                 @php
                     $breakdown = \App\Support\Billing::compute($i, $i->estDomicile() ? null : 0.0);
                     $deplMode = \App\Support\Deplacement::mode();

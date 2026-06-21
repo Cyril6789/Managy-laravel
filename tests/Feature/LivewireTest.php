@@ -121,6 +121,17 @@ class LivewireTest extends TestCase
         $this->assertSame($statut->id, $intervention->fresh()->statut_id);
     }
 
+    public function test_panel_saves_access_password_in_details(): void
+    {
+        $intervention = Intervention::ouvertes()->first();
+
+        // The access password now lives in the "Détails" specs (not the report).
+        Livewire::test(InterventionPanel::class, ['intervention' => $intervention])
+            ->set('mdp', 'BIOS-1234');
+
+        $this->assertSame('BIOS-1234', $intervention->fresh()->mdp);
+    }
+
     public function test_panel_accepts_comma_decimals_for_duration_and_price(): void
     {
         $intervention = Intervention::ouvertes()->first();
