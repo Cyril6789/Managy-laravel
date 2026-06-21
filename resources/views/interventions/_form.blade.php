@@ -138,7 +138,7 @@
                                 <label class="flex items-center gap-3">
                                     <input type="checkbox" name="technicien_ids[]" value="{{ $t->id }}"
                                            @checked(in_array($t->id, $selectedTechs, true))
-                                           class="rounded border-gray-300 text-brand-600">
+                                           class="rounded border-gray-300 text-brand-600 dark:border-gray-700 dark:bg-gray-800">
                                     <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-brand-600 text-[10px] font-semibold text-white">{{ $t->initials() }}</span>
                                     <span class="flex-1 text-sm">{{ $t->fullName() }}</span>
                                 </label>
@@ -161,11 +161,11 @@
                 </x-field>
                 <label class="flex items-center gap-2 text-sm">
                     <input type="hidden" name="urgente" value="0">
-                    <input type="checkbox" name="urgente" value="1" @checked($val('urgente')) class="rounded border-gray-300 text-brand-600"> Urgente
+                    <input type="checkbox" name="urgente" value="1" @checked($val('urgente')) class="rounded border-gray-300 text-brand-600 dark:border-gray-700 dark:bg-gray-800"> Urgente
                 </label>
                 <label class="flex items-center gap-2 text-sm">
                     <input type="hidden" name="garantie" value="0">
-                    <input type="checkbox" name="garantie" value="1" @checked($val('garantie')) class="rounded border-gray-300 text-brand-600"> Sous garantie
+                    <input type="checkbox" name="garantie" value="1" @checked($val('garantie')) class="rounded border-gray-300 text-brand-600 dark:border-gray-700 dark:bg-gray-800"> Sous garantie
                 </label>
             </div>
         </x-card>

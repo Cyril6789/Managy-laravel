@@ -15,7 +15,7 @@
                 </x-field>
                 <label class="flex items-center gap-2 text-sm">
                     <input type="hidden" name="is_active" value="0">
-                    <input type="checkbox" name="is_active" value="1" @checked(old('is_active', $user->is_active)) class="rounded border-gray-300 text-brand-600"> Compte actif
+                    <input type="checkbox" name="is_active" value="1" @checked(old('is_active', $user->is_active)) class="rounded border-gray-300 text-brand-600 dark:border-gray-700 dark:bg-gray-800"> Compte actif
                 </label>
             </div>
         </x-card>
@@ -25,7 +25,7 @@
         <x-card title="Droits d'accès" x-data="{ admin: {{ old('is_admin', $user->is_admin) ? 'true' : 'false' }} }">
             <label class="mb-4 flex items-center gap-2 rounded-lg bg-purple-50 p-3 text-sm dark:bg-purple-900/20">
                 <input type="hidden" name="is_admin" value="0">
-                <input type="checkbox" name="is_admin" value="1" x-model="admin" @checked(old('is_admin', $user->is_admin)) class="rounded border-gray-300 text-purple-600">
+                <input type="checkbox" name="is_admin" value="1" x-model="admin" @checked(old('is_admin', $user->is_admin)) class="rounded border-gray-300 text-purple-600 dark:border-gray-700 dark:bg-gray-800">
                 <span><strong>Administrateur (gérant)</strong> — accès complet à toutes les fonctionnalités.</span>
             </label>
 
@@ -38,7 +38,7 @@
                                 <label class="flex items-center gap-2 rounded-lg border border-gray-100 px-3 py-2 text-sm dark:border-gray-800">
                                     <input type="checkbox" name="permissions[]" value="{{ $key }}"
                                            @checked(collect(old('permissions', $granted))->contains($key))
-                                           class="rounded border-gray-300 text-brand-600">
+                                           class="rounded border-gray-300 text-brand-600 dark:border-gray-700 dark:bg-gray-800">
                                     {{ $label }}
                                 </label>
                             @endforeach

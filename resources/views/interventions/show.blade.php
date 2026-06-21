@@ -177,7 +177,7 @@
 
                                     <div class="space-y-3">
                                         <label class="flex items-center gap-2 text-sm">
-                                            <input type="checkbox" x-model="waiveDepl" class="rounded border-gray-300 text-brand-600">
+                                            <input type="checkbox" x-model="waiveDepl" class="rounded border-gray-300 text-brand-600 dark:border-gray-700 dark:bg-gray-800">
                                             Offrir le déplacement
                                         </label>
                                         <div x-show="!waiveDepl" x-cloak class="space-y-3">
@@ -241,7 +241,7 @@
                                 @if ($i->estDomicile())
                                     <div class="space-y-3">
                                         <label class="flex items-center gap-2 text-sm">
-                                            <input type="checkbox" x-model="payee" class="rounded border-gray-300 text-brand-600">
+                                            <input type="checkbox" x-model="payee" class="rounded border-gray-300 text-brand-600 dark:border-gray-700 dark:bg-gray-800">
                                             Le client a déjà payé
                                         </label>
                                         <input type="hidden" name="payee" :value="payee ? 1 : 0">
@@ -263,7 +263,7 @@
                                     {{-- Atelier : pas de ristourne, simple indication de facturation --}}
                                     <div>
                                         <label class="flex items-center gap-2 text-sm">
-                                            <input type="checkbox" x-model="facturee" class="rounded border-gray-300 text-brand-600">
+                                            <input type="checkbox" x-model="facturee" class="rounded border-gray-300 text-brand-600 dark:border-gray-700 dark:bg-gray-800">
                                             L'intervention a déjà été facturée
                                         </label>
                                         <input type="hidden" name="facturee" :value="facturee ? 1 : 0">

@@ -23,7 +23,7 @@
                 <input type="file" wire:model="uploads" multiple x-ref="target" class="hidden" tabindex="-1" aria-hidden="true">
 
                 <label class="mt-3 flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
-                    <input type="checkbox" wire:model.live="prive" class="rounded border-gray-300 text-brand-600 focus:ring-brand-500">
+                    <input type="checkbox" wire:model.live="prive" class="rounded border-gray-300 text-brand-600 dark:border-gray-700 dark:bg-gray-800 focus:ring-brand-500">
                     Photo privée <span class="text-gray-400">(non visible par le client)</span>
                 </label>
 

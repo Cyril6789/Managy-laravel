@@ -43,7 +43,7 @@
                         @else
                             <input type="checkbox" wire:click="toggleTechnician({{ $t['id'] }})"
                                    @checked(in_array($t['id'], $selected, true))
-                                   class="rounded border-gray-300 text-brand-600">
+                                   class="rounded border-gray-300 text-brand-600 dark:border-gray-700 dark:bg-gray-800">
                         @endif
                         <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[10px] font-semibold text-white {{ $t['unavailable'] ? 'bg-gray-400' : 'bg-brand-600' }}">{{ $t['initials'] }}</span>
                         <span class="flex-1 text-sm {{ $t['unavailable'] ? 'text-gray-400 line-through' : '' }}">{{ $t['nom'] }}</span>

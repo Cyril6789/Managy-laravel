@@ -23,7 +23,7 @@
 
         <div class="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-gray-900">
             <h2 class="mb-1 text-lg font-semibold text-gray-900 dark:text-gray-100">Connexion</h2>
-            <p class="mb-5 text-sm text-gray-500 dark:text-gray-400">Accédez à votre espace de gestion.</p>
+            <p class="mb-5 text-sm text-gray-500">Accédez à votre espace de gestion.</p>
 
             @if ($errors->any())
                 <div class="mb-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-900 dark:bg-red-900/30 dark:text-red-300">
@@ -53,7 +53,7 @@
             </form>
         </div>
 
-        <p class="mt-6 text-center text-xs text-gray-400 dark:text-gray-500">© {{ date('Y') }} {{ $appSettings['company_name'] ?? 'Managy' }}</p>
+        <p class="mt-6 text-center text-xs text-gray-400">© {{ date('Y') }} {{ $appSettings['company_name'] ?? 'Managy' }}</p>
     </div>
     @livewireScripts
 </body>

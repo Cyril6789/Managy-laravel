@@ -54,7 +54,7 @@
                 </x-field>
 
                 <label class="md:col-span-2 flex items-center gap-2 text-sm">
-                    <input type="checkbox" wire:model.live="absJournee" class="rounded border-gray-300 text-brand-600">
+                    <input type="checkbox" wire:model.live="absJournee" class="rounded border-gray-300 text-brand-600 dark:border-gray-700 dark:bg-gray-800">
                     Journée(s) entière(s)
                 </label>
 
