@@ -23,7 +23,7 @@ class InterventionPanel extends Component
 {
     public Intervention $intervention;
 
-    public string $tab = 'details';
+    public string $tab = 'intervention';
 
     public ?int $statutId = null;
 
@@ -35,14 +35,18 @@ class InterventionPanel extends Component
 
     public array $sst = ['nom' => '', 'devis' => ''];
 
-    /** Accès / mot de passe — éditable dans l'onglet « Détails » (spécificités). */
+    /** Accès / mot de passe — éditable dans l'onglet « Intervention » (spécificités). */
     public ?string $mdp = null;
+
+    /** Tarif estimatif — rangé dans la zone « spécificités », sous le mot de passe. */
+    public ?string $tarif_estimatif = null;
 
     public function mount(Intervention $intervention): void
     {
         $this->intervention = $intervention;
         $this->statutId = $intervention->statut_id;
         $this->mdp = $intervention->mdp;
+        $this->tarif_estimatif = $intervention->tarif_estimatif;
     }
 
     public function getCanManageProperty(): bool
@@ -64,7 +68,7 @@ class InterventionPanel extends Component
         $automatismes->fire('changement_statut', $this->intervention);
     }
 
-    // ----- Accès / mot de passe (spécificités) -------------------------------
+    // ----- Spécificités (accès / mot de passe, tarif estimatif) --------------
 
     /** Auto-save the access password when the field loses focus (wire:model.blur). */
     public function updatedMdp(): void
@@ -73,6 +77,16 @@ class InterventionPanel extends Component
         $this->validate(['mdp' => ['nullable', 'string', 'max:255']]);
 
         $this->intervention->update(['mdp' => $this->mdp]);
+    }
+
+    /** Auto-save the estimated price (sits under the password, in the specs box). */
+    public function updatedTarifEstimatif(): void
+    {
+        Gate::authorize(Permissions::INTERVENTIONS_MANAGE);
+        $this->tarif_estimatif = $this->normaliserDecimale($this->tarif_estimatif);
+        $this->validate(['tarif_estimatif' => ['nullable', 'numeric', 'min:0']]);
+
+        $this->intervention->update(['tarif_estimatif' => $this->tarif_estimatif ?: null]);
     }
 
     // ----- Prestations -------------------------------------------------------
@@ -114,12 +128,14 @@ class InterventionPanel extends Component
         ]);
         $this->presta = ['prestation_id' => '', 'designation' => '', 'duree' => ''];
         $this->log('a ajouté une prestation');
+        $this->itemsChanged();
     }
 
     public function deletePrestation(int $id): void
     {
         Gate::authorize(Permissions::INTERVENTIONS_MANAGE);
         InterventionPrestation::where('intervention_id', $this->intervention->id)->findOrFail($id)->delete();
+        $this->itemsChanged();
     }
 
     // ----- Pièces (replaced parts, ad-hoc) -----------------------------------
@@ -138,12 +154,23 @@ class InterventionPanel extends Component
         $this->intervention->pieces()->create($this->piece);
         $this->piece = ['designation' => '', 'prix' => '', 'quantite' => '1'];
         $this->log('a ajouté une pièce');
+        $this->itemsChanged();
     }
 
     public function deletePiece(int $id): void
     {
         Gate::authorize(Permissions::INTERVENTIONS_MANAGE);
         InterventionPiece::where('intervention_id', $this->intervention->id)->findOrFail($id)->delete();
+        $this->itemsChanged();
+    }
+
+    /**
+     * Tell the sibling "clôture" component (finalisation / restitution) that the
+     * billable items changed, so its total recomputes live — no page reload.
+     */
+    private function itemsChanged(): void
+    {
+        $this->dispatch('intervention-items-updated');
     }
 
     // ----- Commandes ---------------------------------------------------------

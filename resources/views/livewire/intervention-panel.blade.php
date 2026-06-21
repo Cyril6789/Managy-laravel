@@ -1,24 +1,22 @@
 @php
     $i = $this->intervention;
     $peutGerer = $this->canManage;
-    // The "Rapport" tab is an editing surface, only meaningful while the job is open
-    // and the user may manage it. When unavailable, the diagnostic / messages are
-    // still shown read-only inside "Détails" so nothing is ever hidden.
-    $showRapportTab = $peutGerer && ! $i->estCloturee();
+    // The report is an editing surface, only meaningful while the job is open and the
+    // user may manage it. When unavailable, the diagnostic / messages are shown
+    // read-only in the same tab so nothing is ever hidden.
+    $rapportEditable = $peutGerer && ! $i->estCloturee();
 
     $counts = [
-        'details' => 0,
-        'rapport' => 0,
-        'prestations' => $i->prestations->count() + $i->pieces->count(),
+        'intervention' => 0,
         'photos' => $i->photos->count(),
         'appro' => $i->commandes->count() + $i->sousTraitances->count(),
         'comm' => $i->clientMessages->count(),
     ];
 
-    $tabs = ['details' => 'Détails'];
-    if ($showRapportTab) $tabs['rapport'] = 'Rapport';
-    $tabs += [
-        'prestations' => 'Prestations & pièces',
+    // One main tab gathers the whole intervention (specs, report, prestations &
+    // parts) so the page reads top-to-bottom; the rest stay as focused tabs.
+    $tabs = [
+        'intervention' => 'Intervention',
         'photos' => 'Photos',
         'appro' => 'Approvisionnement',
         'comm' => 'Communication',
@@ -55,8 +53,9 @@
         </div>
 
         <div class="p-5">
-            {{-- ───────────────────────── Détails (spécificités) ───────────────────────── --}}
-            <div x-show="tab === 'details'" class="space-y-4 text-sm">
+            {{-- ────────── Intervention : spécificités + rapport + prestations & pièces ────────── --}}
+            <div x-show="tab === 'intervention'" class="space-y-6">
+              <section class="space-y-4 text-sm">
                 {{-- Équipement (matériel, OS, antivirus) --}}
                 <div class="grid grid-cols-2 gap-3 rounded-lg border border-gray-100 p-3 dark:border-gray-800 sm:grid-cols-3">
                     <div>
@@ -80,48 +79,59 @@
                     </div>
                 @endforeach
 
-                {{-- Accès / mot de passe : c'est une spécificité de la machine, pas un rapport. --}}
-                <div class="rounded-lg border border-amber-100 bg-amber-50/50 p-3 dark:border-amber-900/40 dark:bg-amber-900/10">
-                    <p class="mb-1 flex items-center gap-1.5 text-xs font-medium uppercase tracking-wide text-amber-600 dark:text-amber-400">
-                        <x-icon name="lock" class="h-3.5 w-3.5" /> Accès / mot de passe
-                    </p>
+                {{-- Zone « spécificités » (jaune) : accès / mot de passe, puis tarif estimatif. --}}
+                <div class="space-y-3 rounded-lg border border-amber-100 bg-amber-50/50 p-3 dark:border-amber-900/40 dark:bg-amber-900/10">
+                    <div>
+                        <p class="mb-1 flex items-center gap-1.5 text-xs font-medium uppercase tracking-wide text-amber-600 dark:text-amber-400">
+                            <x-icon name="lock" class="h-3.5 w-3.5" /> Accès / mot de passe
+                        </p>
+                        @if ($peutGerer && ! $i->estCloturee())
+                            <input wire:model.blur="mdp" placeholder="Session, BIOS, comptes…"
+                                   class="w-full rounded-lg border-gray-300 font-mono text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:border-gray-700 dark:bg-gray-800">
+                            @error('mdp')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
+                        @else
+                            <p class="font-mono text-gray-700 dark:text-gray-300">{{ $i->mdp ?: '—' }}</p>
+                        @endif
+                    </div>
+                    <div>
+                        <p class="mb-1 text-xs font-medium uppercase tracking-wide text-amber-600 dark:text-amber-400">Tarif estimatif (€)</p>
+                        @if ($peutGerer && ! $i->estCloturee())
+                            <input wire:model.blur="tarif_estimatif" type="text" inputmode="decimal" placeholder="0,00"
+                                   class="w-full rounded-lg border-gray-300 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:border-gray-700 dark:bg-gray-800">
+                            @error('tarif_estimatif')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
+                        @else
+                            <p class="text-gray-700 dark:text-gray-300">{{ $i->tarif_estimatif !== null ? number_format($i->tarif_estimatif, 2, ',', ' ').' €' : '—' }}</p>
+                        @endif
+                    </div>
                     @if ($peutGerer && ! $i->estCloturee())
-                        <input wire:model.blur="mdp" placeholder="Session, BIOS, comptes…"
-                               class="w-full rounded-lg border-gray-300 font-mono text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:border-gray-700 dark:bg-gray-800">
-                        <p class="mt-1 text-xs text-gray-400">
-                            <span wire:loading wire:target="mdp" class="text-amber-600">Enregistrement…</span>
+                        <p class="text-xs text-gray-400">
+                            <span wire:loading wire:target="mdp,tarif_estimatif" class="text-amber-600">Enregistrement…</span>
                             <span wire:loading.remove>Enregistré automatiquement.</span>
                         </p>
-                        @error('mdp')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
-                    @else
-                        <p class="font-mono text-gray-700 dark:text-gray-300">{{ $i->mdp ?: '—' }}</p>
                     @endif
                 </div>
+              </section>
 
-                {{-- Quand l'onglet « Rapport » n'est pas disponible (clôturée / lecture seule),
-                     on affiche ici le diagnostic et les messages pour ne rien masquer. --}}
-                @unless ($showRapportTab)
-                    @foreach ([['Diagnostic / rapport', $i->diagnostic], ['Message au client', $i->message_client], ['Note interne', $i->message_interne]] as [$label, $value])
-                        <div>
-                            <p class="mb-0.5 text-xs font-medium uppercase tracking-wide text-gray-400">{{ $label }}</p>
-                            <p class="whitespace-pre-line text-gray-700 dark:text-gray-300">{{ $value ?: '—' }}</p>
-                        </div>
-                    @endforeach
-                    @if ($i->tarif_estimatif !== null)
-                        <div><p class="mb-0.5 text-xs font-medium uppercase tracking-wide text-gray-400">Tarif estimatif</p><p class="text-gray-700 dark:text-gray-300">{{ number_format($i->tarif_estimatif, 2, ',', ' ') }} €</p></div>
-                    @endif
-                @endunless
-            </div>
-
-            {{-- ───────────────────────── Rapport (édition live) ───────────────────────── --}}
-            @if ($showRapportTab)
-                <div x-show="tab === 'rapport'" x-cloak>
+              {{-- Rapport technique : édition live tant que l'intervention est ouverte,
+                   sinon lecture seule (rien n'est masqué). --}}
+              <section class="space-y-4 border-t border-gray-100 pt-6 dark:border-gray-800">
+                <h3 class="text-sm font-semibold text-gray-700 dark:text-gray-200">Rapport</h3>
+                @if ($rapportEditable)
                     <livewire:intervention-report :intervention="$i" :key="'report-'.$i->id" />
-                </div>
-            @endif
+                @else
+                    <div class="space-y-4 text-sm">
+                        @foreach ([['Diagnostic / rapport', $i->diagnostic], ['Message au client', $i->message_client], ['Note interne', $i->message_interne]] as [$label, $value])
+                            <div>
+                                <p class="mb-0.5 text-xs font-medium uppercase tracking-wide text-gray-400">{{ $label }}</p>
+                                <p class="whitespace-pre-line text-gray-700 dark:text-gray-300">{{ $value ?: '—' }}</p>
+                            </div>
+                        @endforeach
+                    </div>
+                @endif
+              </section>
 
-            {{-- ───────────────── Prestations & pièces (matériel ajouté) ───────────────── --}}
-            <div x-show="tab === 'prestations'" x-cloak class="space-y-6">
+              {{-- Prestations & pièces (matériel ajouté) --}}
+              <section class="space-y-6 border-t border-gray-100 pt-6 dark:border-gray-800">
                 {{-- Prestations --}}
                 <div class="space-y-4">
                     <h3 class="text-sm font-semibold text-gray-700 dark:text-gray-200">Prestations</h3>
@@ -219,6 +229,7 @@
                         <span>{{ number_format($i->montantPrestations() + $i->montantPieces(), 2, ',', ' ') }} €</span>
                     </div>
                 @endif
+              </section>
             </div>
 
             {{-- ───────────────────────────── Photos ───────────────────────────── --}}

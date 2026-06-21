@@ -7,6 +7,7 @@ use App\Livewire\ClientPicker;
 use App\Livewire\ContactManager;
 use App\Livewire\ContactPicker;
 use App\Livewire\Facturation;
+use App\Livewire\InterventionCloture;
 use App\Livewire\InterventionPanel;
 use App\Livewire\InterventionReport;
 use App\Livewire\Tasks;
@@ -130,6 +131,42 @@ class LivewireTest extends TestCase
             ->set('mdp', 'BIOS-1234');
 
         $this->assertSame('BIOS-1234', $intervention->fresh()->mdp);
+    }
+
+    public function test_panel_saves_estimated_price_in_specs(): void
+    {
+        $intervention = Intervention::ouvertes()->first();
+
+        // Tarif estimatif now sits in the yellow specs box, under the password.
+        Livewire::test(InterventionPanel::class, ['intervention' => $intervention])
+            ->set('tarif_estimatif', '149,90');
+
+        $this->assertSame('149.90', (string) $intervention->fresh()->tarif_estimatif);
+    }
+
+    public function test_panel_notifies_cloture_when_billable_items_change(): void
+    {
+        $intervention = Intervention::ouvertes()->first();
+
+        // The closing card listens for this so its total recomputes live.
+        Livewire::test(InterventionPanel::class, ['intervention' => $intervention])
+            ->set('presta.designation', 'Diagnostic')
+            ->set('presta.duree', '1')
+            ->call('addPrestation')
+            ->assertDispatched('intervention-items-updated');
+    }
+
+    public function test_cloture_total_recomputes_on_items_updated(): void
+    {
+        $intervention = Intervention::ouvertes()->first();
+        $intervention->prestations()->create(['designation' => 'Forfait', 'duree' => 1, 'tarif' => 60]);
+
+        $component = Livewire::test(InterventionCloture::class, ['intervention' => $intervention])
+            ->assertSee('60,00');
+
+        // Add another billable line, then signal the component: the new total shows.
+        $intervention->prestations()->create(['designation' => 'Extra', 'duree' => 1, 'tarif' => 40]);
+        $component->call('itemsUpdated')->assertSee('100,00');
     }
 
     public function test_panel_accepts_comma_decimals_for_duration_and_price(): void

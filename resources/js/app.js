@@ -315,7 +315,12 @@ document.addEventListener('alpine:init', () => {
 
         show(i) {
             this.slides = Array.from(this.$root.querySelectorAll('[data-carousel-item]'))
-                .map((el) => ({ url: el.dataset.url, name: el.dataset.name || '' }));
+                .map((el) => ({
+                    url: el.dataset.url,
+                    name: el.dataset.name || '',
+                    id: el.dataset.id ? Number(el.dataset.id) : null,
+                    prive: el.dataset.prive === '1',
+                }));
             if (!this.slides.length) return;
             this.index = Math.max(0, Math.min(Number(i) || 0, this.slides.length - 1));
             this.open = true;
