@@ -234,7 +234,7 @@
                                     <canvas x-ref="canvas"
                                             @mousedown="start($event)" @mousemove="move($event)" @mouseup="end()" @mouseleave="end()"
                                             @touchstart="start($event)" @touchmove="move($event)" @touchend="end()"
-                                            class="h-40 w-full touch-none rounded-lg border-2 border-dashed border-gray-300 bg-white dark:border-gray-600"></canvas>
+                                            class="h-40 w-full touch-none rounded-lg border-2 border-dashed border-gray-300 bg-white dark:border-gray-600 dark:bg-gray-200"></canvas>
                                     <p class="mt-1 text-xs text-gray-400">Signez ci-dessus avec le doigt ou la souris (facultatif).</p>
                                 </div>
 
