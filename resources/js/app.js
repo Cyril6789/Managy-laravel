@@ -298,3 +298,86 @@ window.fillTextarea = (targetId, value, mode = 'replace') => {
     t.value = mode === 'append' && t.value.trim() ? `${t.value}\n${value}` : value;
     t.dispatchEvent(new Event('input', { bubbles: true }));
 };
+
+document.addEventListener('alpine:init', () => {
+    /**
+     * Intervention photos uploader. Phone pictures are often several MB, which
+     * routinely exceeds the server's upload limits and leaves Livewire's upload
+     * spinner stuck. We resize / re-encode each image to a sane size in the
+     * browser first, then hand the lightweight files to a hidden Livewire input
+     * (which performs the real upload, so progress / error events still fire).
+     */
+    window.Alpine.data('photoUploader', () => ({
+        uploading: false,
+        preparing: false,
+        progress: 0,
+        error: null,
+        watchdog: null,
+
+        async pick(event) {
+            const files = Array.from(event.target.files || []);
+            event.target.value = '';            // allow re-picking the same file
+            if (!files.length) return;
+
+            this.error = null;
+            this.uploading = true;
+            this.preparing = true;
+            try {
+                const prepared = [];
+                for (const file of files) {
+                    prepared.push(await this.compress(file));
+                }
+
+                const data = new DataTransfer();
+                prepared.forEach((f) => data.items.add(f));
+                const target = this.$refs.target;
+                target.files = data.files;
+                // Hands over to wire:model — fires livewire-upload-start/progress/finish.
+                target.dispatchEvent(new Event('change', { bubbles: true }));
+
+                // Safety net: never leave the spinner stuck if no event comes back.
+                clearTimeout(this.watchdog);
+                this.watchdog = setTimeout(() => {
+                    if (this.uploading) {
+                        this.uploading = false;
+                        this.progress = 0;
+                        this.error = 'Délai dépassé. Réessayez avec une connexion stable.';
+                    }
+                }, 120000);
+            } catch (e) {
+                this.uploading = false;
+                this.error = 'Impossible de préparer ces photos. Réessayez.';
+            } finally {
+                this.preparing = false;
+            }
+        },
+
+        /** Downscale to a max edge and re-encode as JPEG; falls back to the original. */
+        async compress(file, maxEdge = 1800, quality = 0.82) {
+            if (!file.type || !file.type.startsWith('image/')) return file;
+
+            let bitmap;
+            try {
+                bitmap = await createImageBitmap(file, { imageOrientation: 'from-image' });
+            } catch (e) {
+                return file;                    // unsupported (e.g. HEIC on some browsers)
+            }
+
+            const scale = Math.min(1, maxEdge / Math.max(bitmap.width, bitmap.height));
+            const width = Math.round(bitmap.width * scale);
+            const height = Math.round(bitmap.height * scale);
+
+            const canvas = document.createElement('canvas');
+            canvas.width = width;
+            canvas.height = height;
+            canvas.getContext('2d').drawImage(bitmap, 0, 0, width, height);
+            if (bitmap.close) bitmap.close();
+
+            const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/jpeg', quality));
+            if (!blob) return file;
+
+            const name = file.name.replace(/\.[^.]+$/, '') + '.jpg';
+            return new File([blob], name, { type: 'image/jpeg', lastModified: Date.now() });
+        },
+    }));
+});
