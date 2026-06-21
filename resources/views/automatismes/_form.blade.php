@@ -69,7 +69,7 @@
         </x-field>
         <label class="flex items-center gap-2 text-sm">
             <input type="hidden" name="actif" value="0">
-            <input type="checkbox" name="actif" value="1" @checked(old('actif', $automatisme->actif)) class="rounded border-gray-300 text-brand-600"> Actif
+            <input type="checkbox" name="actif" value="1" @checked(old('actif', $automatisme->actif)) class="rounded border-gray-300 text-brand-600 dark:border-gray-700 dark:bg-gray-800"> Actif
         </label>
     </div>
 </x-card>

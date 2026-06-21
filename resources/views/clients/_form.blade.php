@@ -76,7 +76,7 @@
             <p class="mb-3 text-sm font-medium text-gray-700 dark:text-gray-300">Tarification du client</p>
             <label class="flex items-center gap-2 text-sm">
                 <input type="hidden" name="deplacement_gratuit" value="0">
-                <input type="checkbox" name="deplacement_gratuit" value="1" @checked(old('deplacement_gratuit', $client->deplacement_gratuit)) class="rounded border-gray-300 text-brand-600">
+                <input type="checkbox" name="deplacement_gratuit" value="1" @checked(old('deplacement_gratuit', $client->deplacement_gratuit)) class="rounded border-gray-300 text-brand-600 dark:border-gray-700 dark:bg-gray-800">
                 Déplacement toujours gratuit pour ce client
             </label>
             <div class="mt-4 grid grid-cols-1 gap-5 sm:grid-cols-2">

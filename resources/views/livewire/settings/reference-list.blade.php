@@ -11,7 +11,7 @@
                                 <input type="color" wire:model="rows.{{ $item->id }}.{{ $f['key'] }}" class="h-9 w-10 rounded border-gray-300">
                             @elseif ($f['kind'] === 'check')
                                 <label class="flex items-center gap-1 text-xs">
-                                    <input type="checkbox" wire:model="rows.{{ $item->id }}.{{ $f['key'] }}" class="rounded border-gray-300 text-brand-600"> {{ $f['label'] }}
+                                    <input type="checkbox" wire:model="rows.{{ $item->id }}.{{ $f['key'] }}" class="rounded border-gray-300 text-brand-600 dark:border-gray-700 dark:bg-gray-800"> {{ $f['label'] }}
                                 </label>
                             @elseif ($f['kind'] === 'number')
                                 <x-input type="number" step="{{ $f['step'] ?? '1' }}" wire:model="rows.{{ $item->id }}.{{ $f['key'] }}" placeholder="{{ $f['placeholder'] ?? '' }}" class="{{ $f['class'] ?? 'w-24' }}" />
@@ -46,7 +46,7 @@
                         <input type="color" wire:model="draft.{{ $f['key'] }}" class="h-9 w-10 rounded border-gray-300">
                     @elseif ($f['kind'] === 'check')
                         <label class="flex items-center gap-1 text-xs">
-                            <input type="checkbox" wire:model="draft.{{ $f['key'] }}" class="rounded border-gray-300 text-brand-600"> {{ $f['label'] }}
+                            <input type="checkbox" wire:model="draft.{{ $f['key'] }}" class="rounded border-gray-300 text-brand-600 dark:border-gray-700 dark:bg-gray-800"> {{ $f['label'] }}
                         </label>
                     @elseif ($f['kind'] === 'number')
                         <x-input type="number" step="{{ $f['step'] ?? '1' }}" wire:model="draft.{{ $f['key'] }}" placeholder="{{ $f['placeholder'] ?? '' }}" class="{{ $f['class'] ?? 'w-24' }}" />

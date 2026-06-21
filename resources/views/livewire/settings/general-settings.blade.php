@@ -20,7 +20,7 @@
                     </x-field>
                     @if ($companyLogo)
                         <label class="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-                            <input type="checkbox" wire:model="removeLogo" class="rounded border-gray-300 text-red-600"> Supprimer le logo
+                            <input type="checkbox" wire:model="removeLogo" class="rounded border-gray-300 text-red-600 dark:border-gray-700 dark:bg-gray-800"> Supprimer le logo
                         </label>
                     @endif
                 </div>

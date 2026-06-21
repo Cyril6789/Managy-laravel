@@ -22,7 +22,7 @@
                 <option value="particulier" @selected(request('type')==='particulier')>Particuliers</option>
             </x-select>
             <label class="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-                <input type="checkbox" name="archived" value="1" @checked(request('archived')) onchange="this.form.submit()" class="rounded border-gray-300 text-brand-600">
+                <input type="checkbox" name="archived" value="1" @checked(request('archived')) onchange="this.form.submit()" class="rounded border-gray-300 text-brand-600 dark:border-gray-700 dark:bg-gray-800">
                 Inclure archivés
             </label>
             <x-button variant="secondary" type="submit">Filtrer</x-button>

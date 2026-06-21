@@ -22,7 +22,7 @@
         </div>
 
         <div class="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-gray-900">
-            <h2 class="mb-1 text-lg font-semibold">Connexion</h2>
+            <h2 class="mb-1 text-lg font-semibold text-gray-900 dark:text-gray-100">Connexion</h2>
             <p class="mb-5 text-sm text-gray-500">Accédez à votre espace de gestion.</p>
 
             @if ($errors->any())
@@ -43,7 +43,7 @@
 
                 <div class="flex items-center justify-between">
                     <label class="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-                        <input type="checkbox" name="remember" class="rounded border-gray-300 text-brand-600 focus:ring-brand-500">
+                        <input type="checkbox" name="remember" class="rounded border-gray-300 text-brand-600 focus:ring-brand-500 dark:border-gray-700 dark:bg-gray-800">
                         Se souvenir de moi
                     </label>
                     <a href="{{ route('password.request') }}" class="text-sm text-brand-600 hover:underline">Mot de passe oublié&nbsp;?</a>

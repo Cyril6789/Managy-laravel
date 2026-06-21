@@ -16,7 +16,7 @@
                 <option value="terminee">Terminées</option>
             </x-select>
             <label class="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-                <input type="checkbox" wire:model.live="mine" class="rounded border-gray-300 text-brand-600"> Mes tâches
+                <input type="checkbox" wire:model.live="mine" class="rounded border-gray-300 text-brand-600 dark:border-gray-700 dark:bg-gray-800"> Mes tâches
             </label>
         </div>
 
