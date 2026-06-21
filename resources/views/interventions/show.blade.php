@@ -101,7 +101,7 @@
                         </form>
                     </x-card>
                 @else
-                    <x-card title="Restituer &amp; clôturer">
+                    <x-card title="Restituer & clôturer">
                         @if (! $i->estDomicile())
                             <div class="mb-3 flex items-center gap-2 rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-sm text-blue-800 dark:border-blue-900 dark:bg-blue-900/30 dark:text-blue-300">
                                 <x-icon name="check" class="h-4 w-4" /> Intervention finalisée{{ $i->finalisee_at ? ' le '.$i->finalisee_at->format('d/m/Y à H:i') : '' }}.
@@ -284,7 +284,7 @@
             </x-card>
 
             @if ($peutGerer && ! $i->estCloturee())
-                <x-card title="Rendez-vous &amp; affectation">
+                <x-card title="Rendez-vous & affectation">
                     <p class="mb-3 text-xs text-gray-500">Modifiez la date du rendez-vous et choisissez le(s) technicien(s) en fonction des disponibilités de chacun.</p>
                     <livewire:intervention-schedule mode="live" :intervention="$i" :key="'sched-'.$i->id" />
                 </x-card>
