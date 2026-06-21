@@ -521,6 +521,7 @@ class InterventionController extends Controller
             'systemes' => SystemeExploitation::orderBy('nom')->get(),
             'antivirus' => Antivirus::orderBy('nom')->get(),
             'statuts' => Statut::orderBy('ordre')->get(),
+            'techniciens' => User::where('is_active', true)->orderBy('nom')->get(),
         ];
     }
 

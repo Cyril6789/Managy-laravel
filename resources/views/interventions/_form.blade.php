@@ -124,13 +124,37 @@
                         :options="$statuts->pluck('nom', 'id')" :allow-empty="false" />
                 </x-field>
 
-                {{-- RDV + affectation technicien selon les disponibilités --}}
-                <livewire:intervention-schedule
-                    mode="form"
-                    :client-id="$clientId ? (int) $clientId : null"
-                    :rdv-debut="$val('rdv_debut') ? \Illuminate\Support\Carbon::parse($val('rdv_debut'))->format('Y-m-d\TH:i') : null"
-                    :rdv-fin="$val('rdv_fin') ? \Illuminate\Support\Carbon::parse($val('rdv_fin'))->format('Y-m-d\TH:i') : null"
-                    :selected="$intervention->exists ? $intervention->techniciens->pluck('id')->all() : []" />
+                @php $selectedTechs = $intervention->exists ? $intervention->techniciens->pluck('id')->all() : []; @endphp
+
+                {{-- En atelier : pas de rendez-vous ni de disponibilités, juste le choix
+                     du / des technicien(s). En domicile : on retrouve le RDV + l'affectation
+                     selon les disponibilités. Le <fieldset> désactivé du bloc masqué exclut
+                     ses champs de la soumission (un seul bloc actif à la fois). --}}
+                <fieldset x-show="lieu === 'atelier'" x-cloak :disabled="lieu !== 'atelier'">
+                    <span class="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Technicien(s) affecté(s)</span>
+                    <ul class="divide-y divide-gray-100 rounded-lg border border-gray-200 dark:divide-gray-800 dark:border-gray-700">
+                        @foreach ($techniciens as $t)
+                            <li class="px-3 py-2.5">
+                                <label class="flex items-center gap-3">
+                                    <input type="checkbox" name="technicien_ids[]" value="{{ $t->id }}"
+                                           @checked(in_array($t->id, $selectedTechs, true))
+                                           class="rounded border-gray-300 text-brand-600">
+                                    <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-brand-600 text-[10px] font-semibold text-white">{{ $t->initials() }}</span>
+                                    <span class="flex-1 text-sm">{{ $t->fullName() }}</span>
+                                </label>
+                            </li>
+                        @endforeach
+                    </ul>
+                </fieldset>
+
+                <fieldset x-show="lieu === 'domicile'" x-cloak :disabled="lieu !== 'domicile'">
+                    <livewire:intervention-schedule
+                        mode="form"
+                        :client-id="$clientId ? (int) $clientId : null"
+                        :rdv-debut="$val('rdv_debut') ? \Illuminate\Support\Carbon::parse($val('rdv_debut'))->format('Y-m-d\TH:i') : null"
+                        :rdv-fin="$val('rdv_fin') ? \Illuminate\Support\Carbon::parse($val('rdv_fin'))->format('Y-m-d\TH:i') : null"
+                        :selected="$selectedTechs" />
+                </fieldset>
 
                 <x-field label="Tarif estimatif (€)" name="tarif_estimatif">
                     <x-input name="tarif_estimatif" type="number" step="0.01" value="{{ $val('tarif_estimatif') }}" />
