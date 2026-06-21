@@ -35,10 +35,14 @@ class InterventionPanel extends Component
 
     public array $sst = ['nom' => '', 'devis' => ''];
 
+    /** Accès / mot de passe — éditable dans l'onglet « Détails » (spécificités). */
+    public ?string $mdp = null;
+
     public function mount(Intervention $intervention): void
     {
         $this->intervention = $intervention;
         $this->statutId = $intervention->statut_id;
+        $this->mdp = $intervention->mdp;
     }
 
     public function getCanManageProperty(): bool
@@ -58,6 +62,17 @@ class InterventionPanel extends Component
         $this->log('a changé le statut en « '.$statut->nom.' »');
         Notifier::interventionChanged($this->intervention, 'Statut : '.$statut->nom);
         $automatismes->fire('changement_statut', $this->intervention);
+    }
+
+    // ----- Accès / mot de passe (spécificités) -------------------------------
+
+    /** Auto-save the access password when the field loses focus (wire:model.blur). */
+    public function updatedMdp(): void
+    {
+        Gate::authorize(Permissions::INTERVENTIONS_MANAGE);
+        $this->validate(['mdp' => ['nullable', 'string', 'max:255']]);
+
+        $this->intervention->update(['mdp' => $this->mdp]);
     }
 
     // ----- Prestations -------------------------------------------------------
@@ -218,7 +233,7 @@ class InterventionPanel extends Component
 
     public function render()
     {
-        $this->intervention->load(['prestations', 'pieces', 'commandes', 'sousTraitances', 'clientMessages', 'statut', 'client', 'materiel', 'systemeExploitation', 'antivirus']);
+        $this->intervention->load(['prestations', 'pieces', 'commandes', 'sousTraitances', 'clientMessages', 'photos', 'statut', 'client', 'materiel', 'systemeExploitation', 'antivirus']);
 
         return view('livewire.intervention-panel', [
             'statuts' => Statut::orderBy('ordre')->get(),

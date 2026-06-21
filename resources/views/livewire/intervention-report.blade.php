@@ -32,10 +32,7 @@
         <x-textarea wire:model.blur="message_client" rows="2" />
     </x-field>
 
-    <div class="grid grid-cols-2 gap-3">
-        <x-field label="Tarif estimatif (€)"><x-input wire:model.blur="tarif_estimatif" type="number" step="0.01" /></x-field>
-        <x-field label="Accès / mot de passe"><x-input wire:model.blur="mdp" /></x-field>
-    </div>
+    <x-field label="Tarif estimatif (€)"><x-input wire:model.blur="tarif_estimatif" type="number" step="0.01" /></x-field>
 
     <x-field label="Note interne"><x-textarea wire:model.blur="message_interne" rows="2" /></x-field>
 
@@ -43,7 +40,7 @@
 
     <div class="flex items-center justify-between gap-2 text-xs">
         <span>
-            <span wire:loading wire:target="save,diagnostic,message_client,message_interne,mdp,tarif_estimatif" class="text-amber-600">Enregistrement…</span>
+            <span wire:loading wire:target="save,diagnostic,message_client,message_interne,tarif_estimatif" class="text-amber-600">Enregistrement…</span>
             <span wire:loading.remove class="text-green-600" x-show="!dirty" x-cloak>✓ Enregistré automatiquement</span>
             <span x-show="dirty" x-cloak class="text-amber-600">Modifications non enregistrées</span>
         </span>

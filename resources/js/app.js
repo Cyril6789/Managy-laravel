@@ -301,6 +301,57 @@ window.fillTextarea = (targetId, value, mode = 'replace') => {
 
 document.addEventListener('alpine:init', () => {
     /**
+     * Photo carousel / lightbox. Pure Alpine (no dependency), shared by the staff
+     * sheet and the customer tracking page. Clicking a thumbnail opens a fullscreen
+     * overlay with prev/next buttons, keyboard arrows, Escape to close and swipe
+     * gestures on touch screens (iOS / Android). The slide list is read from the DOM
+     * on open, so it always reflects the latest photos after a Livewire add/delete.
+     */
+    window.Alpine.data('photoCarousel', () => ({
+        slides: [],
+        open: false,
+        index: 0,
+        touchX: null,
+
+        show(i) {
+            this.slides = Array.from(this.$root.querySelectorAll('[data-carousel-item]'))
+                .map((el) => ({ url: el.dataset.url, name: el.dataset.name || '' }));
+            if (!this.slides.length) return;
+            this.index = Math.max(0, Math.min(Number(i) || 0, this.slides.length - 1));
+            this.open = true;
+            document.body.style.overflow = 'hidden';
+        },
+        close() {
+            this.open = false;
+            document.body.style.overflow = '';
+        },
+        next() {
+            if (this.slides.length) this.index = (this.index + 1) % this.slides.length;
+        },
+        prev() {
+            if (this.slides.length) this.index = (this.index - 1 + this.slides.length) % this.slides.length;
+        },
+        onKey(e) {
+            if (!this.open) return;
+            if (e.key === 'Escape') this.close();
+            else if (e.key === 'ArrowRight') this.next();
+            else if (e.key === 'ArrowLeft') this.prev();
+        },
+        touchStart(e) {
+            this.touchX = e.changedTouches[0].clientX;
+        },
+        touchEnd(e) {
+            if (this.touchX === null) return;
+            const dx = e.changedTouches[0].clientX - this.touchX;
+            if (Math.abs(dx) > 40) (dx < 0 ? this.next() : this.prev());
+            this.touchX = null;
+        },
+        get current() {
+            return this.slides[this.index] || {};
+        },
+    }));
+
+    /**
      * Intervention photos uploader. Phone pictures are often several MB, which
      * routinely exceeds the server's upload limits and leaves Livewire's upload
      * spinner stuck. We resize / re-encode each image to a sane size in the
