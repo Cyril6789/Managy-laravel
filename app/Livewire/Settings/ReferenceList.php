@@ -5,6 +5,7 @@ namespace App\Livewire\Settings;
 use App\Models\Antivirus;
 use App\Models\CommentaireType;
 use App\Models\Materiel;
+use App\Models\MessageType;
 use App\Models\Prestation;
 use App\Models\RapportType;
 use App\Models\Statut;
@@ -34,8 +35,9 @@ class ReferenceList extends Component
     public array $draft = [];
 
     /**
-     * type => [model, order, fields[]]. Each field: key, kind, placeholder,
-     * class, default.
+     * type => [model, order, fields[], fixed?]. Each field: key, kind,
+     * placeholder, class, default. The optional 4th element is a map of fixed
+     * attributes applied on create and used to scope the listing (e.g. canal).
      */
     private const TYPES = [
         'materiels' => [Materiel::class, 'nom', [
@@ -66,6 +68,15 @@ class ReferenceList extends Component
             ['key' => 'titre', 'kind' => 'text', 'placeholder' => 'Titre', 'class' => 'flex-1'],
             ['key' => 'texte', 'kind' => 'textarea', 'placeholder' => 'Contenu du modèle…'],
         ]],
+        'sms-types' => [MessageType::class, 'titre', [
+            ['key' => 'titre', 'kind' => 'text', 'placeholder' => 'Nom du modèle (ex. RDV confirmé)', 'class' => 'flex-1'],
+            ['key' => 'corps', 'kind' => 'textarea', 'placeholder' => 'Texte du SMS…'],
+        ], ['canal' => 'sms']],
+        'mail-types' => [MessageType::class, 'titre', [
+            ['key' => 'titre', 'kind' => 'text', 'placeholder' => 'Nom du modèle (ex. Devis prêt)', 'class' => 'flex-1'],
+            ['key' => 'sujet', 'kind' => 'text', 'placeholder' => 'Objet de l\'e-mail', 'class' => 'flex-1'],
+            ['key' => 'corps', 'kind' => 'textarea', 'placeholder' => 'Texte de l\'e-mail…'],
+        ], ['canal' => 'email']],
     ];
 
     public function mount(string $type, string $title = ''): void
@@ -92,6 +103,12 @@ class ReferenceList extends Component
         return $this->fields()[0]['key'];
     }
 
+    /** Fixed attributes applied on create and used to scope the listing. */
+    private function fixed(): array
+    {
+        return $this->config()[3] ?? [];
+    }
+
     private function loadRows(): void
     {
         $this->rows = [];
@@ -114,7 +131,12 @@ class ReferenceList extends Component
     {
         [$model, $order] = $this->config();
 
-        return $model::orderBy($order)->get();
+        $query = $model::query();
+        foreach ($this->fixed() as $key => $value) {
+            $query->where($key, $value);
+        }
+
+        return $query->orderBy($order)->get();
     }
 
     private function cast(array $field, $value)
@@ -141,7 +163,7 @@ class ReferenceList extends Component
             return;
         }
 
-        $data = [];
+        $data = $this->fixed();
         foreach ($this->fields() as $f) {
             $data[$f['key']] = $this->cast($f, $this->draft[$f['key']] ?? null);
         }

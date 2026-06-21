@@ -47,6 +47,9 @@
                       deplPrixKm: {{ $deplPrixKm ?: 0 }},
                       deplDefault: {{ $breakdown['deplacement'] }},
                       canRistourne: {{ ($peutRistourne && $i->estDomicile() && ! $i->garantie) ? 'true' : 'false' }},
+                      hasPack: {{ ($maintenanceHasPack && ! $i->garantie) ? 'true' : 'false' }},
+                      packSolde: {{ $maintenanceSolde }},
+                      totalHeures: {{ $totalHeures }},
                       needsPrepare: {{ ($i->estDomicile() && ! $i->garantie) ? 'true' : 'false' }},
                   })" class="space-y-4">
                 @csrf
@@ -56,6 +59,7 @@
                 <input type="hidden" name="remise_valeur" :value="canRistourne ? remiseValeur : 0">
                 <input type="hidden" name="deplacement_km" :value="waiveDepl ? 0 : km">
                 <input type="hidden" name="montant_deplacement" :value="effectiveDepl">
+                <input type="hidden" name="maintenance_heures" :value="hasPack ? packHeures : 0">
 
                 @if ($i->garantie)
                     <div class="rounded-lg border border-green-200 bg-green-50 px-3 py-2 text-sm text-green-700 dark:border-green-900 dark:bg-green-900/30 dark:text-green-300">
@@ -100,12 +104,26 @@
                             </div>
                         </div>
 
+                        {{-- Pack maintenance : règle tout ou partie des HEURES de prestations
+                             (jamais les pièces ni le déplacement). Facultatif. --}}
+                        <div x-show="hasPack && totalHeures > 0" x-cloak>
+                            <span class="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Régler des prestations avec le pack maintenance (facultatif)</span>
+                            <div class="flex items-center gap-2">
+                                <input type="text" inputmode="decimal" x-model="packHeures" @input="clampPack()" @blur="clampPack()"
+                                       class="block w-28 rounded-lg border-gray-300 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:border-gray-700 dark:bg-gray-800">
+                                <span class="text-sm text-gray-500">h <span x-text="'/ ' + fmtH(packMax) + ' dispo'"></span></span>
+                            </div>
+                            <p class="mt-1 text-xs text-gray-400" x-show="packCovered > 0" x-cloak x-text="'− ' + fmt(packCovered) + ' déduits des prestations (réglés par le pack).'"></p>
+                            <p class="mt-1 text-xs text-gray-400" x-show="packCovered <= 0" x-cloak>Laissez à 0 pour que le client règle tout en argent (le pack ne sera pas débité).</p>
+                        </div>
+
                         {{-- Récap détaillé réservé au technicien (avec la ristourne) --}}
                         <div class="rounded-lg border border-gray-200 p-3 text-sm dark:border-gray-700">
                             <div class="flex justify-between"><span class="text-gray-500">Sous-total</span><span x-text="fmt(sousTotal)"></span></div>
                             <div class="flex justify-between" x-show="remiseMontant > 0" x-cloak><span class="text-gray-500">Ristourne</span><span x-text="'− ' + fmt(remiseMontant)"></span></div>
+                            <div class="flex justify-between" x-show="packCovered > 0" x-cloak><span class="text-gray-500">Pack maintenance</span><span x-text="'− ' + fmt(packCovered)"></span></div>
                             <div class="flex justify-between" x-show="effectiveDepl > 0" x-cloak><span class="text-gray-500">Déplacement</span><span x-text="fmt(effectiveDepl)"></span></div>
-                            <div class="mt-1 flex items-center justify-between border-t border-gray-100 pt-2 text-base font-semibold dark:border-gray-800"><span>Total</span><span x-text="fmt(total)"></span></div>
+                            <div class="mt-1 flex items-center justify-between border-t border-gray-100 pt-2 text-base font-semibold dark:border-gray-800"><span>Total à régler</span><span x-text="fmt(total)"></span></div>
                         </div>
 
                         <div class="flex justify-end">
@@ -124,6 +142,7 @@
                     <div class="rounded-lg border border-gray-200 p-3 text-sm dark:border-gray-700">
                         <div class="flex justify-between"><span class="text-gray-500">Prestations</span><span x-text="fmt(prestaNet)"></span></div>
                         <div class="flex justify-between" x-show="piecesNet > 0" x-cloak><span class="text-gray-500">Pièces</span><span x-text="fmt(piecesNet)"></span></div>
+                        <div class="flex justify-between" x-show="packCovered > 0" x-cloak><span class="text-gray-500">Réglé par pack maintenance</span><span x-text="'− ' + fmt(packCovered)"></span></div>
                         <div class="flex justify-between" x-show="isDomicile && effectiveDepl > 0" x-cloak><span class="text-gray-500">Déplacement</span><span x-text="fmt(effectiveDepl)"></span></div>
                         <div class="mt-1 flex items-center justify-between border-t border-gray-100 pt-2 text-base font-semibold dark:border-gray-800">
                             <span>Total</span><span x-text="fmt(total)"></span>
@@ -167,6 +186,18 @@
                             </div>
                         </div>
                     @else
+                        {{-- Pack maintenance (atelier) : règle tout ou partie des HEURES de prestations. --}}
+                        <div x-show="hasPack && totalHeures > 0" x-cloak>
+                            <span class="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Régler des prestations avec le pack maintenance (facultatif)</span>
+                            <div class="flex items-center gap-2">
+                                <input type="text" inputmode="decimal" x-model="packHeures" @input="clampPack()" @blur="clampPack()"
+                                       class="block w-28 rounded-lg border-gray-300 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:border-gray-700 dark:bg-gray-800">
+                                <span class="text-sm text-gray-500">h <span x-text="'/ ' + fmtH(packMax) + ' dispo'"></span></span>
+                            </div>
+                            <p class="mt-1 text-xs text-gray-400" x-show="packCovered > 0" x-cloak x-text="'− ' + fmt(packCovered) + ' réglés par le pack.'"></p>
+                            <p class="mt-1 text-xs text-gray-400" x-show="packCovered <= 0" x-cloak>Laissez à 0 pour ne pas débiter le pack.</p>
+                        </div>
+
                         {{-- Atelier : pas de ristourne, simple indication de facturation --}}
                         <div>
                             <label class="flex items-center gap-2 text-sm">

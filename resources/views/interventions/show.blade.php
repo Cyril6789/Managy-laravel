@@ -47,6 +47,7 @@
                     if ($i->montant_pieces) $details[] = number_format($i->montant_pieces, 2, ',', ' ').' € de pièces';
                     if ($i->montant_deplacement) $details[] = number_format($i->montant_deplacement, 2, ',', ' ').' € de déplacement';
                     if ($i->remise_montant) $details[] = 'ristourne '.number_format($i->remise_montant, 2, ',', ' ').' €';
+                    if ($i->montant_maintenance) $details[] = number_format($i->montant_maintenance, 2, ',', ' ').' € réglés par pack maintenance';
                 @endphp
                 <span class="font-medium">— {{ number_format($i->montant_total, 2, ',', ' ') }} €{{ $details ? ' (dont '.implode(', ', $details).')' : '' }}</span>
                 @if ($i->payee)<span>· payé{{ $i->paiement_mode ? ' par '.$i->paiement_mode : '' }}</span>@endif
@@ -152,14 +153,23 @@
 
             @can(\App\Support\Permissions::MESSAGES_SEND)
                 <x-card title="Contacter le client">
-                    <form action="{{ route('interventions.message_client', $i) }}" method="POST" class="space-y-3" x-data="{ canal: 'sms' }">
+                    <form action="{{ route('interventions.message_client', $i) }}" method="POST" class="space-y-3"
+                          x-data="messageComposer({ sms: @js($smsTypes), email: @js($mailTypes) })">
                         @csrf
                         <x-select name="canal" x-model="canal">
                             <option value="sms">SMS</option>
                             <option value="email">E-mail</option>
                         </x-select>
-                        <x-input name="sujet" placeholder="Sujet (e-mail)" x-show="canal === 'email'" x-cloak />
-                        <x-textarea name="corps" rows="3" placeholder="Votre message…" required></x-textarea>
+                        <template x-if="templates.length">
+                            <x-select x-model="typeId" @change="applyType()">
+                                <option value="">— Modèle —</option>
+                                <template x-for="t in templates" :key="t.id">
+                                    <option :value="t.id" x-text="t.titre"></option>
+                                </template>
+                            </x-select>
+                        </template>
+                        <x-input name="sujet" placeholder="Sujet (e-mail)" x-model="sujet" x-show="canal === 'email'" x-cloak />
+                        <x-textarea name="corps" rows="3" placeholder="Votre message…" x-model="corps" required></x-textarea>
                         <div class="flex justify-end"><x-button type="submit">Envoyer</x-button></div>
                     </form>
                 </x-card>

@@ -22,6 +22,7 @@ class Intervention extends Model
         'message_interne', 'mdp', 'tarif_estimatif', 'note', 'facturee', 'payee',
         'montant_prestations', 'montant_pieces', 'montant_deplacement', 'deplacement_km',
         'montant_total', 'remise_type', 'remise_valeur', 'remise_montant', 'montant_paye', 'paiement_mode',
+        'maintenance_heures', 'montant_maintenance',
         'public_token', 'signature_path', 'signataire_nom', 'signed_at',
         'opened_at', 'closed_at', 'restituted_at', 'finalisee_at',
     ];
@@ -45,6 +46,8 @@ class Intervention extends Model
             'remise_valeur' => 'decimal:2',
             'remise_montant' => 'decimal:2',
             'montant_paye' => 'decimal:2',
+            'maintenance_heures' => 'decimal:2',
+            'montant_maintenance' => 'decimal:2',
             'opened_at' => 'datetime',
             'closed_at' => 'datetime',
             'restituted_at' => 'datetime',

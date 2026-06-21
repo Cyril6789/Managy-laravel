@@ -7,6 +7,7 @@ use App\Models\Client;
 use App\Models\Intervention;
 use App\Models\InterventionLog;
 use App\Models\Materiel;
+use App\Models\MessageType;
 use App\Models\Setting;
 use App\Models\SousTraitance;
 use App\Models\Statut;
@@ -35,6 +36,10 @@ class InterventionController extends Controller
 
         $voirTout = $request->user()->can(Permissions::INTERVENTIONS_VIEW_ALL);
 
+        // Single combined "statut" filter: a keyword (non clôturées par défaut,
+        // clôturées, toutes) or a specific status id.
+        $statut = (string) $request->input('statut', 'ouvertes');
+
         $interventions = Intervention::query()
             ->with(['client', 'statut', 'techniciens'])
             ->when($request->filled('q'), function ($q) use ($request) {
@@ -43,10 +48,11 @@ class InterventionController extends Controller
                     ->orWhere('panne', 'like', $term)
                     ->orWhereHas('client', fn ($c) => $c->where('nom', 'like', $term)->orWhere('prenom', 'like', $term)));
             })
-            ->when($request->input('statut'), fn ($q, $s) => $q->where('statut_id', $s))
+            ->when($statut === 'ouvertes', fn ($q) => $q->ouvertes())
+            ->when($statut === 'cloturees', fn ($q) => $q->cloturees())
+            ->when(ctype_digit($statut), fn ($q) => $q->where('statut_id', $statut))
+            ->when($request->input('type'), fn ($q, $t) => $q->where('type_lieu', $t))
             ->when($request->input('technicien'), fn ($q, $t) => $q->whereHas('techniciens', fn ($w) => $w->where('users.id', $t)))
-            ->when($request->input('etat') === 'cloturees', fn ($q) => $q->cloturees())
-            ->when($request->input('etat', 'ouvertes') === 'ouvertes', fn ($q) => $q->ouvertes())
             // Without the "view all" right, only show interventions the user is assigned to.
             ->when(! $voirTout, fn ($q) => $q->whereHas('techniciens', fn ($w) => $w->where('users.id', $request->user()->id)))
             ->latest('opened_at')
@@ -139,6 +145,9 @@ class InterventionController extends Controller
                 'balance' => $hasPack ? $client->soldeMaintenance() : 0,
                 'threshold' => (float) Setting::get('maintenance_alert_threshold', 2),
             ],
+            // Pre-written SMS / e-mail templates, picked to prefill the composer.
+            'smsTypes' => MessageType::canal('sms')->orderBy('titre')->get(['id', 'titre', 'corps']),
+            'mailTypes' => MessageType::canal('email')->orderBy('titre')->get(['id', 'titre', 'sujet', 'corps']),
         ]);
     }
 
@@ -291,6 +300,7 @@ class InterventionController extends Controller
             'montant_paye' => ['nullable', 'numeric', 'min:0'],
             'remise_type' => ['nullable', Rule::in(['euro', 'pourcent'])],
             'remise_valeur' => ['nullable', 'numeric', 'min:0'],
+            'maintenance_heures' => ['nullable', 'numeric', 'min:0'],
         ]);
 
         // The report itself is saved separately (saveRapport); here we only close.
@@ -313,7 +323,12 @@ class InterventionController extends Controller
         // Prices come from the catalogue + entered parts; never from a free amount.
         $intervention->loadMissing(['prestations', 'pieces', 'client']);
         $intervention->deplacement_km = $data['deplacement_km'] ?? null; // used by km-mode fallback
-        $breakdown = Billing::compute($intervention, $deplacement, $remiseType, $remiseValeur);
+
+        // Maintenance pack: the technician may settle part/all of the service
+        // hours from the customer's pack (optional, never for parts/travel),
+        // capped at the available balance and the hours actually logged.
+        $heuresPack = $this->maintenanceHeuresAUtiliser($intervention, (float) ($data['maintenance_heures'] ?? 0));
+        $breakdown = Billing::compute($intervention, $deplacement, $remiseType, $remiseValeur, $heuresPack);
 
         $payee = $request->boolean('payee');
 
@@ -335,6 +350,8 @@ class InterventionController extends Controller
             'remise_valeur' => $breakdown['ristourne_type'] ? $breakdown['ristourne_valeur'] : null,
             'remise_montant' => $breakdown['ristourne_montant'] ?: null,
             'montant_total' => $breakdown['total'],
+            'maintenance_heures' => $breakdown['maintenance_heures'] ?: null,
+            'montant_maintenance' => $breakdown['maintenance_montant'] ?: null,
             'payee' => $payee,
             'montant_paye' => $payee ? ($data['montant_paye'] ?? $breakdown['total']) : null,
             'paiement_mode' => $payee ? ($data['paiement_mode'] ?? null) : null,
@@ -344,8 +361,8 @@ class InterventionController extends Controller
 
         $this->log($intervention, 'a restitué et clôturé l\'intervention'.($signaturePath ? ' (signée)' : ''));
 
-        // Auto-debit the maintenance pack (if the client has one) with the hours spent.
-        $this->debitMaintenancePack($intervention);
+        // Consume the chosen service hours from the maintenance pack (if any).
+        $this->debitMaintenancePack($intervention, $breakdown['maintenance_heures']);
 
         // E-mail a signed copy of the final report to the customer / contact.
         $this->emailSignedReport($intervention);
@@ -552,20 +569,33 @@ class InterventionController extends Controller
     }
 
     /**
-     * If the client owns a maintenance pack, consume the intervention's logged
-     * hours from it (once). Skipped when the client has no pack.
+     * Number of service hours that may actually be drawn from the pack: capped at
+     * the requested amount, the hours logged on the job and the available balance.
+     * Returns 0 when the client has no pack or the job is under warranty.
      */
-    private function debitMaintenancePack(Intervention $intervention): void
+    private function maintenanceHeuresAUtiliser(Intervention $intervention, float $demande): float
     {
-        // Under warranty nothing is consumed from the maintenance pack.
-        if ($intervention->garantie) {
-            return;
+        $client = $intervention->client;
+
+        if ($demande <= 0 || $intervention->garantie || ! $client || ! $client->maintenanceMovements()->exists()) {
+            return 0.0;
         }
 
-        $client = $intervention->client;
-        $heures = $intervention->prestations()->sum('duree');
+        $disponible = max(0.0, $client->soldeMaintenance());
+        $heuresJob = (float) $intervention->prestations()->sum('duree');
 
-        if (! $client || $heures <= 0 || ! $client->maintenanceMovements()->exists()) {
+        return round(min($demande, $heuresJob, $disponible), 2);
+    }
+
+    /**
+     * Consume the chosen service hours from the client's maintenance pack (once).
+     * Skipped when nothing is to be drawn.
+     */
+    private function debitMaintenancePack(Intervention $intervention, float $heures): void
+    {
+        $client = $intervention->client;
+
+        if ($heures <= 0 || ! $client) {
             return;
         }
 

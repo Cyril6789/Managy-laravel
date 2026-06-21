@@ -99,7 +99,7 @@ class SmokeTest extends TestCase
         $this->assertTrue($intervention->techniciens()->where('users.id', $tech->id)->exists());
     }
 
-    public function test_maintenance_credit_then_debit_on_close(): void
+    public function test_maintenance_pack_debit_is_opt_in_on_close(): void
     {
         $admin = $this->admin();
         $this->actingAs($admin);
@@ -111,11 +111,62 @@ class SmokeTest extends TestCase
         $this->post(route('maintenance.store', $client), ['sens' => 'credit', 'heures' => 10])->assertRedirect();
         $this->assertEqualsWithDelta(10.0, $client->soldeMaintenance(), 0.001);
 
-        // Add a 2h prestation then close -> pack debited by the total logged hours.
+        // Closing WITHOUT requesting a pack deduction leaves the pack untouched
+        // (the customer pays everything in money).
         $intervention->prestations()->create(['designation' => 'Test', 'duree' => 2]);
-        $total = (float) $intervention->prestations()->sum('duree');
         $this->post(route('interventions.restituer', $intervention))->assertRedirect();
-        $this->assertEqualsWithDelta(10.0 - $total, $client->fresh()->soldeMaintenance(), 0.001);
+        $this->assertEqualsWithDelta(10.0, $client->fresh()->soldeMaintenance(), 0.001);
+    }
+
+    public function test_maintenance_pack_settles_part_of_the_service_hours(): void
+    {
+        $this->actingAs($this->admin());
+
+        $intervention = Intervention::ouvertes()->first();
+        $intervention->update(['type_lieu' => 'domicile']);
+        $client = $intervention->client;
+        $client->update(['remise_prestations' => 0, 'remise_pieces' => 0]);
+
+        // Pack with 1.5h available; the job logs 2h of service at 100 €/h.
+        $this->post(route('maintenance.store', $client), ['sens' => 'credit', 'heures' => 1.5])->assertRedirect();
+        $intervention->prestations()->delete();
+        $intervention->prestations()->create(['designation' => 'Prestation', 'duree' => 2, 'tarif' => 100]);
+
+        // Ask to settle 1.5h from the pack -> 150 € covered, 50 € left to pay.
+        $this->post(route('interventions.restituer', $intervention), [
+            'maintenance_heures' => 1.5,
+            'montant_deplacement' => 0,
+        ])->assertRedirect();
+
+        $intervention->refresh();
+        $this->assertEqualsWithDelta(1.5, (float) $intervention->maintenance_heures, 0.001);
+        $this->assertEqualsWithDelta(150.0, (float) $intervention->montant_maintenance, 0.01);
+        $this->assertEqualsWithDelta(50.0, (float) $intervention->montant_total, 0.01);
+        // The pack is debited by exactly the requested (available) hours.
+        $this->assertEqualsWithDelta(0.0, $client->fresh()->soldeMaintenance(), 0.001);
+    }
+
+    public function test_maintenance_pack_deduction_is_capped_at_balance(): void
+    {
+        $this->actingAs($this->admin());
+
+        $intervention = Intervention::ouvertes()->first();
+        $intervention->update(['type_lieu' => 'domicile']);
+        $client = $intervention->client;
+
+        // Only 1h available but 3h requested on a 2h job -> capped at 1h.
+        $this->post(route('maintenance.store', $client), ['sens' => 'credit', 'heures' => 1])->assertRedirect();
+        $intervention->prestations()->delete();
+        $intervention->prestations()->create(['designation' => 'Prestation', 'duree' => 2, 'tarif' => 100]);
+
+        $this->post(route('interventions.restituer', $intervention), [
+            'maintenance_heures' => 3,
+            'montant_deplacement' => 0,
+        ])->assertRedirect();
+
+        $intervention->refresh();
+        $this->assertEqualsWithDelta(1.0, (float) $intervention->maintenance_heures, 0.001);
+        $this->assertEqualsWithDelta(0.0, $client->fresh()->soldeMaintenance(), 0.001);
     }
 
     public function test_sms_goes_to_the_selected_contact(): void
