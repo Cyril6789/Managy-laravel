@@ -19,14 +19,12 @@ class InterventionReport extends Component
 
     public ?string $message_interne = null;
 
-    public ?string $tarif_estimatif = null;
-
     public bool $saved = false;
 
     public function mount(Intervention $intervention): void
     {
         $this->intervention = $intervention;
-        foreach (['diagnostic', 'message_client', 'message_interne', 'tarif_estimatif'] as $f) {
+        foreach (['diagnostic', 'message_client', 'message_interne'] as $f) {
             $this->{$f} = $intervention->{$f};
         }
     }
@@ -37,7 +35,6 @@ class InterventionReport extends Component
             'diagnostic' => ['nullable', 'string'],
             'message_client' => ['nullable', 'string'],
             'message_interne' => ['nullable', 'string'],
-            'tarif_estimatif' => ['nullable', 'numeric', 'min:0'],
         ];
     }
 

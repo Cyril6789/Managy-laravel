@@ -55,6 +55,7 @@
                     <div wire:key="photo-{{ $photo->id }}" class="group relative aspect-square overflow-hidden rounded-lg border border-gray-200 bg-gray-100 dark:border-gray-700 dark:bg-gray-800">
                         {{-- The carousel reads its slides from these data-attributes at open time. --}}
                         <button type="button" data-carousel-item data-url="{{ $url }}" data-name="{{ $photo->original_name }}"
+                                data-id="{{ $photo->id }}" data-prive="{{ $photo->prive ? '1' : '0' }}"
                                 @click="show({{ $loop->index }})"
                                 class="block h-full w-full cursor-zoom-in" title="Agrandir">
                             <img src="{{ $url }}" alt="{{ $photo->original_name }}" loading="lazy"
@@ -68,19 +69,18 @@
                                 </span>
                             @endif
 
+                            {{-- Actions toujours visibles (indispensable au tactile : pas de survol
+                                 sur mobile). Suppression et bascule privée/publique. --}}
                             @can(\App\Support\Permissions::INTERVENTIONS_MANAGE)
-                                <div class="absolute inset-x-1 bottom-1 flex justify-between gap-1 opacity-0 transition focus-within:opacity-100 group-hover:opacity-100">
-                                    <button type="button" wire:click="togglePrivacy({{ $photo->id }})"
-                                            class="rounded bg-white/90 px-1.5 py-0.5 text-[10px] font-medium text-gray-700 shadow hover:bg-white dark:bg-gray-900/80 dark:text-gray-200"
-                                            title="{{ $photo->prive ? 'Rendre visible au client' : 'Masquer au client' }}">
-                                        {{ $photo->prive ? 'Publier' : 'Masquer' }}
-                                    </button>
-                                    <button type="button" wire:click="delete({{ $photo->id }})"
-                                            wire:confirm="Supprimer cette photo ?"
-                                            class="rounded bg-white/90 px-1.5 py-0.5 text-[10px] font-medium text-red-600 shadow hover:bg-white dark:bg-gray-900/80">
-                                        Suppr.
-                                    </button>
-                                </div>
+                                <button type="button" wire:click="delete({{ $photo->id }})"
+                                        wire:confirm="Supprimer cette photo ?"
+                                        class="absolute right-1 top-1 flex h-6 w-6 items-center justify-center rounded-full bg-white/90 text-sm font-bold leading-none text-red-600 shadow hover:bg-white dark:bg-gray-900/80"
+                                        title="Supprimer la photo">&times;</button>
+                                <button type="button" wire:click="togglePrivacy({{ $photo->id }})"
+                                        class="absolute inset-x-1 bottom-1 rounded bg-white/90 px-1.5 py-0.5 text-[10px] font-medium text-gray-700 shadow hover:bg-white dark:bg-gray-900/80 dark:text-gray-200"
+                                        title="{{ $photo->prive ? 'Rendre visible au client' : 'Masquer au client' }}">
+                                    {{ $photo->prive ? 'Publier' : 'Masquer' }}
+                                </button>
                             @endcan
                         @endif
                     </div>
@@ -114,11 +114,26 @@
                             class="absolute right-2 top-1/2 flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full bg-white/10 text-3xl leading-none text-white hover:bg-white/20 sm:right-4"
                             title="Suivante (→)">&rsaquo;</button>
 
-                    {{-- Counter + caption --}}
-                    <div class="absolute inset-x-0 bottom-4 flex flex-col items-center gap-1 px-4 text-center text-sm text-white/90" @click.stop>
+                    {{-- Counter + caption + actions de gestion (staff) --}}
+                    <div class="absolute inset-x-0 bottom-4 flex flex-col items-center gap-2 px-4 text-center text-sm text-white/90" @click.stop>
                         <span x-show="current.name" x-text="current.name" class="max-w-[90vw] truncate"></span>
                         <span x-show="slides.length > 1" class="rounded-full bg-white/10 px-3 py-1 text-xs"
                               x-text="(index + 1) + ' / ' + slides.length"></span>
+                        @if (! $public)
+                            @can(\App\Support\Permissions::INTERVENTIONS_MANAGE)
+                                <div class="flex items-center gap-2">
+                                    <button type="button"
+                                            @click="$wire.togglePrivacy(current.id); current.prive = !current.prive"
+                                            class="rounded-full bg-white/10 px-3 py-1 text-xs font-medium hover:bg-white/20"
+                                            x-text="current.prive ? 'Publier' : 'Masquer au client'"></button>
+                                    <button type="button"
+                                            @click="if (confirm('Supprimer cette photo ?')) { $wire.delete(current.id); close(); }"
+                                            class="rounded-full bg-red-500/80 px-3 py-1 text-xs font-medium text-white hover:bg-red-500">
+                                        Supprimer
+                                    </button>
+                                </div>
+                            @endcan
+                        @endif
                     </div>
                 </div>
             </template>
