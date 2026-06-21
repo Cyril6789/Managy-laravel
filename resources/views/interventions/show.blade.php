@@ -6,6 +6,10 @@
     $estTech = $i->techniciens->contains(auth()->id());
     $verrou = $i->estVerrouillee();
     $peutGerer = auth()->user()->can(\App\Support\Permissions::INTERVENTIONS_MANAGE);
+    // RDV + affectation : réservé aux interventions à domicile (l'atelier n'a pas
+    // de rendez-vous, le bloc « Techniciens » suffit). Le bloc « Techniciens » est
+    // alors masqué pour le domicile, pour ne pas faire doublon.
+    $afficheRdv = $peutGerer && ! $i->estCloturee() && $i->estDomicile();
 @endphp
 
 @section('content')
@@ -289,13 +293,14 @@
                 </dl>
             </x-card>
 
-            @if ($peutGerer && ! $i->estCloturee())
+            @if ($afficheRdv)
                 <x-card title="Rendez-vous & affectation">
                     <p class="mb-3 text-xs text-gray-500">Modifiez la date du rendez-vous et choisissez le(s) technicien(s) en fonction des disponibilités de chacun.</p>
                     <livewire:intervention-schedule mode="live" :intervention="$i" :key="'sched-'.$i->id" />
                 </x-card>
             @endif
 
+            @unless ($afficheRdv)
             <x-card title="Techniciens">
                 @php $assignables = $techniciens->whereNotIn('id', $i->techniciens->pluck('id')); @endphp
                 @forelse ($i->techniciens as $t)
@@ -326,6 +331,7 @@
                     @endif
                 @endcan
             </x-card>
+            @endunless
 
             <x-card title="Suivi client (lien sécurisé)">
                 <p class="mb-2 text-xs text-gray-500">Le client peut suivre l'avancement en direct via ce lien :</p>
