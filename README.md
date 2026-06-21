@@ -36,13 +36,6 @@ sous-traitance, rapport, facturation), **communication** automatisée avec le
 client (SMS / e-mail), **agenda**, **tâches**, **pack de maintenance** et
 **enquêtes de satisfaction**.
 
-C'est la réécriture complète et modernisée d'une application PHP « maison »
-vieille de quinze ans. La version d'origine était un **SaaS multi-entreprises** ;
-cette version est **mono-entreprise** : chaque société **télécharge et installe
-sa propre instance**. Toute la mécanique SaaS (multi-comptes, inscription,
-paiement, landing page, super-administration, modules payants à activer) a été
-**supprimée**, et **toutes les fonctionnalités métier sont natives et activées
-par défaut**.
 
 > 🔒 Aucune donnée n'est partagée avec l'extérieur : l'instance tourne pour une
 > seule entreprise, sur son propre hébergement et sa propre base de données.
@@ -425,6 +418,3 @@ public** (onglet *Ports*) puis à ouvrir l'URL. Connexion : `admin / password`.
 
 ## 14. Licence & origine
 
-Managy est la modernisation, sous **Laravel**, d'une application PHP propriétaire
-développée il y a une quinzaine d'années. Le code historique reste consultable
-dans l'historique Git du dépôt ; il n'est pas inclus dans cette branche.
