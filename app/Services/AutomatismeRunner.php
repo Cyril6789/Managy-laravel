@@ -6,6 +6,7 @@ use App\Models\Automatisme;
 use App\Models\ClientMessage;
 use App\Models\Intervention;
 use App\Models\Setting;
+use App\Support\Tenancy;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
@@ -35,19 +36,24 @@ class AutomatismeRunner
     /** Send a single automatism for a given intervention. */
     public function fireRule(Automatisme $rule, Intervention $intervention): void
     {
-        $client = $intervention->client;
-        if (! $client) {
-            return;
-        }
+        // Anchor the tenant context on the intervention's société so messages
+        // and settings stay isolated even when fired from the (unauthenticated)
+        // scheduler.
+        app(Tenancy::class)->forSociety($intervention->society_id, function () use ($rule, $intervention) {
+            $client = $intervention->client;
+            if (! $client) {
+                return;
+            }
 
-        $body = $this->render($rule->modele, $intervention);
-        $recipient = $intervention->recipientClient();
+            $body = $this->render($rule->modele, $intervention);
+            $recipient = $intervention->recipientClient();
 
-        if ($rule->canal === 'sms') {
-            $this->sms->send($client, $body, $intervention, $recipient);
-        } else {
-            $this->sendEmail($intervention, $rule->sujet ?? 'Suivi de votre intervention', $body, $recipient?->email);
-        }
+            if ($rule->canal === 'sms') {
+                $this->sms->send($client, $body, $intervention, $recipient);
+            } else {
+                $this->sendEmail($intervention, $rule->sujet ?? 'Suivi de votre intervention', $body, $recipient?->email);
+            }
+        });
     }
 
     private function sendEmail(Intervention $intervention, string $sujet, string $body, ?string $to = null): void

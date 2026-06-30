@@ -52,7 +52,7 @@ class Tenancy
     }
 
     /** Run a callback scoped to a given société, then restore the context. */
-    public function forSociety(int $societyId, callable $callback): mixed
+    public function forSociety(?int $societyId, callable $callback): mixed
     {
         $previousId = $this->societyId;
         $previousExplicit = $this->explicit;

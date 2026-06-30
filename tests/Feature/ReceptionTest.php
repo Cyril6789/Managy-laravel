@@ -30,13 +30,13 @@ class ReceptionTest extends TestCase
 
     public function test_receiving_an_order_unblocks_and_notifies_the_technician(): void
     {
+        $this->actingAs($this->admin()); // admin bypasses the permission gate
+
         $tech = User::where('pseudo', 'tech')->firstOrFail();
         $intervention = Intervention::ouvertes()->first();
         $intervention->update(['opened_by' => $tech->id]);
         $intervention->techniciens()->syncWithoutDetaching([$tech->id => ['assigned_at' => now()]]);
         $commande = $intervention->commandes()->create(['fournisseur' => 'LDLC', 'numero_commande' => 'A1', 'recue' => false]);
-
-        $this->actingAs($this->admin()); // admin bypasses the permission gate
 
         Livewire::test(PendingCommandes::class)
             ->call('receive', $commande->id);
@@ -52,13 +52,13 @@ class ReceptionTest extends TestCase
 
     public function test_receiving_a_subcontracting_return_notifies_the_technician(): void
     {
+        $this->actingAs($this->admin());
+
         $tech = User::where('pseudo', 'tech')->firstOrFail();
         $intervention = Intervention::ouvertes()->first();
         $intervention->update(['opened_by' => $tech->id]);
         $intervention->techniciens()->syncWithoutDetaching([$tech->id => ['assigned_at' => now()]]);
         $sst = $intervention->sousTraitances()->create(['nom' => 'Labo X', 'retournee' => false]);
-
-        $this->actingAs($this->admin());
 
         Livewire::test(PendingSousTraitances::class)
             ->call('markReturned', $sst->id);

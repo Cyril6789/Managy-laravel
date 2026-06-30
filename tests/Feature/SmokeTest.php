@@ -29,10 +29,12 @@ class SmokeTest extends TestCase
         return User::where('pseudo', 'admin')->firstOrFail();
     }
 
-    public function test_guest_redirected_to_login(): void
+    public function test_guest_sees_landing_and_login(): void
     {
-        $this->get('/')->assertRedirect('/login');
+        // Guests land on the SaaS marketing page; the app itself stays protected.
+        $this->get('/')->assertOk()->assertSee('Managy');
         $this->get('/login')->assertOk();
+        $this->get('/tableau-de-bord')->assertRedirect('/login');
     }
 
     public function test_admin_can_browse_main_pages(): void
@@ -40,7 +42,7 @@ class SmokeTest extends TestCase
         $this->actingAs($this->admin());
 
         foreach ([
-            '/', '/clients', '/clients/create', '/interventions', '/interventions/create',
+            '/tableau-de-bord', '/clients', '/clients/create', '/interventions', '/interventions/create',
             '/calendrier', '/disponibilites', '/tasks', '/maintenance', '/statistiques', '/journaux',
             '/satisfaction', '/staff', '/staff/create', '/automatismes', '/automatismes/create',
             '/facturation', '/parametres', '/profil', '/recherche?q=dup',

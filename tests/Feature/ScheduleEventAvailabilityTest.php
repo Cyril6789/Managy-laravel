@@ -25,14 +25,15 @@ class ScheduleEventAvailabilityTest extends TestCase
         $tech = User::where('pseudo', 'admin')->firstOrFail();
         $day = now()->addDay()->setTime(14, 0);
 
+        // Authenticate first so the created Event is stamped with the société.
+        $this->actingAs($tech);
+
         Event::create([
             'user_id' => $tech->id,
             'titre' => 'Rendez-vous commercial',
             'debut' => $day,
             'fin' => $day->copy()->addHour(),
         ]);
-
-        $this->actingAs($tech);
 
         Livewire::test(InterventionSchedule::class, ['mode' => 'form'])
             ->set('rdv_debut', $day->copy()->setTime(15, 0)->format('Y-m-d\TH:i'))
