@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class StickyNote extends Model
 {
     use BelongsToSociety;
+
     protected $fillable = ['user_id', 'contenu', 'couleur', 'ordre'];
 
     public function user(): BelongsTo

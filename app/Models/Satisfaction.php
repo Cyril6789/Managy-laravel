@@ -10,6 +10,7 @@ use Illuminate\Support\Str;
 class Satisfaction extends Model
 {
     use BelongsToSociety;
+
     protected $fillable = [
         'intervention_id', 'client_id', 'token', 'note', 'commentaire', 'sent_at', 'submitted_at',
     ];

@@ -8,5 +8,6 @@ use Illuminate\Database\Eloquent\Model;
 class MaterielAjouteType extends Model
 {
     use BelongsToSociety;
+
     protected $fillable = ['nom', 'texte'];
 }

@@ -8,5 +8,6 @@ use Illuminate\Database\Eloquent\Model;
 class CommentaireType extends Model
 {
     use BelongsToSociety;
+
     protected $fillable = ['titre', 'texte'];
 }

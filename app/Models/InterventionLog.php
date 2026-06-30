@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class InterventionLog extends Model
 {
     use BelongsToSociety;
+
     public const UPDATED_AT = null;
 
     protected $fillable = ['intervention_id', 'user_id', 'texte', 'created_at'];

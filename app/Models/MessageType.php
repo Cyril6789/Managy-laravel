@@ -14,6 +14,7 @@ use Illuminate\Database\Eloquent\Model;
 class MessageType extends Model
 {
     use BelongsToSociety;
+
     protected $fillable = ['canal', 'titre', 'sujet', 'corps'];
 
     public function scopeCanal(Builder $query, string $canal): Builder

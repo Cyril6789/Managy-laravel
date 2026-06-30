@@ -16,6 +16,7 @@ use Illuminate\Support\Carbon;
 class TechnicianAbsence extends Model
 {
     use BelongsToSociety;
+
     protected $fillable = [
         'user_id', 'debut', 'fin', 'journee_entiere', 'motif', 'note', 'created_by',
     ];

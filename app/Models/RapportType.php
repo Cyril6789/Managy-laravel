@@ -8,5 +8,6 @@ use Illuminate\Database\Eloquent\Model;
 class RapportType extends Model
 {
     use BelongsToSociety;
+
     protected $fillable = ['titre', 'texte'];
 }

@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Carbon;
 
 class User extends Authenticatable implements MustVerifyEmail
 {
@@ -86,7 +87,7 @@ class User extends Authenticatable implements MustVerifyEmail
     }
 
     /** Whether the technician is absent at the given moment / window. */
-    public function isAbsentBetween(\Illuminate\Support\Carbon $start, ?\Illuminate\Support\Carbon $end = null): bool
+    public function isAbsentBetween(Carbon $start, ?Carbon $end = null): bool
     {
         $end = $end ?: $start->copy()->addMinute();
 

@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class SousTraitance extends Model
 {
     use BelongsToSociety;
+
     protected $fillable = [
         'intervention_id', 'nom', 'devis', 'numero_commande', 'suivi_aller',
         'suivi_retour', 'envoye_le', 'retour_le', 'retournee',

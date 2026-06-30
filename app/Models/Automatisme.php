@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class Automatisme extends Model
 {
     use BelongsToSociety;
+
     protected $table = 'automatismes';
 
     protected $fillable = [

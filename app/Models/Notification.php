@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class Notification extends Model
 {
     use BelongsToSociety;
+
     protected $table = 'app_notifications';
 
     protected $fillable = [

@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class InterventionPrestation extends Model
 {
     use BelongsToSociety;
+
     protected $fillable = ['intervention_id', 'prestation_id', 'designation', 'duree', 'tarif'];
 
     protected function casts(): array

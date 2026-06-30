@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class InterventionPhoto extends Model
 {
     use BelongsToSociety;
+
     protected $fillable = [
         'intervention_id', 'user_id', 'path', 'original_name', 'prive',
     ];

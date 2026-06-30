@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 class AutomatismeRun extends Model
 {
     use BelongsToSociety;
+
     public $timestamps = false;
 
     protected $fillable = ['automatisme_id', 'intervention_id', 'ran_at'];

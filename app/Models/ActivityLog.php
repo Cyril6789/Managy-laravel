@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class ActivityLog extends Model
 {
     use BelongsToSociety;
+
     public const UPDATED_AT = null;
 
     protected $fillable = [
