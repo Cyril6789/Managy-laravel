@@ -2,27 +2,32 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
+use App\Models\Concerns\BelongsToSociety;
 use Database\Factories\UserFactory;
+use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Carbon;
 
-class User extends Authenticatable
+class User extends Authenticatable implements MustVerifyEmail
 {
     /** @use HasFactory<UserFactory> */
-    use HasFactory, Notifiable;
+    use BelongsToSociety, HasFactory, Notifiable;
 
     protected $fillable = [
+        'society_id',
         'prenom',
         'nom',
         'pseudo',
         'email',
         'telephone',
         'password',
+        'email_verified_at',
         'is_admin',
+        'is_super_admin',
         'is_active',
         'two_factor_enabled',
         'chat_status',
@@ -42,6 +47,7 @@ class User extends Authenticatable
             'last_action_at' => 'datetime',
             'password' => 'hashed',
             'is_admin' => 'boolean',
+            'is_super_admin' => 'boolean',
             'is_active' => 'boolean',
             'two_factor_enabled' => 'boolean',
             'preferences' => 'array',
@@ -82,7 +88,7 @@ class User extends Authenticatable
     }
 
     /** Whether the technician is absent at the given moment / window. */
-    public function isAbsentBetween(\Illuminate\Support\Carbon $start, ?\Illuminate\Support\Carbon $end = null): bool
+    public function isAbsentBetween(Carbon $start, ?Carbon $end = null): bool
     {
         $end = $end ?: $start->copy()->addMinute();
 

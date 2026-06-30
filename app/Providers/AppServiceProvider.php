@@ -2,9 +2,14 @@
 
 namespace App\Providers;
 
+use App\Models\Commande;
+use App\Models\Intervention;
 use App\Models\Setting;
+use App\Models\SousTraitance;
+use App\Models\Task;
 use App\Models\User;
 use App\Support\Permissions;
+use App\Support\Tenancy;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Facades\View;
@@ -14,7 +19,8 @@ class AppServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
-        //
+        // Resolves the current SaaS tenant (société) for the whole request.
+        $this->app->singleton(Tenancy::class);
     }
 
     public function boot(): void
@@ -62,24 +68,24 @@ class AppServiceProvider extends ServiceProvider
 
         try {
             if ($user->can(Permissions::INTERVENTIONS_VIEW)) {
-                $counts['interventions.index'] = \App\Models\Intervention::ouvertes()
+                $counts['interventions.index'] = Intervention::ouvertes()
                     ->when(! $user->can(Permissions::INTERVENTIONS_VIEW_ALL),
                         fn ($q) => $q->whereHas('techniciens', fn ($w) => $w->where('users.id', $user->id)))
                     ->count();
             }
 
             if ($user->can(Permissions::COMMANDES_RECEPTION)) {
-                $counts['reception.commandes'] = \App\Models\Commande::where('recue', false)
+                $counts['reception.commandes'] = Commande::where('recue', false)
                     ->whereHas('intervention', fn ($i) => $i->whereNull('closed_at'))->count();
             }
 
             if ($user->can(Permissions::SOUS_TRAITANCES_RECEPTION)) {
-                $counts['reception.sous_traitances'] = \App\Models\SousTraitance::where('retournee', false)
+                $counts['reception.sous_traitances'] = SousTraitance::where('retournee', false)
                     ->whereHas('intervention', fn ($i) => $i->whereNull('closed_at'))->count();
             }
 
             if ($user->can(Permissions::TASKS_VIEW)) {
-                $counts['tasks.index'] = \App\Models\Task::where('user_id', $user->id)
+                $counts['tasks.index'] = Task::where('user_id', $user->id)
                     ->where('statut', '!=', 'terminee')->count();
             }
         } catch (\Throwable) {

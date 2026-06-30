@@ -2,11 +2,14 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\BelongsToSociety;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class MaintenanceMovement extends Model
 {
+    use BelongsToSociety;
+
     protected $fillable = ['client_id', 'intervention_id', 'user_id', 'mouvement', 'description'];
 
     protected function casts(): array

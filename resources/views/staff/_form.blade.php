@@ -4,8 +4,8 @@
             <div class="space-y-4">
                 <x-field label="Prénom" name="prenom"><x-input name="prenom" value="{{ old('prenom', $user->prenom) }}" /></x-field>
                 <x-field label="Nom" name="nom" required><x-input name="nom" value="{{ old('nom', $user->nom) }}" /></x-field>
-                <x-field label="Identifiant de connexion" name="pseudo" required><x-input name="pseudo" value="{{ old('pseudo', $user->pseudo) }}" /></x-field>
-                <x-field label="E-mail" name="email" required><x-input name="email" type="email" value="{{ old('email', $user->email) }}" /></x-field>
+                <x-field label="E-mail (identifiant de connexion)" name="email" required><x-input name="email" type="email" value="{{ old('email', $user->email) }}" /></x-field>
+                <x-field label="Pseudo (facultatif)" name="pseudo"><x-input name="pseudo" value="{{ old('pseudo', $user->pseudo) }}" /></x-field>
                 <x-field label="Téléphone" name="telephone"><x-input name="telephone" value="{{ old('telephone', $user->telephone) }}" /></x-field>
                 <x-field label="{{ $user->exists ? 'Nouveau mot de passe' : 'Mot de passe' }}" name="password" :required="!$user->exists" hint="{{ $user->exists ? 'Laisser vide pour conserver.' : '' }}">
                     <x-input name="password" type="password" autocomplete="new-password" />

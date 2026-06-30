@@ -2,11 +2,14 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\BelongsToSociety;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Automatisme extends Model
 {
+    use BelongsToSociety;
+
     protected $table = 'automatismes';
 
     protected $fillable = [

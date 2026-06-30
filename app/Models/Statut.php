@@ -2,12 +2,14 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\BelongsToSociety;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Statut extends Model
 {
+    use BelongsToSociety;
     use HasFactory;
 
     protected $fillable = ['nom', 'couleur', 'ordre', 'verrouille', 'est_defaut', 'est_cloture'];

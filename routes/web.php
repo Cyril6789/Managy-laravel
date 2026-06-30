@@ -1,8 +1,11 @@
 <?php
 
 use App\Http\Controllers\AddressController;
+use App\Http\Controllers\Admin\AdminController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\PasswordResetController;
+use App\Http\Controllers\Auth\RegisterController;
+use App\Http\Controllers\Auth\VerificationController;
 use App\Http\Controllers\AutomatismeController;
 use App\Http\Controllers\CalendarController;
 use App\Http\Controllers\ClientController;
@@ -18,6 +21,7 @@ use App\Http\Controllers\MaintenanceController;
 use App\Http\Controllers\MediaController;
 use App\Http\Controllers\MessageController;
 use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\PageController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\Public\PublicInterventionController;
 use App\Http\Controllers\Public\PublicSatisfactionController;
@@ -29,9 +33,13 @@ use App\Http\Controllers\StaffController;
 use App\Http\Controllers\StatsController;
 use App\Http\Controllers\StickyNoteController;
 use App\Http\Controllers\TaskController;
+use App\Http\Middleware\EnsureEmailVerified;
+use App\Http\Middleware\EnsureHasSociety;
+use App\Http\Middleware\EnsureSuperAdmin;
 use Illuminate\Support\Facades\Route;
 
 // ----- Public (no auth) ------------------------------------------------------
+Route::get('/', [PageController::class, 'home'])->name('home');
 Route::get('/logo-entreprise', [MediaController::class, 'logo'])->name('company.logo');
 Route::get('/suivi/{token}', [PublicInterventionController::class, 'show'])->name('public.intervention');
 Route::get('/suivi/{token}/photos/{photo}', [InterventionPhotoController::class, 'showPublic'])->name('public.intervention.photo');
@@ -42,17 +50,37 @@ Route::post('/satisfaction/{token}', [PublicSatisfactionController::class, 'stor
 Route::middleware('guest')->group(function () {
     Route::get('/login', [LoginController::class, 'show'])->name('login');
     Route::post('/login', [LoginController::class, 'login']);
+    // SaaS sign-up: creates a brand new société + its first user.
+    Route::get('/inscription', [RegisterController::class, 'show'])->name('register');
+    Route::post('/inscription', [RegisterController::class, 'store']);
     Route::get('/forgot-password', [PasswordResetController::class, 'request'])->name('password.request');
     Route::post('/forgot-password', [PasswordResetController::class, 'email'])->name('password.email');
     Route::get('/reset-password/{token}', [PasswordResetController::class, 'reset'])->name('password.reset');
     Route::post('/reset-password', [PasswordResetController::class, 'update'])->name('password.update');
 });
 
-// ----- Authenticated ---------------------------------------------------------
+// ----- Authenticated (any user) ----------------------------------------------
 Route::middleware('auth')->group(function () {
     Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
 
-    Route::get('/', DashboardController::class)->name('dashboard');
+    // E-mail verification (only enforced when saas.email_verification is on).
+    Route::get('/email/verify', [VerificationController::class, 'notice'])->name('verification.notice');
+    Route::get('/email/verify/{id}/{hash}', [VerificationController::class, 'verify'])
+        ->middleware('signed')->name('verification.verify');
+    Route::post('/email/verification-notification', [VerificationController::class, 'resend'])
+        ->middleware('throttle:6,1')->name('verification.send');
+});
+
+// ----- SaaS supervision (platform super-admin only) --------------------------
+Route::middleware(['auth', EnsureSuperAdmin::class])->prefix('admin')->name('admin.')->group(function () {
+    Route::get('/', [AdminController::class, 'dashboard'])->name('dashboard');
+    Route::get('/societes/{society}', [AdminController::class, 'society'])->name('society');
+    Route::post('/societes/{society}/toggle', [AdminController::class, 'toggle'])->name('society.toggle');
+});
+
+// ----- Business application (a société owner / technician) --------------------
+Route::middleware(['auth', EnsureHasSociety::class, EnsureEmailVerified::class])->group(function () {
+    Route::get('/tableau-de-bord', DashboardController::class)->name('dashboard');
     Route::get('/recherche', SearchController::class)->name('search');
 
     // Profile

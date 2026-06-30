@@ -14,7 +14,7 @@ class LoginController extends Controller
     public function show()
     {
         if (Auth::check()) {
-            return redirect()->route('dashboard');
+            return redirect()->route(Auth::user()->is_super_admin ? 'admin.dashboard' : 'dashboard');
         }
 
         return view('auth.login');
@@ -23,21 +23,20 @@ class LoginController extends Controller
     public function login(Request $request): RedirectResponse
     {
         $credentials = $request->validate([
-            'identifiant' => ['required', 'string'],
+            'email' => ['required', 'email'],
             'password' => ['required', 'string'],
         ]);
 
-        // Identifier can be the pseudo (login handle) or the e-mail.
-        $field = filter_var($credentials['identifiant'], FILTER_VALIDATE_EMAIL) ? 'email' : 'pseudo';
-
+        // Login is e-mail only: the société is then derived automatically from
+        // the authenticated user — the user never has to choose one.
         $ok = Auth::attempt(
-            [$field => $credentials['identifiant'], 'password' => $credentials['password']],
+            ['email' => $credentials['email'], 'password' => $credentials['password']],
             $request->boolean('remember'),
         );
 
         if (! $ok) {
             throw ValidationException::withMessages([
-                'identifiant' => __('Identifiant ou mot de passe incorrect.'),
+                'email' => __('Identifiant ou mot de passe incorrect.'),
             ]);
         }
 
@@ -45,7 +44,7 @@ class LoginController extends Controller
             Auth::logout();
 
             throw ValidationException::withMessages([
-                'identifiant' => __('Ce compte est désactivé.'),
+                'email' => __('Ce compte est désactivé.'),
             ]);
         }
 
@@ -59,6 +58,11 @@ class LoginController extends Controller
             'ip_address' => $request->ip(),
             'created_at' => now(),
         ]);
+
+        // Platform super-admin lands on the supervision area, not a société app.
+        if (Auth::user()->is_super_admin) {
+            return redirect()->intended(route('admin.dashboard'));
+        }
 
         return redirect()->intended(route('dashboard'));
     }

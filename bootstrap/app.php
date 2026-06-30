@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\EnsureCorrectEdition;
 use App\Http\Middleware\TrackLastActivity;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -17,7 +18,11 @@ return Application::configure(basePath: dirname(__DIR__))
         // Laravel detects HTTPS and generates correct asset / cookie URLs.
         $middleware->trustProxies(at: '*');
 
-        $middleware->web(append: [
+        $middleware->web(prepend: [
+            // Refuse to serve if the deployed branch (saas) doesn't match the
+            // environment's declared APP_EDITION. Runs before everything else.
+            EnsureCorrectEdition::class,
+        ], append: [
             TrackLastActivity::class,
         ]);
     })
