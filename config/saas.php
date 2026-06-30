@@ -19,6 +19,23 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Platform super-admin
+    |--------------------------------------------------------------------------
+    |
+    | Credentials of the platform owner created by `php artisan db:seed` on the
+    | first deployment (user id 1, no société, supervises every space at /admin).
+    | Override these in .env before seeding production, then change the password
+    | from the app.
+    |
+    */
+    'super_admin' => [
+        'email' => env('SUPER_ADMIN_EMAIL', 'admin@managy.fr'),
+        'password' => env('SUPER_ADMIN_PASSWORD', 'password'),
+        'name' => env('SUPER_ADMIN_NAME', 'Super Admin'),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | E-mail verification
     |--------------------------------------------------------------------------
     |

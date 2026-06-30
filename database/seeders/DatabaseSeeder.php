@@ -17,28 +17,31 @@ class DatabaseSeeder extends Seeder
         //    It has no société and supervises every space from /admin.
         $this->seedSuperAdmin();
 
-        // 2. A ready-to-use demo société with its first "gérant".
+        // 2. A ready-to-use demo société + sample data, in every environment.
+        //    Idempotent, so re-running db:seed never duplicates anything.
         $demo = $this->seedDemoSociety();
-
-        if (app()->environment('local', 'testing')) {
-            app(Tenancy::class)->forSociety($demo->id, fn () => $this->call(DemoSeeder::class));
-        }
+        app(Tenancy::class)->forSociety($demo->id, fn () => $this->call(DemoSeeder::class));
     }
 
     private function seedSuperAdmin(): void
     {
-        User::firstOrCreate(
-            ['email' => 'superadmin@managy.app'],
+        $email = config('saas.super_admin.email');
+
+        $user = User::firstOrCreate(
+            ['email' => $email],
             [
-                'prenom' => 'Super',
-                'nom' => 'Admin',
-                'password' => Hash::make('password'),
+                'nom' => config('saas.super_admin.name'),
+                'password' => Hash::make(config('saas.super_admin.password')),
                 'is_super_admin' => true,
                 'is_admin' => true,
                 'is_active' => true,
                 'email_verified_at' => now(),
             ],
         );
+
+        $this->command?->info($user->wasRecentlyCreated
+            ? "Super-admin créé : {$email} (pensez à changer le mot de passe)."
+            : "Super-admin déjà présent : {$email}.");
     }
 
     private function seedDemoSociety(): Society
