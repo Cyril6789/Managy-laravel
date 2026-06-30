@@ -2,20 +2,22 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
+use App\Models\Concerns\BelongsToSociety;
 use Database\Factories\UserFactory;
+use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
-class User extends Authenticatable
+class User extends Authenticatable implements MustVerifyEmail
 {
     /** @use HasFactory<UserFactory> */
-    use HasFactory, Notifiable;
+    use BelongsToSociety, HasFactory, Notifiable;
 
     protected $fillable = [
+        'society_id',
         'prenom',
         'nom',
         'pseudo',
@@ -23,6 +25,7 @@ class User extends Authenticatable
         'telephone',
         'password',
         'is_admin',
+        'is_super_admin',
         'is_active',
         'two_factor_enabled',
         'chat_status',
@@ -42,6 +45,7 @@ class User extends Authenticatable
             'last_action_at' => 'datetime',
             'password' => 'hashed',
             'is_admin' => 'boolean',
+            'is_super_admin' => 'boolean',
             'is_active' => 'boolean',
             'two_factor_enabled' => 'boolean',
             'preferences' => 'array',

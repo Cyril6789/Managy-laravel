@@ -5,6 +5,7 @@ namespace App\Providers;
 use App\Models\Setting;
 use App\Models\User;
 use App\Support\Permissions;
+use App\Support\Tenancy;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Facades\View;
@@ -14,7 +15,8 @@ class AppServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
-        //
+        // Resolves the current SaaS tenant (société) for the whole request.
+        $this->app->singleton(Tenancy::class);
     }
 
     public function boot(): void

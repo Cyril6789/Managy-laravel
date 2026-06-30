@@ -2,11 +2,13 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\BelongsToSociety;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class InterventionPiece extends Model
 {
+    use BelongsToSociety;
     protected $fillable = ['intervention_id', 'designation', 'prix', 'quantite'];
 
     protected function casts(): array

@@ -100,7 +100,7 @@ class StaffController extends Controller
         return [
             'prenom' => ['nullable', 'string', 'max:255'],
             'nom' => ['required', 'string', 'max:255'],
-            'pseudo' => ['required', 'string', 'max:255', Rule::unique('users', 'pseudo')->ignore($staff)],
+            'pseudo' => ['nullable', 'string', 'max:255'],
             'email' => ['required', 'email', 'max:255', Rule::unique('users', 'email')->ignore($staff)],
             'telephone' => ['nullable', 'string', 'max:30'],
             'is_admin' => ['nullable', 'boolean'],

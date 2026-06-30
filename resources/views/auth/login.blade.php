@@ -33,8 +33,8 @@
 
             <form action="{{ route('login') }}" method="POST" class="space-y-4">
                 @csrf
-                <x-field label="Identifiant ou e-mail" name="identifiant" required>
-                    <x-input name="identifiant" value="{{ old('identifiant') }}" autofocus autocomplete="username" />
+                <x-field label="Adresse e-mail" name="email" required>
+                    <x-input name="email" type="email" value="{{ old('email') }}" autofocus autocomplete="email" />
                 </x-field>
 
                 <x-field label="Mot de passe" name="password" required>
@@ -51,6 +51,11 @@
 
                 <x-button type="submit" class="w-full">Se connecter</x-button>
             </form>
+
+            <p class="mt-5 text-center text-sm text-gray-500">
+                Pas encore de compte ?
+                <a href="{{ route('register') }}" class="font-medium text-brand-600 hover:underline">Créer mon espace</a>
+            </p>
         </div>
 
         <p class="mt-6 text-center text-xs text-gray-400">© {{ date('Y') }} {{ $appSettings['company_name'] ?? 'Managy' }}</p>
