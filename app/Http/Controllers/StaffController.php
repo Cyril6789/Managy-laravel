@@ -42,6 +42,9 @@ class StaffController extends Controller
         $user = User::create([
             ...collect($data)->except(['password', 'permissions'])->all(),
             'password' => Hash::make($data['password']),
+            // Team members created by the gérant never go through e-mail
+            // verification (they may even be fictitious accounts).
+            'email_verified_at' => now(),
         ]);
 
         $this->syncPermissions($user, $request);

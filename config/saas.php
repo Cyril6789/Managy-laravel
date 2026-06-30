@@ -4,6 +4,21 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Edition guard
+    |--------------------------------------------------------------------------
+    |
+    | 'edition' is baked into the branch and must NOT be edited per environment:
+    | it is 'saas' on the multi-tenant "saas" branch and 'standalone' on "main".
+    | 'expected' comes from the deployment's .env (APP_EDITION). The
+    | EnsureCorrectEdition middleware refuses to serve when they disagree, so a
+    | client server can never accidentally run the SaaS build and vice-versa.
+    |
+    */
+    'edition' => 'saas',
+    'expected_edition' => env('APP_EDITION'),
+
+    /*
+    |--------------------------------------------------------------------------
     | E-mail verification
     |--------------------------------------------------------------------------
     |

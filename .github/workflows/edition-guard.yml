@@ -1,0 +1,22 @@
+name: Edition guard
+
+# Prevents the multi-tenant SaaS code from ever being merged into `main`
+# (the single-client / standalone edition). Enable this check as "required"
+# in the branch protection rules of `main`.
+
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  block-saas-into-main:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Refuse SaaS edition on main
+        run: |
+          if [ -f config/saas.php ] && grep -q "'edition' => 'saas'" config/saas.php; then
+            echo "::error::This branch carries the SaaS edition (config/saas.php → edition 'saas'). Merging it into 'main' (standalone) is forbidden. Forward-merge main → saas instead."
+            exit 1
+          fi
+          echo "OK: no SaaS edition marker, safe to merge into main."
