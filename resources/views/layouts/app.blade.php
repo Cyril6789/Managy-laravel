@@ -32,7 +32,7 @@
         @include('partials.header')
 
         <main class="py-6">
-            <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <div class="mx-auto px-4 sm:px-6 lg:px-8">
                 @include('partials.flash')
                 @yield('content')
             </div>
