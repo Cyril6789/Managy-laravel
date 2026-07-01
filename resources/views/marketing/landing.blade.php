@@ -64,10 +64,7 @@
         <div class="pointer-events-none absolute -right-32 top-24 -z-10 h-72 w-72 rounded-full bg-purple-200/40 blur-3xl dark:bg-purple-900/10"></div>
 
         <div class="mx-auto max-w-6xl px-6 pt-16 pb-8 text-center sm:pt-24">
-            <span class="inline-flex items-center gap-2 rounded-full border border-brand-200 bg-brand-50 px-3 py-1 text-xs font-medium text-brand-700 dark:border-brand-800 dark:bg-brand-900/30 dark:text-brand-300">
-                <x-icon name="bolt" class="h-3.5 w-3.5" />
-                Nouveau · Plateforme multi-entreprises
-            </span>
+            
             <h1 class="mx-auto mt-6 max-w-3xl text-4xl font-bold tracking-tight sm:text-6xl">
                 Gérez votre atelier informatique,<br class="hidden sm:block"> sans la paperasse.
             </h1>
@@ -191,7 +188,7 @@
                 @php
                     $steps = [
                         ['1', 'Inscrivez votre entreprise', 'Nom, SIRET, logo… votre identité est enregistrée comme une nouvelle société, isolée des autres.'],
-                        ['2', 'Votre espace est créé', "Statuts, systèmes d'exploitation, antivirus et prestations sont déjà pré-remplis pour démarrer tout de suite."],
+                        ['2', 'Votre espace est créé', "Des réglages de bases appliqués pour commencer à travailler tout de suite. Vous pourrez tout modifier ensuite !"],
                         ['3', 'Vous travaillez', 'Connectez-vous, invitez votre équipe et commencez à enregistrer vos interventions.'],
                     ];
                 @endphp
@@ -206,56 +203,6 @@
         </div>
     </section>
 
-    {{-- SaaS / multi-tenant highlight --}}
-    <section class="mx-auto max-w-6xl px-6 py-20 sm:py-24">
-        <div class="grid items-center gap-12 lg:grid-cols-2">
-            <div>
-                <p class="text-sm font-semibold uppercase tracking-wide text-brand-600 dark:text-brand-400">Pensé pour la croissance</p>
-                <h2 class="mt-2 text-3xl font-bold tracking-tight sm:text-4xl">Une plateforme, plusieurs sociétés, zéro mélange.</h2>
-                <p class="mt-4 text-gray-600 dark:text-gray-300">
-                    Que vous soyez seul ou en équipe sur plusieurs sites, chaque entreprise dispose de son espace
-                    totalement cloisonné&nbsp;: données, réglages et utilisateurs ne sont jamais partagés.
-                </p>
-                <ul class="mt-6 space-y-4">
-                    @php
-                        $points = [
-                            ['shield', 'Données cloisonnées', "Chaque société a ses propres clients, interventions et réglages."],
-                            ['lock', 'Suivi client sécurisé', "Vos clients suivent leur réparation via un lien privé, sans créer de compte."],
-                            ['cog', 'Réglages sur mesure', 'Statuts, modèles de messages et automatisations propres à chaque entreprise.'],
-                        ];
-                    @endphp
-                    @foreach ($points as [$icon, $title, $text])
-                        <li class="flex gap-3">
-                            <span class="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-brand-50 text-brand-600 dark:bg-brand-900/30 dark:text-brand-300">
-                                <x-icon :name="$icon" class="h-4 w-4" />
-                            </span>
-                            <div>
-                                <p class="font-medium text-gray-900 dark:text-gray-100">{{ $title }}</p>
-                                <p class="text-sm text-gray-600 dark:text-gray-300">{{ $text }}</p>
-                            </div>
-                        </li>
-                    @endforeach
-                </ul>
-            </div>
-            <div class="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-gray-900">
-                <div class="flex items-center justify-between border-b border-gray-100 pb-4 dark:border-gray-800">
-                    <span class="text-sm font-semibold text-gray-500">Sociétés actives</span>
-                    <x-icon name="id" class="h-5 w-5 text-gray-400" />
-                </div>
-                <ul class="mt-4 space-y-3">
-                    @foreach ([['Atelier Dupont Informatique', 'bg-emerald-500'], ['Reboot Services', 'bg-emerald-500'], ['NovaTech Dépannage', 'bg-emerald-500']] as [$name, $dot])
-                        <li class="flex items-center justify-between rounded-lg bg-gray-50 px-4 py-3 text-sm dark:bg-gray-800/60">
-                            <span class="font-medium text-gray-700 dark:text-gray-200">{{ $name }}</span>
-                            <span class="flex items-center gap-1.5 text-xs font-medium text-emerald-600 dark:text-emerald-400">
-                                <span class="h-1.5 w-1.5 rounded-full {{ $dot }}"></span>
-                                Active
-                            </span>
-                        </li>
-                    @endforeach
-                </ul>
-            </div>
-        </div>
-    </section>
 
     {{-- FAQ --}}
     <section id="faq" class="bg-gray-50 py-20 sm:py-24 dark:bg-gray-900/40">
@@ -274,10 +221,6 @@
                         [
                             'Puis-je essayer sans engagement ?',
                             'Oui, créez votre espace en quelques secondes, sans carte bancaire, et arrêtez quand vous voulez.',
-                        ],
-                        [
-                            'Mes données sont-elles isolées des autres entreprises ?',
-                            'Oui, chaque société dispose de son propre espace cloisonné : vos clients, interventions et réglages ne sont jamais partagés avec un autre compte.',
                         ],
                         [
                             'Puis-je inviter mon équipe de techniciens ?',
