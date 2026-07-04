@@ -94,3 +94,51 @@ L'édition autonome doit, symétriquement, déclarer la sienne. Sur `main` :
 | `.env` → `APP_EDITION` | `saas` | `standalone` |
 | `SAAS_EMAIL_VERIFICATION` | `true` une fois le SMTP prêt | sans objet |
 | Pipeline | déploie `saas` | déploie `main` |
+
+---
+
+## 5. SSO & groupes de permissions (par société)
+
+Chaque gérant peut activer une connexion SSO et regrouper les droits, depuis
+l'espace d'administration de sa société. Trois briques, indépendantes mais
+conçues pour fonctionner ensemble.
+
+### 5.1 Connexion SSO — *Paramètres → Connexion SSO*
+
+- Une configuration **par société et par fournisseur** (`Microsoft Entra ID` ou
+  `Google Workspace`), stockée dans `sso_connections` (le secret client est
+  **chiffré** en base).
+- Le gérant déclare l'application côté annuaire avec l'URL de redirection
+  affichée (`/auth/sso/{provider}/callback`), saisit `client_id` / `client_secret`
+  (+ `tenant_id` pour Entra), la liste des **domaines e-mail autorisés**, puis
+  active la connexion.
+- Sur la page de login, l'utilisateur saisit son e-mail pro et choisit son
+  fournisseur : la société est **résolue depuis le domaine de l'e-mail**, portée
+  en session, puis le callback provisionne le compte (si `auto_provision_users`)
+  et connecte l'utilisateur. Techniquement : **Laravel Socialite** (+
+  `socialiteproviders/microsoft-azure`).
+
+### 5.2 Groupes de permissions — *Groupes de permissions*
+
+- Couche **facultative** au-dessus des permissions attribuées directement : un
+  groupe (ex. `Tech_Niv1`) porte une liste de permissions (`App\Support\Permissions`)
+  et des utilisateurs. `User::hasPermission()` additionne droits directs **et**
+  droits hérités des groupes.
+
+### 5.3 Provisioning automatique via SSO
+
+- Chaque groupe peut être associé à un ou plusieurs **groupes de sécurité** de
+  l'annuaire (par **nom** — ex. `sg_managy_tech_niv1` — ou par **GUID**), table
+  `sso_group_mappings`.
+- À la connexion SSO, les groupes de sécurité de l'utilisateur sont lus
+  (Microsoft Graph `me/transitiveMemberOf`) et `SsoGroupSynchronizer` le place
+  automatiquement dans les groupes Managy correspondants. Seules les
+  appartenances `source = "sso"` sont recalculées ; les affectations manuelles
+  sont préservées.
+
+> Exemple : l'AD ajoute un user à `sg_managy_tech_niv1` → il se connecte en SSO →
+> il rejoint automatiquement `Tech_Niv1` et hérite de ses permissions.
+>
+> Google Workspace : la connexion et le provisioning fonctionnent, mais
+> l'appartenance aux groupes n'est pas exposée dans le jeton OAuth — la synchro
+> automatique des groupes reste donc propre à Microsoft Entra pour l'instant.

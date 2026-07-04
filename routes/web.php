@@ -5,6 +5,7 @@ use App\Http\Controllers\Admin\AdminController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\PasswordResetController;
 use App\Http\Controllers\Auth\RegisterController;
+use App\Http\Controllers\Auth\SsoController;
 use App\Http\Controllers\Auth\VerificationController;
 use App\Http\Controllers\AutomatismeController;
 use App\Http\Controllers\CalendarController;
@@ -22,12 +23,14 @@ use App\Http\Controllers\MediaController;
 use App\Http\Controllers\MessageController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PageController;
+use App\Http\Controllers\PermissionGroupController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\Public\PublicInterventionController;
 use App\Http\Controllers\Public\PublicSatisfactionController;
 use App\Http\Controllers\ReceptionController;
 use App\Http\Controllers\SatisfactionController;
 use App\Http\Controllers\SearchController;
+use App\Http\Controllers\Settings\SsoConnectionController;
 use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\StaffController;
 use App\Http\Controllers\StatsController;
@@ -57,6 +60,11 @@ Route::middleware('guest')->group(function () {
     Route::post('/forgot-password', [PasswordResetController::class, 'email'])->name('password.email');
     Route::get('/reset-password/{token}', [PasswordResetController::class, 'reset'])->name('password.reset');
     Route::post('/reset-password', [PasswordResetController::class, 'update'])->name('password.update');
+
+    // SSO login (Microsoft / Google). The société is resolved from the e-mail
+    // domain entered on the login page, then carried through the callback.
+    Route::post('/auth/sso/{provider}', [SsoController::class, 'redirect'])->name('sso.redirect');
+    Route::get('/auth/sso/{provider}/callback', [SsoController::class, 'callback'])->name('sso.callback');
 });
 
 // ----- Authenticated (any user) ----------------------------------------------
@@ -168,6 +176,17 @@ Route::middleware(['auth', EnsureHasSociety::class, EnsureEmailVerified::class])
     Route::put('/parametres/smtp', [SettingsController::class, 'updateSmtp'])->name('settings.smtp');
     Route::put('/parametres/automatisation', [SettingsController::class, 'updateAutomation'])->name('settings.automation');
     Route::put('/parametres/facturation', [SettingsController::class, 'updateBilling'])->name('settings.billing');
+    // SSO — registered before the generic {type} CRUD so /parametres/sso/... wins.
+    Route::get('/parametres/sso', [SsoConnectionController::class, 'edit'])->name('settings.sso.edit');
+    Route::put('/parametres/sso-policy', [SsoConnectionController::class, 'updatePolicy'])->name('settings.sso.policy');
+    Route::put('/parametres/sso/{provider}', [SsoConnectionController::class, 'update'])->name('settings.sso.update');
+
+    // Permission groups (optional bundles of permissions + SSO group mappings)
+    Route::resource('groupes-permissions', PermissionGroupController::class)
+        ->parameters(['groupes-permissions' => 'permissionGroup'])
+        ->names('permission-groups')
+        ->except('show');
+
     // Generic reference-list CRUD (materiels, systemes, antivirus, prestations, statuts, modeles...)
     Route::post('/parametres/{type}', [SettingsController::class, 'storeReference'])->name('settings.reference.store');
     Route::put('/parametres/{type}/{id}', [SettingsController::class, 'updateReference'])->name('settings.reference.update');

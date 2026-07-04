@@ -68,6 +68,10 @@ final class Permissions
 
     public const AUTOMATISMES_MANAGE = 'automatismes.manage';
 
+    public const PERMISSION_GROUPS_MANAGE = 'permission_groups.manage';
+
+    public const SSO_MANAGE = 'sso.manage';
+
     /**
      * Grouped catalogue for the staff-rights UI and seeding.
      *
@@ -117,6 +121,8 @@ final class Permissions
                 self::STAFF_MANAGE => 'Gérer les techniciens et leurs droits',
                 self::SETTINGS_MANAGE => 'Gérer les paramètres et listes',
                 self::AUTOMATISMES_MANAGE => 'Gérer les automatismes',
+                self::PERMISSION_GROUPS_MANAGE => 'Gérer les groupes de permissions',
+                self::SSO_MANAGE => 'Configurer la connexion SSO (Microsoft / Google)',
             ],
         ];
     }

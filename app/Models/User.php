@@ -30,6 +30,8 @@ class User extends Authenticatable implements MustVerifyEmail
         'is_super_admin',
         'is_active',
         'two_factor_enabled',
+        'sso_provider',
+        'sso_subject',
         'chat_status',
         'preferences',
         'last_action_at',
@@ -82,6 +84,14 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->hasMany(UserPermission::class);
     }
 
+    /** Permission groups (e.g. "Tech_Niv1") the user belongs to. */
+    public function groups(): BelongsToMany
+    {
+        return $this->belongsToMany(PermissionGroup::class, 'permission_group_user')
+            ->withPivot('source')
+            ->withTimestamps();
+    }
+
     public function absences(): HasMany
     {
         return $this->hasMany(TechnicianAbsence::class);
@@ -118,9 +128,42 @@ class User extends Authenticatable implements MustVerifyEmail
             return true;
         }
 
-        return $this->permissionEntries()
-            ->where('permission', $permission)
+        // Granted directly on the user...
+        if ($this->permissionEntries()->where('permission', $permission)->exists()) {
+            return true;
+        }
+
+        // ...or inherited from one of the user's permission groups.
+        return $this->groups()
+            ->whereHas('permissions', fn ($q) => $q->where('permission', $permission))
             ->exists();
+    }
+
+    /**
+     * All effective permission keys for the user: the ones granted directly plus
+     * the ones inherited from their groups.
+     *
+     * @return list<string>
+     */
+    public function effectivePermissions(): array
+    {
+        $direct = $this->permissionEntries()->pluck('permission');
+        $fromGroups = $this->groups()
+            ->with('permissions:id,permission_group_id,permission')
+            ->get()
+            ->flatMap(fn (PermissionGroup $g) => $g->permissions->pluck('permission'));
+
+        return $direct->merge($fromGroups)->unique()->values()->all();
+    }
+
+    /**
+     * Whether the user has any business access at all: a gérant, or someone with
+     * at least one effective permission (directly or via a group). Used to decide
+     * what to do with an SSO user who landed in no synchronised group.
+     */
+    public function hasAnyBusinessAccess(): bool
+    {
+        return $this->is_admin || $this->effectivePermissions() !== [];
     }
 
     public function fullName(): string
