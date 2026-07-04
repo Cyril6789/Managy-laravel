@@ -16,6 +16,8 @@
     ];
     $admin = [
         ['staff.index', 'Techniciens', 'id', \App\Support\Permissions::STAFF_MANAGE],
+        ['permission-groups.index', 'Groupes de permissions', 'users', \App\Support\Permissions::PERMISSION_GROUPS_MANAGE],
+        ['settings.sso.edit', 'Connexion SSO', 'shield', \App\Support\Permissions::SSO_MANAGE],
         ['automatismes.index', 'Automatismes', 'bolt', \App\Support\Permissions::AUTOMATISMES_MANAGE],
         ['settings.index', 'Paramètres', 'cog', \App\Support\Permissions::SETTINGS_MANAGE],
         ['logs.index', 'Journaux', 'list', \App\Support\Permissions::LOGS_VIEW],

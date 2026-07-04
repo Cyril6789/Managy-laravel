@@ -10,10 +10,13 @@ use App\Models\Task;
 use App\Models\User;
 use App\Support\Permissions;
 use App\Support\Tenancy;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
+use SocialiteProviders\Azure\Provider;
+use SocialiteProviders\Manager\SocialiteWasCalled;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -27,6 +30,11 @@ class AppServiceProvider extends ServiceProvider
     {
         $this->configureCodespaceUrl();
         $this->configureMailFromSettings();
+
+        // Register the Microsoft Entra (Azure) driver for Socialite.
+        Event::listen(function (SocialiteWasCalled $event) {
+            $event->extendSocialite('azure', Provider::class);
+        });
 
         // Admins ("gérant") bypass every gate.
         Gate::before(function (User $user) {
