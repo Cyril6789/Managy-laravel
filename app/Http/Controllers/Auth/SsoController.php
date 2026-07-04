@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Models\ActivityLog;
+use App\Models\Setting;
 use App\Models\SsoConnection;
 use App\Models\User;
 use App\Services\Sso\MicrosoftGraphGroups;
@@ -111,6 +112,14 @@ class SsoController extends Controller
         $request->session()->regenerate();
 
         $this->synchronizeGroups($user, $connection, $ssoUser);
+
+        // The gérant decides what happens to an SSO user who ends up with no
+        // access at all (in no synchronised group and with no direct right):
+        // either refuse the connection, or let them in with the read-only floor.
+        if (! $user->hasAnyBusinessAccess()
+            && Setting::get('sso_unmapped_policy', 'read_only') === 'deny') {
+            return $this->fail(__('Votre accès n\'est pas encore configuré. Contactez votre administrateur.'));
+        }
 
         $user->forceFill(['last_action_at' => now()])->save();
         ActivityLog::create([

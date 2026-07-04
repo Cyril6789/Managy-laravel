@@ -156,6 +156,16 @@ class User extends Authenticatable implements MustVerifyEmail
         return $direct->merge($fromGroups)->unique()->values()->all();
     }
 
+    /**
+     * Whether the user has any business access at all: a gérant, or someone with
+     * at least one effective permission (directly or via a group). Used to decide
+     * what to do with an SSO user who landed in no synchronised group.
+     */
+    public function hasAnyBusinessAccess(): bool
+    {
+        return $this->is_admin || $this->effectivePermissions() !== [];
+    }
+
     public function fullName(): string
     {
         return trim(($this->prenom ?? '').' '.$this->nom);

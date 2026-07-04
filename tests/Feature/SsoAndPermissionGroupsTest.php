@@ -3,14 +3,20 @@
 namespace Tests\Feature;
 
 use App\Models\PermissionGroup;
+use App\Models\Setting;
 use App\Models\SsoConnection;
 use App\Models\SsoGroupMapping;
 use App\Models\User;
+use App\Services\Sso\MicrosoftGraphGroups;
 use App\Services\Sso\SsoGroupSynchronizer;
 use App\Support\Permissions;
 use App\Support\Tenancy;
 use Database\Seeders\DatabaseSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Laravel\Socialite\Contracts\Provider;
+use Laravel\Socialite\Facades\Socialite;
+use Laravel\Socialite\Two\User as SocialiteUser;
+use Mockery;
 use Tests\TestCase;
 
 class SsoAndPermissionGroupsTest extends TestCase
@@ -177,6 +183,98 @@ class SsoAndPermissionGroupsTest extends TestCase
         $connection = $this->forSociety(fn () => SsoConnection::where('provider', 'microsoft')->firstOrFail());
         $this->assertSame('client-456', $connection->client_id);
         $this->assertSame('super-secret', $connection->client_secret);
+    }
+
+    private function usableMicrosoftConnection(): SsoConnection
+    {
+        return $this->forSociety(fn () => SsoConnection::create([
+            'provider' => 'microsoft',
+            'enabled' => true,
+            'client_id' => 'client-123',
+            'client_secret' => 'secret',
+            'tenant_id' => 'tenant-abc',
+            'allowed_domains' => 'contoso.com',
+        ]));
+    }
+
+    /** Make Socialite return a fixed identity (no groups → token null). */
+    private function fakeSocialiteUser(string $id, string $email, string $name): void
+    {
+        $ssoUser = (new SocialiteUser)->map(['id' => $id, 'email' => $email, 'name' => $name]);
+        $ssoUser->token = null;
+
+        $provider = Mockery::mock(Provider::class);
+        $provider->shouldReceive('scopes')->andReturnSelf();
+        $provider->shouldReceive('user')->andReturn($ssoUser);
+        Socialite::shouldReceive('driver')->andReturn($provider);
+    }
+
+    private function hitCallback()
+    {
+        return $this->withSession([
+            'sso.society_id' => $this->societyId(),
+            'sso.provider' => 'microsoft',
+        ])->get(route('sso.callback', 'microsoft'));
+    }
+
+    public function test_deny_policy_blocks_an_sso_user_without_any_access(): void
+    {
+        $this->usableMicrosoftConnection();
+        $this->forSociety(fn () => Setting::put('sso_unmapped_policy', 'deny'));
+        $this->fakeSocialiteUser('ext-1', 'newbie@contoso.com', 'New Bie');
+
+        $this->hitCallback()
+            ->assertRedirect(route('login'))
+            ->assertSessionHasErrors('email');
+
+        $this->assertGuest();
+        // The account is provisioned but simply not allowed to enter.
+        $this->assertNotNull(User::whereRaw('LOWER(email) = ?', ['newbie@contoso.com'])->first());
+    }
+
+    public function test_read_only_policy_lets_an_sso_user_in_without_access(): void
+    {
+        $this->usableMicrosoftConnection(); // default policy = read_only
+        $this->fakeSocialiteUser('ext-2', 'reader@contoso.com', 'Read Er');
+
+        $this->hitCallback()->assertRedirect(route('dashboard'));
+
+        $this->assertAuthenticated();
+        $user = User::whereRaw('LOWER(email) = ?', ['reader@contoso.com'])->firstOrFail();
+        $this->assertFalse($user->hasAnyBusinessAccess());
+    }
+
+    public function test_deny_policy_still_admits_a_user_who_has_a_mapped_group(): void
+    {
+        $this->usableMicrosoftConnection();
+        $this->forSociety(function () {
+            Setting::put('sso_unmapped_policy', 'deny');
+            $group = PermissionGroup::create(['name' => 'Tech_Niv1']);
+            $group->syncPermissions([Permissions::CLIENTS_VIEW]);
+            SsoGroupMapping::create([
+                'permission_group_id' => $group->id,
+                'external_group' => 'sg_managy_tech_niv1',
+            ]);
+        });
+
+        // The directory returns a matching group, so the user gains access.
+        $ssoUser = (new SocialiteUser)->map(['id' => 'ext-3', 'email' => 'tech@contoso.com', 'name' => 'Tech One']);
+        $ssoUser->token = 'graph-token';
+        $provider = Mockery::mock(Provider::class);
+        $provider->shouldReceive('scopes')->andReturnSelf();
+        $provider->shouldReceive('user')->andReturn($ssoUser);
+        Socialite::shouldReceive('driver')->andReturn($provider);
+
+        // Stub the Graph group lookup to report the mapped security group.
+        $this->mock(MicrosoftGraphGroups::class, function ($m) {
+            $m->shouldReceive('forToken')->andReturn([
+                ['id' => 'guid-1', 'name' => 'sg_managy_tech_niv1'],
+            ]);
+        });
+
+        $this->hitCallback()->assertRedirect(route('dashboard'));
+        $this->assertAuthenticated();
+        $this->assertTrue(User::whereRaw('LOWER(email) = ?', ['tech@contoso.com'])->firstOrFail()->hasAnyBusinessAccess());
     }
 
     public function test_sso_redirect_resolves_the_connection_from_the_email_domain(): void

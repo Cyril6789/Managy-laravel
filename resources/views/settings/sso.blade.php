@@ -18,6 +18,35 @@
         </ol>
     </div>
 
+    {{-- Politique société : que faire d'un utilisateur SSO sans aucun droit ? --}}
+    <form action="{{ route('settings.sso.policy') }}" method="POST" class="mb-6">
+        @csrf
+        @method('PUT')
+        <x-card title="Utilisateur SSO sans droits">
+            <p class="mb-4 text-sm text-gray-500">
+                Que se passe-t-il lorsqu'un utilisateur se connecte en SSO mais n'appartient à aucun groupe de sécurité associé
+                (aucune permission ne lui est donc attribuée)&nbsp;?
+            </p>
+            <div class="space-y-2">
+                <label class="flex items-start gap-3 rounded-lg border border-gray-100 p-3 text-sm dark:border-gray-800">
+                    <input type="radio" name="sso_unmapped_policy" value="read_only" @checked($unmappedPolicy !== 'deny')
+                           class="mt-0.5 border-gray-300 text-brand-600 dark:border-gray-700 dark:bg-gray-800">
+                    <span><strong>Autoriser en lecture seule</strong> — l'utilisateur se connecte mais n'accède qu'au tableau de bord
+                        et à la page des disponibilités (aucune donnée modifiable, tout le reste est refusé).</span>
+                </label>
+                <label class="flex items-start gap-3 rounded-lg border border-gray-100 p-3 text-sm dark:border-gray-800">
+                    <input type="radio" name="sso_unmapped_policy" value="deny" @checked($unmappedPolicy === 'deny')
+                           class="mt-0.5 border-gray-300 text-brand-600 dark:border-gray-700 dark:bg-gray-800">
+                    <span><strong>Bloquer la connexion</strong> — l'accès est refusé tant qu'aucun groupe/permission n'a été attribué.
+                        L'utilisateur voit un message l'invitant à contacter son administrateur.</span>
+                </label>
+            </div>
+            <div class="mt-4 flex justify-end">
+                <x-button type="submit">Enregistrer</x-button>
+            </div>
+        </x-card>
+    </form>
+
     <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
         @foreach ($providers as $provider => $label)
             @php $connection = $connections[$provider]; @endphp

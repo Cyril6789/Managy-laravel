@@ -178,6 +178,7 @@ Route::middleware(['auth', EnsureHasSociety::class, EnsureEmailVerified::class])
     Route::put('/parametres/facturation', [SettingsController::class, 'updateBilling'])->name('settings.billing');
     // SSO — registered before the generic {type} CRUD so /parametres/sso/... wins.
     Route::get('/parametres/sso', [SsoConnectionController::class, 'edit'])->name('settings.sso.edit');
+    Route::put('/parametres/sso-policy', [SsoConnectionController::class, 'updatePolicy'])->name('settings.sso.policy');
     Route::put('/parametres/sso/{provider}', [SsoConnectionController::class, 'update'])->name('settings.sso.update');
 
     // Permission groups (optional bundles of permissions + SSO group mappings)

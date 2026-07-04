@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Settings;
 
 use App\Http\Controllers\Controller;
+use App\Models\Setting;
 use App\Models\SsoConnection;
 use App\Support\Permissions;
 use Illuminate\Http\RedirectResponse;
@@ -29,7 +30,26 @@ class SsoConnectionController extends Controller
             'connections' => $connections,
             'providers' => SsoConnection::PROVIDERS,
             'callbackBase' => url('/auth/sso'),
+            'unmappedPolicy' => Setting::get('sso_unmapped_policy', 'read_only'),
         ]);
+    }
+
+    /**
+     * How to treat an SSO user who signs in without landing in any synchronised
+     * group (no effective permission): let them in read-only, or refuse.
+     */
+    public function updatePolicy(Request $request): RedirectResponse
+    {
+        $this->authorize(Permissions::SSO_MANAGE);
+
+        $data = $request->validate([
+            'sso_unmapped_policy' => ['required', 'in:read_only,deny'],
+        ]);
+
+        Setting::put('sso_unmapped_policy', $data['sso_unmapped_policy']);
+
+        return redirect()->route('settings.sso.edit')
+            ->with('success', __('Politique d\'accès SSO enregistrée.'));
     }
 
     public function update(Request $request, string $provider): RedirectResponse
