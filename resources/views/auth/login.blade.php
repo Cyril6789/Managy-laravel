@@ -53,7 +53,8 @@
                     <x-button type="submit" class="w-full">Se connecter</x-button>
                 </form>
 
-                {{-- Single Sign-On: the société is resolved from the e-mail domain typed above. --}}
+                {{-- Single Sign-On: goes straight to the provider, which handles the identity.
+                     The e-mail above is only used to disambiguate when several spaces share a provider. --}}
                 <div class="my-5 flex items-center gap-3 text-xs uppercase tracking-wide text-gray-400">
                     <span class="h-px flex-1 bg-gray-200 dark:bg-gray-800"></span>ou<span class="h-px flex-1 bg-gray-200 dark:bg-gray-800"></span>
                 </div>
@@ -75,7 +76,7 @@
                             Continuer avec Google
                         </button>
                     </form>
-                    <p class="pt-1 text-center text-xs text-gray-400">Saisissez d'abord votre e-mail professionnel ci-dessus.</p>
+                    <p class="pt-1 text-center text-xs text-gray-400">Vous serez redirigé vers votre fournisseur. Renseignez votre e-mail ci-dessus uniquement si on vous le demande.</p>
                 </div>
             </div>
 

@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\PermissionGroup;
 use App\Models\Setting;
+use App\Models\Society;
 use App\Models\SsoConnection;
 use App\Models\SsoGroupMapping;
 use App\Models\User;
@@ -296,6 +297,47 @@ class SsoAndPermissionGroupsTest extends TestCase
 
         // Unknown domain → back to the login page with an error.
         $this->post(route('sso.redirect', 'microsoft'), ['email' => 'jdoe@unknown.com'])
+            ->assertRedirect(route('login'))
+            ->assertSessionHasErrors('email');
+    }
+
+    public function test_sso_redirect_without_email_uses_the_single_connection(): void
+    {
+        $this->usableMicrosoftConnection();
+
+        // No e-mail typed: the sole connection is used, straight to the provider.
+        $response = $this->post(route('sso.redirect', 'microsoft'));
+
+        $response->assertRedirect();
+        $this->assertStringContainsString('login.microsoftonline.com', $response->headers->get('Location'));
+        $this->assertSame($this->societyId(), session('sso.society_id'));
+    }
+
+    public function test_sso_redirect_without_email_reports_when_no_connection_exists(): void
+    {
+        $this->post(route('sso.redirect', 'microsoft'))
+            ->assertRedirect(route('login'))
+            ->assertSessionHasErrors('email');
+
+        $this->assertNull(session('sso.society_id'));
+    }
+
+    public function test_sso_redirect_without_email_asks_for_it_when_several_spaces_share_the_provider(): void
+    {
+        $this->usableMicrosoftConnection(); // demo société
+
+        // A second société also uses Microsoft → the provider is ambiguous.
+        $other = Society::create(['name' => 'Autre', 'slug' => 'autre', 'is_active' => true]);
+        app(Tenancy::class)->forSociety($other->id, fn () => SsoConnection::create([
+            'provider' => 'microsoft',
+            'enabled' => true,
+            'client_id' => 'client-2',
+            'client_secret' => 'secret-2',
+            'tenant_id' => 'tenant-2',
+            'allowed_domains' => 'other.com',
+        ]));
+
+        $this->post(route('sso.redirect', 'microsoft'))
             ->assertRedirect(route('login'))
             ->assertSessionHasErrors('email');
     }

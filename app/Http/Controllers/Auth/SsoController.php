@@ -39,17 +39,44 @@ class SsoController extends Controller
             abort(404);
         }
 
-        $request->validate(['email' => ['required', 'email']]);
-        $email = $request->input('email');
+        // The e-mail is only needed to pick the right société when several use
+        // the same provider. With a single connection we go straight to the
+        // provider, which handles the identity (seamless if already signed in).
+        $request->validate(['email' => ['nullable', 'email']]);
+        $email = $request->filled('email') ? (string) $request->input('email') : null;
 
-        $connection = $this->resolveConnection($provider, $email);
+        if ($email !== null) {
+            $connection = $this->resolveConnection($provider, $email);
 
-        if (! $connection) {
-            return redirect()->route('login')->withErrors([
-                'email' => __('Aucune connexion SSO :provider n\'est active pour ce domaine.', [
-                    'provider' => SsoConnection::PROVIDERS[$provider],
-                ]),
-            ]);
+            if (! $connection) {
+                return redirect()->route('login')->withErrors([
+                    'email' => __('Aucune connexion SSO :provider n\'est active pour ce domaine.', [
+                        'provider' => SsoConnection::PROVIDERS[$provider],
+                    ]),
+                ]);
+            }
+        } else {
+            $connections = $this->enabledConnections($provider);
+
+            if ($connections->isEmpty()) {
+                return redirect()->route('login')->withErrors([
+                    'email' => __('La connexion SSO :provider n\'est pas configurée.', [
+                        'provider' => SsoConnection::PROVIDERS[$provider],
+                    ]),
+                ]);
+            }
+
+            // Several tenants use this provider: we can't know which one without
+            // the e-mail, so fall back to asking for it.
+            if ($connections->count() > 1) {
+                return redirect()->route('login')->withErrors([
+                    'email' => __('Plusieurs espaces utilisent le SSO :provider. Saisissez votre e-mail pour continuer.', [
+                        'provider' => SsoConnection::PROVIDERS[$provider],
+                    ]),
+                ]);
+            }
+
+            $connection = $connections->first();
         }
 
         // Remember which société / provider this flow belongs to.
@@ -133,18 +160,30 @@ class SsoController extends Controller
         return redirect()->intended(route('dashboard'));
     }
 
+    /**
+     * Enabled, usable connections for a provider. Guest context: the société
+     * scope is off, so we legitimately see every space's connection.
+     *
+     * @return \Illuminate\Support\Collection<int, SsoConnection>
+     */
+    private function enabledConnections(string $provider): \Illuminate\Support\Collection
+    {
+        return SsoConnection::where('provider', $provider)
+            ->where('enabled', true)
+            ->get()
+            ->filter(fn (SsoConnection $c) => $c->isUsable())
+            ->values();
+    }
+
     /** Find the usable, enabled connection for a provider matching the e-mail. */
     private function resolveConnection(string $provider, string $email): ?SsoConnection
     {
-        // Guest context: the société scope is off, so we see every connection.
-        $candidates = SsoConnection::where('provider', $provider)
-            ->where('enabled', true)
-            ->get()
-            ->filter(fn (SsoConnection $c) => $c->isUsable() && $c->acceptsEmail($email));
-
         // Prefer a connection that explicitly whitelists the domain over a
         // catch-all one, so a specific tenant always wins.
-        return $candidates->sortByDesc(fn (SsoConnection $c) => $c->domains() === [] ? 0 : 1)->first();
+        return $this->enabledConnections($provider)
+            ->filter(fn (SsoConnection $c) => $c->acceptsEmail($email))
+            ->sortByDesc(fn (SsoConnection $c) => $c->domains() === [] ? 0 : 1)
+            ->first();
     }
 
     private function findOrProvisionUser(SsoConnection $connection, $ssoUser, string $email): ?User
