@@ -6,6 +6,7 @@ use App\Models\Commande;
 use App\Models\Intervention;
 use App\Models\Setting;
 use App\Models\SousTraitance;
+use App\Models\SupportTicket;
 use App\Models\Task;
 use App\Models\User;
 use App\Support\Permissions;
@@ -96,6 +97,9 @@ class AppServiceProvider extends ServiceProvider
                 $counts['tasks.index'] = Task::where('user_id', $user->id)
                     ->where('statut', '!=', 'terminee')->count();
             }
+
+            // Assistance is open to everyone: badge the société's open tickets.
+            $counts['support.index'] = SupportTicket::query()->open()->count();
         } catch (\Throwable) {
             return []; // DB not migrated yet (e.g. during install)
         }

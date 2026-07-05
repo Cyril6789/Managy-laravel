@@ -53,5 +53,10 @@
                 @endcan
             @endforeach
         @endif
+
+        {{-- Assistance : tout en bas, accessible à chaque utilisateur --}}
+        <div class="mt-auto border-t border-gray-200 pt-2 dark:border-gray-800">
+            <x-nav-link route="support.index" icon="lifebuoy" :count="($navCounts ?? [])['support.index'] ?? null">Assistance</x-nav-link>
+        </div>
     </nav>
 </aside>
