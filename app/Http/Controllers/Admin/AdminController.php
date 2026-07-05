@@ -7,7 +7,10 @@ use App\Models\Client;
 use App\Models\Intervention;
 use App\Models\Society;
 use App\Models\User;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\Rules\Password as PasswordRule;
 
 /**
  * SaaS supervision area, reserved to the platform super-admin. Provides a
@@ -73,5 +76,42 @@ class AdminController extends Controller
         return back()->with('success', $society->is_active
             ? 'Société réactivée.'
             : 'Société suspendue.');
+    }
+
+    /**
+     * Account page for the super-admin. The regular /profil area lives behind
+     * the "has a société" middleware, which the super-admin never satisfies, so
+     * it gets its own minimal page here to update credentials.
+     */
+    public function account(Request $request)
+    {
+        return view('admin.account', ['user' => $request->user()]);
+    }
+
+    public function updateAccount(Request $request)
+    {
+        $user = $request->user();
+
+        $data = $request->validate([
+            'prenom' => ['nullable', 'string', 'max:255'],
+            'nom' => ['required', 'string', 'max:255'],
+            'email' => ['required', 'email', \Illuminate\Validation\Rule::unique('users', 'email')->ignore($user)],
+        ]);
+
+        $user->update($data);
+
+        return back()->with('success', 'Profil mis à jour.');
+    }
+
+    public function updatePassword(Request $request)
+    {
+        $request->validate([
+            'current_password' => ['required', 'current_password'],
+            'password' => ['required', 'confirmed', PasswordRule::defaults()],
+        ]);
+
+        $request->user()->update(['password' => Hash::make($request->password)]);
+
+        return back()->with('success', 'Mot de passe modifié.');
     }
 }
