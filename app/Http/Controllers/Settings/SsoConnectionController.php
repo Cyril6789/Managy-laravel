@@ -15,7 +15,7 @@ use Illuminate\Http\Request;
  */
 class SsoConnectionController extends Controller
 {
-    public function edit()
+    public function edit(Request $request)
     {
         $this->authorize(Permissions::SSO_MANAGE);
 
@@ -31,7 +31,34 @@ class SsoConnectionController extends Controller
             'providers' => SsoConnection::PROVIDERS,
             'callbackBase' => url('/auth/sso'),
             'unmappedPolicy' => Setting::get('sso_unmapped_policy', 'read_only'),
+            'society' => $request->user()->society,
+            'passwordEnabled' => (bool) Setting::get('login_password_enabled', true),
         ]);
+    }
+
+    /**
+     * Dedicated login page: the société's unique slug and whether password login
+     * is offered. The gérant always keeps a password fallback (emergency access).
+     */
+    public function updateLogin(Request $request): RedirectResponse
+    {
+        $this->authorize(Permissions::SSO_MANAGE);
+
+        $society = $request->user()->society;
+
+        $data = $request->validate([
+            'slug' => [
+                'required', 'string', 'alpha_dash', 'min:3', 'max:60',
+                \Illuminate\Validation\Rule::unique('societies', 'slug')->ignore($society->id),
+            ],
+            'login_password_enabled' => ['nullable', 'boolean'],
+        ]);
+
+        $society->forceFill(['slug' => $data['slug']])->save();
+        Setting::put('login_password_enabled', $request->boolean('login_password_enabled') ? '1' : '0');
+
+        return redirect()->route('settings.sso.edit')
+            ->with('success', __('Options de connexion enregistrées.'));
     }
 
     /**

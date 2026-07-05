@@ -18,6 +18,38 @@
         </ol>
     </div>
 
+    {{-- Lien de connexion dédié + méthodes proposées --}}
+    <form action="{{ route('settings.sso.login') }}" method="POST" class="mb-6">
+        @csrf
+        @method('PUT')
+        <x-card title="Page de connexion dédiée">
+            <p class="mb-4 text-sm text-gray-500">
+                Chaque société dispose d'un lien de connexion à elle, à mettre en favori. Vos utilisateurs y retrouvent directement
+                les méthodes que vous proposez.
+            </p>
+
+            <x-field label="Identifiant de la société (slug)" name="slug" hint="lettres, chiffres, tirets — 3 à 60 caractères">
+                <x-input name="slug" value="{{ old('slug', $society->slug) }}" />
+            </x-field>
+
+            <p class="mt-2 text-sm text-gray-500">
+                Lien&nbsp;: <span class="font-mono text-brand-600">{{ url('/login/'.$society->slug) }}</span>
+            </p>
+
+            <label class="mt-4 flex items-start gap-3 rounded-lg border border-gray-100 p-3 text-sm dark:border-gray-800">
+                <input type="hidden" name="login_password_enabled" value="0">
+                <input type="checkbox" name="login_password_enabled" value="1" @checked(old('login_password_enabled', $passwordEnabled))
+                       class="mt-0.5 rounded border-gray-300 text-brand-600 dark:border-gray-700 dark:bg-gray-800">
+                <span><strong>Autoriser la connexion par mot de passe</strong> — si décochée, vos utilisateurs devront passer par le SSO.
+                    Le gérant garde toujours un accès mot de passe de secours (en cas de panne du fournisseur).</span>
+            </label>
+
+            <div class="mt-4 flex justify-end">
+                <x-button type="submit">Enregistrer</x-button>
+            </div>
+        </x-card>
+    </form>
+
     {{-- Politique société : que faire d'un utilisateur SSO sans aucun droit ? --}}
     <form action="{{ route('settings.sso.policy') }}" method="POST" class="mb-6">
         @csrf

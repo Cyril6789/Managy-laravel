@@ -52,6 +52,11 @@ Route::post('/satisfaction/{token}', [PublicSatisfactionController::class, 'stor
 // ----- Guest auth ------------------------------------------------------------
 Route::middleware('guest')->group(function () {
     Route::get('/login', [LoginController::class, 'show'])->name('login');
+    // Identifier-first: resolve the typed e-mail to SSO or a password field.
+    Route::post('/login/identify', [LoginController::class, 'identify'])
+        ->middleware('throttle:30,1')->name('login.identify');
+    // Dedicated per-société login page (bookmarkable), resolved by its slug.
+    Route::get('/login/{society:slug}', [LoginController::class, 'slug'])->name('login.society');
     // Coarse per-IP throttle in front of the per-credential lockout done in the controller.
     Route::post('/login', [LoginController::class, 'login'])->middleware('throttle:20,1');
     // SaaS sign-up: creates a brand new société + its first user.
@@ -187,6 +192,7 @@ Route::middleware(['auth', EnsureHasSociety::class, EnsureEmailVerified::class])
     // SSO — registered before the generic {type} CRUD so /parametres/sso/... wins.
     Route::get('/parametres/sso', [SsoConnectionController::class, 'edit'])->name('settings.sso.edit');
     Route::put('/parametres/sso-policy', [SsoConnectionController::class, 'updatePolicy'])->name('settings.sso.policy');
+    Route::put('/parametres/sso-login', [SsoConnectionController::class, 'updateLogin'])->name('settings.sso.login');
     Route::put('/parametres/sso/{provider}', [SsoConnectionController::class, 'update'])->name('settings.sso.update');
 
     // Permission groups (optional bundles of permissions + SSO group mappings)
