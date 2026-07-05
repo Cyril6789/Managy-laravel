@@ -36,6 +36,11 @@
             <form action="{{ route('register') }}" method="POST" enctype="multipart/form-data" class="space-y-5">
                 @csrf
 
+                {{-- Honeypot: hidden from humans, irresistible to bots. Server rejects any submission that fills it. --}}
+                <div aria-hidden="true" style="position:absolute;left:-9999px;top:-9999px;height:0;width:0;overflow:hidden">
+                    <label>Page web<input type="text" name="homepage" tabindex="-1" autocomplete="off" value=""></label>
+                </div>
+
                 <div>
                     <h2 class="text-sm font-semibold uppercase tracking-wide text-gray-400">Votre entreprise</h2>
                     <div class="mt-3 space-y-4">
