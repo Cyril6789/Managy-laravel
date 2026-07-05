@@ -33,7 +33,7 @@
 
     {{-- Societies table --}}
     <div class="mt-8 overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-gray-800 dark:bg-gray-900">
-        <table class="min-w-full divide-y divide-gray-100 text-sm dark:divide-gray-800">
+        <div class="overflow-x-auto"><table class="min-w-full divide-y divide-gray-100 text-sm dark:divide-gray-800">
             <thead class="bg-gray-50 text-left text-xs font-semibold uppercase tracking-wide text-gray-500 dark:bg-gray-800/50">
                 <tr>
                     <th class="px-5 py-3">Société</th>
@@ -81,6 +81,6 @@
                     </tr>
                 @endforelse
             </tbody>
-        </table>
+        </table></div>
     </div>
 @endsection

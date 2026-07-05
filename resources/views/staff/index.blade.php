@@ -9,7 +9,7 @@
     </x-page-header>
 
     <x-card :padding="false">
-        <table class="min-w-full divide-y divide-gray-100 text-sm dark:divide-gray-800">
+        <div class="overflow-x-auto"><table class="min-w-full divide-y divide-gray-100 text-sm dark:divide-gray-800">
             <thead class="bg-gray-50 text-left text-xs uppercase tracking-wide text-gray-500 dark:bg-gray-800/50">
                 <tr>
                     <th class="px-5 py-3 font-medium">Nom</th>
@@ -39,6 +39,6 @@
                     </tr>
                 @endforeach
             </tbody>
-        </table>
+        </table></div>
     </x-card>
 @endsection

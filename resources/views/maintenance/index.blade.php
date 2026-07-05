@@ -5,7 +5,7 @@
     <x-page-header title="Pack maintenance" subtitle="Solde d'heures par client" />
 
     <x-card :padding="false">
-        <table class="min-w-full divide-y divide-gray-100 text-sm dark:divide-gray-800">
+        <div class="overflow-x-auto"><table class="min-w-full divide-y divide-gray-100 text-sm dark:divide-gray-800">
             <thead class="bg-gray-50 text-left text-xs uppercase tracking-wide text-gray-500 dark:bg-gray-800/50">
                 <tr><th class="px-5 py-3 font-medium">Client</th><th class="px-5 py-3 text-right font-medium">Solde (h)</th><th></th></tr>
             </thead>
@@ -20,7 +20,7 @@
                     <tr><td colspan="3"><x-empty-state icon="shield" title="Aucun pack maintenance" message="Créditez un client depuis sa fiche maintenance." /></td></tr>
                 @endforelse
             </tbody>
-        </table>
+        </table></div>
         @if ($clients->hasPages())<div class="border-t border-gray-100 p-4 dark:border-gray-800">{{ $clients->links() }}</div>@endif
     </x-card>
 @endsection

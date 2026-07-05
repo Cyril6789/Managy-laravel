@@ -73,7 +73,7 @@ trait Auditable
         });
 
         static::restored(function (Model $model) {
-            $model->recordAudit('restored', []);
+            $model->recordAudit('restored', ['attributes' => $model->auditableSnapshot()]);
         });
     }
 

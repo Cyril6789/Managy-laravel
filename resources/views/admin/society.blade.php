@@ -74,7 +74,7 @@
         <div class="border-b border-gray-100 px-5 py-3 dark:border-gray-800">
             <h2 class="text-sm font-semibold">Utilisateurs ({{ $users->count() }})</h2>
         </div>
-        <table class="min-w-full divide-y divide-gray-100 text-sm dark:divide-gray-800">
+        <div class="overflow-x-auto"><table class="min-w-full divide-y divide-gray-100 text-sm dark:divide-gray-800">
             <thead class="bg-gray-50 text-left text-xs font-semibold uppercase tracking-wide text-gray-500 dark:bg-gray-800/50">
                 <tr>
                     <th class="px-5 py-3">Nom</th>
@@ -99,6 +99,6 @@
                     </tr>
                 @endforeach
             </tbody>
-        </table>
+        </table></div>
     </div>
 @endsection

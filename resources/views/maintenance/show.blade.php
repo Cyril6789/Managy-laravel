@@ -35,7 +35,7 @@
 
         <div class="lg:col-span-2">
             <x-card title="Historique" :padding="false">
-                <table class="min-w-full divide-y divide-gray-100 text-sm dark:divide-gray-800">
+                <div class="overflow-x-auto"><table class="min-w-full divide-y divide-gray-100 text-sm dark:divide-gray-800">
                     <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
                         @forelse ($mouvements as $m)
                             <tr>
@@ -62,7 +62,7 @@
                             <tr><td colspan="4"><x-empty-state icon="shield" title="Aucun mouvement" /></td></tr>
                         @endforelse
                     </tbody>
-                </table>
+                </table></div>
             </x-card>
         </div>
     </div>
