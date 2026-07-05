@@ -59,7 +59,7 @@
                                 @if (in_array($log->action, ['created', 'updated']) && $log->subjectUrl())
                                     <a href="{{ $log->subjectUrl() }}" class="text-xs font-medium text-brand-600 hover:underline">Voir →</a>
                                 @endif
-                                @if ($log->isRestorable() && auth()->user()->can(\App\Support\Permissions::AUDIT_RESTORE))
+                                @if ($log->isRestorable() && \Illuminate\Support\Facades\Route::has('logs.restore') && auth()->user()->can(\App\Support\Permissions::AUDIT_RESTORE))
                                     <form action="{{ route('logs.restore', $log) }}" method="POST" onsubmit="return confirm('Restaurer cet élément supprimé ?')">
                                         @csrf
                                         <button type="submit" class="text-xs font-medium text-green-600 hover:underline">Annuler</button>
