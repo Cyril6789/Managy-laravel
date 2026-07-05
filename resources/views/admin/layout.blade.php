@@ -23,7 +23,11 @@
                 <span class="rounded-md bg-brand-50 px-2 py-0.5 text-xs font-semibold text-brand-700 dark:bg-brand-900/30 dark:text-brand-300">SUPERVISION</span>
             </a>
             <div class="flex items-center gap-4 text-sm">
-                <a href="{{ route('admin.account') }}" class="font-medium text-gray-600 hover:text-brand-600 dark:text-gray-300">{{ auth()->user()->fullName() }}</a>
+                @if (Route::has('admin.account'))
+                    <a href="{{ route('admin.account') }}" class="font-medium text-gray-600 hover:text-brand-600 dark:text-gray-300">{{ auth()->user()->fullName() }}</a>
+                @else
+                    <span class="text-gray-500">{{ auth()->user()->fullName() }}</span>
+                @endif
                 <form action="{{ route('logout') }}" method="POST">
                     @csrf
                     <button type="submit" class="font-medium text-gray-600 hover:text-brand-600 dark:text-gray-300">Déconnexion</button>
