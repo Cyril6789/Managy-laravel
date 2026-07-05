@@ -52,10 +52,12 @@ Route::post('/satisfaction/{token}', [PublicSatisfactionController::class, 'stor
 // ----- Guest auth ------------------------------------------------------------
 Route::middleware('guest')->group(function () {
     Route::get('/login', [LoginController::class, 'show'])->name('login');
-    Route::post('/login', [LoginController::class, 'login']);
+    // Coarse per-IP throttle in front of the per-credential lockout done in the controller.
+    Route::post('/login', [LoginController::class, 'login'])->middleware('throttle:20,1');
     // SaaS sign-up: creates a brand new société + its first user.
     Route::get('/inscription', [RegisterController::class, 'show'])->name('register');
-    Route::post('/inscription', [RegisterController::class, 'store']);
+    // Cap automated mass sign-ups from a single IP (10 per hour).
+    Route::post('/inscription', [RegisterController::class, 'store'])->middleware('throttle:10,60');
     Route::get('/forgot-password', [PasswordResetController::class, 'request'])->name('password.request');
     Route::post('/forgot-password', [PasswordResetController::class, 'email'])->name('password.email');
     Route::get('/reset-password/{token}', [PasswordResetController::class, 'reset'])->name('password.reset');

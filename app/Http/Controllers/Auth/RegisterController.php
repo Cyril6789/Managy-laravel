@@ -13,6 +13,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules\Password;
+use Illuminate\Validation\ValidationException;
 
 /**
  * Public sign-up. Creating an account creates a brand new SaaS space:
@@ -21,7 +22,10 @@ use Illuminate\Validation\Rules\Password;
  */
 class RegisterController extends Controller
 {
-    public function show()
+    /** Fastest a genuine human could plausibly fill and submit the form. */
+    private const MIN_FORM_SECONDS = 2;
+
+    public function show(Request $request)
     {
         abort_unless(config('saas.registration_enabled'), 404);
 
@@ -29,12 +33,18 @@ class RegisterController extends Controller
             return redirect()->route('dashboard');
         }
 
+        // Stamp the moment the form is served; the submit handler rejects
+        // anything that comes back implausibly fast (i.e. an automated bot).
+        $request->session()->put('register_started_at', now()->timestamp);
+
         return view('auth.register');
     }
 
     public function store(Request $request, SocietyProvisioner $provisioner): RedirectResponse
     {
         abort_unless(config('saas.registration_enabled'), 404);
+
+        $this->ensureNotABot($request);
 
         $data = $request->validate([
             // Société
@@ -101,5 +111,30 @@ class RegisterController extends Controller
 
         return redirect()->route('dashboard')
             ->with('success', 'Bienvenue ! Votre espace '.$society->name.' est prêt.');
+    }
+
+    /**
+     * Cheap, dependency-free bot screening for the public sign-up form:
+     *  - a hidden "homepage" honeypot no human ever fills, and
+     *  - a minimum think-time between rendering and submitting the form.
+     *
+     * Either signal points to automation, so we reject with a generic message
+     * rather than provisioning a throwaway société.
+     */
+    private function ensureNotABot(Request $request): void
+    {
+        if (filled($request->input('homepage'))) {
+            throw ValidationException::withMessages([
+                'email' => __('Envoi non valide. Merci de recharger la page et de réessayer.'),
+            ]);
+        }
+
+        $startedAt = $request->session()->pull('register_started_at');
+
+        if ($startedAt !== null && (now()->timestamp - (int) $startedAt) < self::MIN_FORM_SECONDS) {
+            throw ValidationException::withMessages([
+                'email' => __('Formulaire soumis trop rapidement. Merci de réessayer.'),
+            ]);
+        }
     }
 }
