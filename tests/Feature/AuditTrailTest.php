@@ -111,6 +111,7 @@ class AuditTrailTest extends TestCase
             ->assertOk()
             ->assertSee('Suppression')   // action badge
             ->assertSee('Modification')
+            ->assertSee('Détails')       // expandable detail (diff / snapshot)
             ->assertSee('Annuler');      // undo button (admin holds the permission)
     }
 

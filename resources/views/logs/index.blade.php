@@ -13,8 +13,8 @@
         <x-card :padding="false" x-show="tab==='inter'">
             <div class="divide-y divide-gray-100 dark:divide-gray-800">
                 @forelse ($interLogs as $log)
-                    <div class="flex items-center gap-3 px-5 py-2.5 text-sm">
-                        <span class="w-32 shrink-0 text-xs text-gray-400">{{ $log->created_at?->format('d/m/Y H:i') }}</span>
+                    <div class="flex flex-wrap items-center gap-x-3 gap-y-1 px-4 py-2.5 text-sm sm:px-5">
+                        <span class="text-xs text-gray-400">{{ $log->created_at?->format('d/m/Y H:i') }}</span>
                         <span class="font-medium">{{ $log->user?->fullName() ?? 'Système' }}</span>
                         <span class="text-gray-600 dark:text-gray-300">{{ $log->texte }}</span>
                         @if ($log->intervention)<a href="{{ route('interventions.show', $log->intervention) }}" class="ml-auto text-brand-600 hover:underline">{{ $log->intervention->reference }}</a>@endif
@@ -33,13 +33,22 @@
                     'deleted' => ['Suppression', 'bg-red-50 text-red-700 dark:bg-red-900/30 dark:text-red-300'],
                     'restored' => ['Restauration', 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300'],
                 ];
-                $fmt = fn ($v) => $v === null ? '—' : \Illuminate\Support\Str::limit(is_array($v) ? json_encode($v, JSON_UNESCAPED_UNICODE) : (string) $v, 80);
+                // Technical columns not worth showing in the human-readable detail.
+                $hideKeys = ['id', 'society_id', 'created_at', 'updated_at', 'public_token', 'signature_path', 'remember_token'];
+                $fmt = fn ($v) => $v === null || $v === '' ? '—' : \Illuminate\Support\Str::limit(is_array($v) ? json_encode($v, JSON_UNESCAPED_UNICODE) : (string) $v, 80);
             @endphp
             <div class="divide-y divide-gray-100 dark:divide-gray-800">
                 @forelse ($appLogs as $log)
-                    <div class="px-5 py-2.5 text-sm" x-data="{ open: false }">
-                        <div class="flex items-center gap-3">
-                            <span class="w-32 shrink-0 text-xs text-gray-400">{{ $log->created_at?->format('d/m/Y H:i') }}</span>
+                    @php
+                        $isUpdate = $log->action === 'updated' && ! empty($log->changes['new']);
+                        $snapshot = collect($log->changes['attributes'] ?? [])->except($hideKeys)->filter(fn ($v) => $v !== null && $v !== '');
+                        $hasDetail = $isUpdate || $snapshot->isNotEmpty();
+                        // A deleted subject is trashed, so a "Voir" link would 404 — offer it only when the record exists.
+                        $canView = in_array($log->action, ['created', 'updated', 'restored']) && $log->subjectUrl();
+                    @endphp
+                    <div class="px-4 py-2.5 text-sm sm:px-5" x-data="{ open: false }">
+                        <div class="flex flex-wrap items-center gap-x-3 gap-y-1">
+                            <span class="text-xs text-gray-400">{{ $log->created_at?->format('d/m/Y H:i') }}</span>
                             <span class="font-medium">{{ $log->user?->fullName() ?? '—' }}</span>
 
                             @if (isset($actionMeta[$log->action]))
@@ -49,14 +58,14 @@
                                 <span class="text-gray-600 dark:text-gray-300">{{ $log->description ?? $log->action }}</span>
                             @endif
 
-                            <div class="ml-auto flex items-center gap-3">
+                            <div class="ml-auto flex flex-wrap items-center gap-x-3 gap-y-1">
                                 @if ($log->undone_at)
                                     <span class="rounded-full bg-blue-50 px-2 py-0.5 text-xs font-medium text-blue-600 dark:bg-blue-900/30 dark:text-blue-300">Restauré</span>
                                 @endif
-                                @if ($log->action === 'updated' && ! empty($log->changes['new']))
+                                @if ($hasDetail)
                                     <button type="button" @click="open = ! open" class="text-xs text-gray-400 hover:text-brand-600">Détails</button>
                                 @endif
-                                @if (in_array($log->action, ['created', 'updated']) && $log->subjectUrl())
+                                @if ($canView)
                                     <a href="{{ $log->subjectUrl() }}" class="text-xs font-medium text-brand-600 hover:underline">Voir →</a>
                                 @endif
                                 @if ($log->isRestorable() && \Illuminate\Support\Facades\Route::has('logs.restore') && auth()->user()->can(\App\Support\Permissions::AUDIT_RESTORE))
@@ -65,20 +74,34 @@
                                         <button type="submit" class="text-xs font-medium text-green-600 hover:underline">Annuler</button>
                                     </form>
                                 @endif
-                                <span class="w-28 shrink-0 text-right text-xs text-gray-400">{{ $log->ip_address }}</span>
+                                <span class="text-xs text-gray-400">{{ $log->ip_address }}</span>
                             </div>
                         </div>
 
-                        @if ($log->action === 'updated' && ! empty($log->changes['new']))
-                            <div x-show="open" x-cloak class="ml-32 mt-2 space-y-1 rounded-lg bg-gray-50 p-3 text-xs dark:bg-gray-800/50">
-                                @foreach ($log->changes['new'] as $field => $newVal)
-                                    <div class="flex flex-wrap items-center gap-2">
-                                        <span class="font-medium text-gray-500">{{ $field }}</span>
-                                        <span class="text-red-500 line-through">{{ $fmt($log->changes['old'][$field] ?? null) }}</span>
-                                        <span class="text-gray-400">→</span>
-                                        <span class="text-green-600 dark:text-green-400">{{ $fmt($newVal) }}</span>
+                        @if ($hasDetail)
+                            <div x-show="open" x-cloak class="mt-2 rounded-lg bg-gray-50 p-3 text-xs dark:bg-gray-800/50">
+                                @if ($isUpdate)
+                                    <div class="space-y-1">
+                                        @foreach ($log->changes['new'] as $field => $newVal)
+                                            <div class="flex flex-wrap items-center gap-2">
+                                                <span class="min-w-32 font-medium text-gray-500">{{ $field }}</span>
+                                                <span class="text-red-500 line-through">{{ $fmt($log->changes['old'][$field] ?? null) }}</span>
+                                                <span class="text-gray-400">→</span>
+                                                <span class="text-green-600 dark:text-green-400">{{ $fmt($newVal) }}</span>
+                                            </div>
+                                        @endforeach
                                     </div>
-                                @endforeach
+                                @else
+                                    {{-- Full snapshot for a creation, deletion or restoration --}}
+                                    <dl class="grid grid-cols-1 gap-x-6 gap-y-1 sm:grid-cols-2">
+                                        @foreach ($snapshot as $field => $value)
+                                            <div class="flex flex-wrap gap-2">
+                                                <dt class="font-medium text-gray-500">{{ $field }}</dt>
+                                                <dd class="text-gray-700 dark:text-gray-300">{{ $fmt($value) }}</dd>
+                                            </div>
+                                        @endforeach
+                                    </dl>
+                                @endif
                             </div>
                         @endif
                     </div>
