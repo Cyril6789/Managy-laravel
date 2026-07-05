@@ -2,7 +2,9 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\Auditable;
 use App\Models\Concerns\BelongsToSociety;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -13,8 +15,19 @@ use Illuminate\Support\Str;
 
 class Intervention extends Model
 {
-    use BelongsToSociety;
+    use Auditable, BelongsToSociety, SoftDeletes;
     use HasFactory;
+
+    /**
+     * Child records soft-deleted (and restored) together with the intervention,
+     * so undoing a deletion brings the whole file back.
+     *
+     * @var list<string>
+     */
+    protected array $auditCascades = [
+        'prestations', 'pieces', 'commandes', 'sousTraitances',
+        'photos', 'messages', 'clientMessages', 'publicMessages',
+    ];
 
     protected $fillable = [
         'reference', 'client_id', 'contact_id', 'materiel_id', 'systeme_exploitation_id',

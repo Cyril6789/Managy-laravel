@@ -7,7 +7,6 @@ use App\Models\InterventionLog;
 use App\Support\Permissions;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
-use Illuminate\Support\Facades\Storage;
 use Livewire\Attributes\Locked;
 use Livewire\Component;
 use Livewire\WithFileUploads;
@@ -110,8 +109,9 @@ class InterventionPhotos extends Component
         abort_if($this->public, 403);
         Gate::authorize(Permissions::INTERVENTIONS_MANAGE);
 
+        // Soft delete: the file is kept so the removal can be undone from the
+        // journal, and only purged when the photo is permanently deleted.
         $photo = $this->intervention->photos()->findOrFail($photoId);
-        Storage::disk('public')->delete($photo->path);
         $photo->delete();
         $this->log('a supprimé une photo');
     }

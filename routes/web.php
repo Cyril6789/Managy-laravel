@@ -171,6 +171,7 @@ Route::middleware(['auth', EnsureHasSociety::class, EnsureEmailVerified::class])
     // Stats / logs / satisfaction
     Route::get('/statistiques', StatsController::class)->name('stats.index');
     Route::get('/journaux', LogController::class)->name('logs.index');
+    Route::post('/journaux/{log}/annuler', [LogController::class, 'restore'])->name('logs.restore');
     Route::get('/satisfaction', [SatisfactionController::class, 'index'])->name('satisfaction.index');
 
     // Administration

@@ -104,7 +104,7 @@ class StaffController extends Controller
             'prenom' => ['nullable', 'string', 'max:255'],
             'nom' => ['required', 'string', 'max:255'],
             'pseudo' => ['nullable', 'string', 'max:255'],
-            'email' => ['required', 'email', 'max:255', Rule::unique('users', 'email')->ignore($staff)],
+            'email' => ['required', 'email', 'max:255', Rule::unique('users', 'email')->ignore($staff)->whereNull('deleted_at')],
             'telephone' => ['nullable', 'string', 'max:30'],
             'is_admin' => ['nullable', 'boolean'],
             'is_active' => ['nullable', 'boolean'],

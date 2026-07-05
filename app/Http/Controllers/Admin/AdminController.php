@@ -95,7 +95,7 @@ class AdminController extends Controller
         $data = $request->validate([
             'prenom' => ['nullable', 'string', 'max:255'],
             'nom' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'email', \Illuminate\Validation\Rule::unique('users', 'email')->ignore($user)],
+            'email' => ['required', 'email', \Illuminate\Validation\Rule::unique('users', 'email')->ignore($user)->whereNull('deleted_at')],
         ]);
 
         $user->update($data);

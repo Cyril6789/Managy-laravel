@@ -21,7 +21,7 @@ class ProfileController extends Controller
         $data = $request->validate([
             'prenom' => ['nullable', 'string', 'max:255'],
             'nom' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'email', Rule::unique('users', 'email')->ignore($user)],
+            'email' => ['required', 'email', Rule::unique('users', 'email')->ignore($user)->whereNull('deleted_at')],
             'telephone' => ['nullable', 'string', 'max:30'],
         ]);
 
