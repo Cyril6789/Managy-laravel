@@ -84,6 +84,11 @@ Route::middleware(['auth', EnsureSuperAdmin::class])->prefix('admin')->name('adm
     Route::get('/', [AdminController::class, 'dashboard'])->name('dashboard');
     Route::get('/societes/{society}', [AdminController::class, 'society'])->name('society');
     Route::post('/societes/{society}/toggle', [AdminController::class, 'toggle'])->name('society.toggle');
+
+    // Super-admin account (the regular /profil area is société-scoped).
+    Route::get('/compte', [AdminController::class, 'account'])->name('account');
+    Route::put('/compte', [AdminController::class, 'updateAccount'])->name('account.update');
+    Route::put('/compte/mot-de-passe', [AdminController::class, 'updatePassword'])->name('account.password');
 });
 
 // ----- Business application (a société owner / technician) --------------------
