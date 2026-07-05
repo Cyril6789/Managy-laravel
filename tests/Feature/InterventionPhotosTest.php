@@ -79,11 +79,17 @@ class InterventionPhotosTest extends TestCase
         $photo = $intervention->photos()->firstOrFail();
         Storage::disk('public')->assertExists($photo->path);
 
+        // Deletion is soft: the record is trashed but the file is kept so the
+        // removal can be undone from the journal.
         Livewire::test(InterventionPhotos::class, ['intervention' => $intervention])
             ->call('delete', $photo->id);
 
+        $this->assertSoftDeleted('intervention_photos', ['id' => $photo->id]);
+        Storage::disk('public')->assertExists($photo->path);
+
+        // A permanent delete finally purges the file from storage.
+        $photo->forceDelete();
         Storage::disk('public')->assertMissing($photo->path);
-        $this->assertDatabaseMissing('intervention_photos', ['id' => $photo->id]);
     }
 
     public function test_public_photo_route_streams_only_non_private_photos(): void

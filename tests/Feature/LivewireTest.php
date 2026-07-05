@@ -337,7 +337,7 @@ class LivewireTest extends TestCase
         $this->assertSame('a_faire', $task->fresh()->statut);
 
         $component->call('delete', $task->id);
-        $this->assertDatabaseMissing('tasks', ['id' => $task->id]);
+        $this->assertSoftDeleted('tasks', ['id' => $task->id]);
     }
 
     public function test_tasks_component_requires_a_title(): void

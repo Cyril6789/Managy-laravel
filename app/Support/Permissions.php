@@ -59,6 +59,8 @@ final class Permissions
 
     public const LOGS_VIEW = 'logs.view';
 
+    public const AUDIT_RESTORE = 'audit.restore';       // undo a deletion from the activity journal
+
     public const SATISFACTION_VIEW = 'satisfaction.view';
 
     // Administration
@@ -115,6 +117,7 @@ final class Permissions
             'Suivi' => [
                 self::STATS_VIEW => 'Voir les statistiques',
                 self::LOGS_VIEW => 'Voir les journaux',
+                self::AUDIT_RESTORE => 'Annuler une suppression depuis le journal d\'activité',
                 self::SATISFACTION_VIEW => 'Voir les enquêtes de satisfaction',
             ],
             'Administration' => [

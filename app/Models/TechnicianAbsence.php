@@ -2,7 +2,9 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\Auditable;
 use App\Models\Concerns\BelongsToSociety;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -15,7 +17,7 @@ use Illuminate\Support\Carbon;
  */
 class TechnicianAbsence extends Model
 {
-    use BelongsToSociety;
+    use Auditable, BelongsToSociety, SoftDeletes;
 
     protected $fillable = [
         'user_id', 'debut', 'fin', 'journee_entiere', 'motif', 'note', 'created_by',

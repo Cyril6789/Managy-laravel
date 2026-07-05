@@ -35,7 +35,7 @@ class StickyNotesTest extends TestCase
 
         // Delete works through a Livewire action (touch-friendly, no hover).
         $component->call('delete', $note->id);
-        $this->assertDatabaseMissing('sticky_notes', ['id' => $note->id]);
+        $this->assertSoftDeleted('sticky_notes', ['id' => $note->id]);
     }
 
     public function test_cannot_delete_another_users_note(): void

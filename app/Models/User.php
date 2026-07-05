@@ -2,7 +2,9 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\Auditable;
 use App\Models\Concerns\BelongsToSociety;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Database\Factories\UserFactory;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -15,7 +17,7 @@ use Illuminate\Support\Carbon;
 class User extends Authenticatable implements MustVerifyEmail
 {
     /** @use HasFactory<UserFactory> */
-    use BelongsToSociety, HasFactory, Notifiable;
+    use Auditable, BelongsToSociety, HasFactory, Notifiable, SoftDeletes;
 
     protected $fillable = [
         'society_id',

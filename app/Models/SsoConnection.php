@@ -2,7 +2,9 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\Auditable;
 use App\Models\Concerns\BelongsToSociety;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
 
@@ -13,7 +15,7 @@ use Illuminate\Support\Str;
  */
 class SsoConnection extends Model
 {
-    use BelongsToSociety;
+    use Auditable, BelongsToSociety, SoftDeletes;
 
     public const PROVIDER_MICROSOFT = 'microsoft';
 

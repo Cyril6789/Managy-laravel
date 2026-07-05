@@ -26,13 +26,61 @@
         </x-card>
 
         <x-card :padding="false" x-show="tab==='app'" x-cloak>
+            @php
+                $actionMeta = [
+                    'created' => ['Création', 'bg-green-50 text-green-700 dark:bg-green-900/30 dark:text-green-300'],
+                    'updated' => ['Modification', 'bg-amber-50 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300'],
+                    'deleted' => ['Suppression', 'bg-red-50 text-red-700 dark:bg-red-900/30 dark:text-red-300'],
+                    'restored' => ['Restauration', 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300'],
+                ];
+                $fmt = fn ($v) => $v === null ? '—' : \Illuminate\Support\Str::limit(is_array($v) ? json_encode($v, JSON_UNESCAPED_UNICODE) : (string) $v, 80);
+            @endphp
             <div class="divide-y divide-gray-100 dark:divide-gray-800">
                 @forelse ($appLogs as $log)
-                    <div class="flex items-center gap-3 px-5 py-2.5 text-sm">
-                        <span class="w-32 shrink-0 text-xs text-gray-400">{{ $log->created_at?->format('d/m/Y H:i') }}</span>
-                        <span class="font-medium">{{ $log->user?->fullName() ?? '—' }}</span>
-                        <span class="text-gray-600 dark:text-gray-300">{{ $log->description ?? $log->action }}</span>
-                        <span class="ml-auto text-xs text-gray-400">{{ $log->ip_address }}</span>
+                    <div class="px-5 py-2.5 text-sm" x-data="{ open: false }">
+                        <div class="flex items-center gap-3">
+                            <span class="w-32 shrink-0 text-xs text-gray-400">{{ $log->created_at?->format('d/m/Y H:i') }}</span>
+                            <span class="font-medium">{{ $log->user?->fullName() ?? '—' }}</span>
+
+                            @if (isset($actionMeta[$log->action]))
+                                <span class="rounded-full px-2 py-0.5 text-xs font-medium {{ $actionMeta[$log->action][1] }}">{{ $actionMeta[$log->action][0] }}</span>
+                                <span class="text-gray-600 dark:text-gray-300">{{ $log->subjectLabel() }} <span class="text-gray-400">#{{ $log->subject_id }}</span></span>
+                            @else
+                                <span class="text-gray-600 dark:text-gray-300">{{ $log->description ?? $log->action }}</span>
+                            @endif
+
+                            <div class="ml-auto flex items-center gap-3">
+                                @if ($log->undone_at)
+                                    <span class="rounded-full bg-blue-50 px-2 py-0.5 text-xs font-medium text-blue-600 dark:bg-blue-900/30 dark:text-blue-300">Restauré</span>
+                                @endif
+                                @if ($log->action === 'updated' && ! empty($log->changes['new']))
+                                    <button type="button" @click="open = ! open" class="text-xs text-gray-400 hover:text-brand-600">Détails</button>
+                                @endif
+                                @if (in_array($log->action, ['created', 'updated']) && $log->subjectUrl())
+                                    <a href="{{ $log->subjectUrl() }}" class="text-xs font-medium text-brand-600 hover:underline">Voir →</a>
+                                @endif
+                                @if ($log->isRestorable() && auth()->user()->can(\App\Support\Permissions::AUDIT_RESTORE))
+                                    <form action="{{ route('logs.restore', $log) }}" method="POST" onsubmit="return confirm('Restaurer cet élément supprimé ?')">
+                                        @csrf
+                                        <button type="submit" class="text-xs font-medium text-green-600 hover:underline">Annuler</button>
+                                    </form>
+                                @endif
+                                <span class="w-28 shrink-0 text-right text-xs text-gray-400">{{ $log->ip_address }}</span>
+                            </div>
+                        </div>
+
+                        @if ($log->action === 'updated' && ! empty($log->changes['new']))
+                            <div x-show="open" x-cloak class="ml-32 mt-2 space-y-1 rounded-lg bg-gray-50 p-3 text-xs dark:bg-gray-800/50">
+                                @foreach ($log->changes['new'] as $field => $newVal)
+                                    <div class="flex flex-wrap items-center gap-2">
+                                        <span class="font-medium text-gray-500">{{ $field }}</span>
+                                        <span class="text-red-500 line-through">{{ $fmt($log->changes['old'][$field] ?? null) }}</span>
+                                        <span class="text-gray-400">→</span>
+                                        <span class="text-green-600 dark:text-green-400">{{ $fmt($newVal) }}</span>
+                                    </div>
+                                @endforeach
+                            </div>
+                        @endif
                     </div>
                 @empty
                     <x-empty-state icon="list" title="Aucune activité" />
