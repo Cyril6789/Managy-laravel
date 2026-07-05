@@ -27,7 +27,10 @@ return new class extends Migration
             $table->foreignId('permission_group_id')->constrained('permission_groups')->cascadeOnDelete();
             $table->string('permission');
 
-            $table->unique(['permission_group_id', 'permission']);
+            // Custom index name: the auto-generated one
+            // ("permission_group_permissions_permission_group_id_permission_unique")
+            // exceeds MySQL/MariaDB's 64-character identifier limit.
+            $table->unique(['permission_group_id', 'permission'], 'perm_group_permissions_unique');
         });
 
         // Group membership. "source" tells manual assignments apart from the ones
