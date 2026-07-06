@@ -131,6 +131,17 @@ class CalendarFeed
             $parts[] = 'Téléphone : '.$phone;
         }
 
+        if ($client = $i->client) {
+            // How many jobs this client already went through (this one excluded).
+            $passees = $client->interventions()
+                ->whereKeyNot($i->id)
+                ->whereNotNull('closed_at')
+                ->count();
+            $parts[] = 'Interventions passées : '.$passees;
+
+            $parts[] = 'Solde pack maintenance : '.$this->formatHeures($client->soldeMaintenance());
+        }
+
         if ($i->note) {
             $parts[] = 'Note : '.$i->note;
         }
@@ -138,6 +149,14 @@ class CalendarFeed
         $parts[] = 'Fiche intervention : '.route('interventions.show', $i);
 
         return implode("\n", $parts);
+    }
+
+    /** Human-readable hours: "3 h", "1,5 h", "0 h". */
+    private function formatHeures(float $heures): string
+    {
+        $formatted = rtrim(rtrim(number_format($heures, 2, ',', ' '), '0'), ',');
+
+        return $formatted.' h';
     }
 
     /** @return array<int, string> */

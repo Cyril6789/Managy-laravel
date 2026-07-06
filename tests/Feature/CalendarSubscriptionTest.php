@@ -94,6 +94,38 @@ class CalendarSubscriptionTest extends TestCase
         $this->assertStringNotContainsString('intervention-'.$other->id.'@managy', $body);
     }
 
+    public function test_notes_include_past_interventions_and_maintenance_balance(): void
+    {
+        $tech = $this->technician();
+        $this->actingAs($tech);
+
+        $client = Client::create(['type' => 'particulier', 'nom' => 'Moreau']);
+
+        // Two closed (past) jobs for this client, plus one still open (ignored).
+        Intervention::create(['client_id' => $client->id, 'closed_at' => now()->subMonth()]);
+        Intervention::create(['client_id' => $client->id, 'closed_at' => now()->subWeek()]);
+        Intervention::create(['client_id' => $client->id]);
+
+        // Maintenance pack: +5h credited, −1.5h consumed -> 3,5 h balance.
+        $client->maintenanceMovements()->create(['mouvement' => 5]);
+        $client->maintenanceMovements()->create(['mouvement' => -1.5]);
+
+        $upcoming = Intervention::create([
+            'client_id' => $client->id,
+            'rdv_debut' => now()->addDay()->setTime(9, 0),
+        ]);
+        $upcoming->techniciens()->attach($tech->id);
+
+        $body = $this->get(route('calendar.subscribe', ['token' => $tech->calendarToken()]))
+            ->assertOk()
+            ->getContent();
+        // Unfold (RFC 5545) and unescape the reserved comma before asserting.
+        $notes = str_replace(["\r\n ", '\\,'], ['', ','], $body);
+
+        $this->assertStringContainsString('Interventions passées : 2', $notes);
+        $this->assertStringContainsString('Solde pack maintenance : 3,5 h', $notes);
+    }
+
     public function test_in_shop_intervention_shows_atelier_as_location(): void
     {
         $tech = $this->technician();
