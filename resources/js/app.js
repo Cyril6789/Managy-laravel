@@ -1,4 +1,20 @@
 /**
+ * Re-apply the persisted theme on every Livewire SPA navigation. `wire:navigate`
+ * morphs the <html> element to match the server response, which drops the
+ * JS-added `dark` class and would otherwise flip the theme to light mid-browse.
+ * We also keep the Alpine `theme` store in sync so the toggle icon stays right.
+ * Fires on the initial load too, so it doubles as a boot-time sync.
+ */
+document.addEventListener('livewire:navigated', () => {
+    const t = localStorage.getItem('theme');
+    const dark = t === 'dark' || (!t && window.matchMedia('(prefers-color-scheme: dark)').matches);
+    document.documentElement.classList.toggle('dark', dark);
+    if (window.Alpine?.store('theme')) {
+        window.Alpine.store('theme').dark = dark;
+    }
+});
+
+/**
  * Alpine is bundled with Livewire, so we DON'T import/start it ourselves.
  * Custom stores / data / helpers are registered on the `alpine:init` event.
  */
