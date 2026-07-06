@@ -3,6 +3,8 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    {{-- Stop iOS Safari from turning reference numbers into tappable phone links. --}}
+    <meta name="format-detection" content="telephone=no">
     <title>@yield('title', 'Suivi') · {{ $appSettings['company_name'] ?? config('app.name') }}</title>
     <script>(function(){const t=localStorage.getItem('theme');if(t==='dark'||(!t&&matchMedia('(prefers-color-scheme: dark)').matches))document.documentElement.classList.add('dark');})();</script>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
