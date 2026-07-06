@@ -75,7 +75,7 @@ class TicketThread extends Component
     public function render()
     {
         return view('livewire.support.ticket-thread', [
-            'messages' => $this->ticket->messages()->with('user')->get(),
+            'messages' => $this->ticket->messages()->with('author')->get(),
         ]);
     }
 }

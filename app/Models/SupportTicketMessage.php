@@ -34,4 +34,17 @@ class SupportTicketMessage extends Model
     {
         return $this->belongsTo(User::class);
     }
+
+    /**
+     * The message author, resolved WITHOUT the tenant scope — so a société
+     * member reading their ticket sees the real name of the platform super-admin
+     * who answered as "Support" (whose société is null and would otherwise fall
+     * outside the reader's scope, showing up as "Utilisateur supprimé"). Only
+     * used to display the author name; genuinely deleted users stay hidden by the
+     * soft-delete scope, which is left in place.
+     */
+    public function author(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'user_id')->withoutGlobalScope('society');
+    }
 }
