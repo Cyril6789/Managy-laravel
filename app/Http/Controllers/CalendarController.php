@@ -6,9 +6,11 @@ use App\Models\Client;
 use App\Models\Event;
 use App\Models\Intervention;
 use App\Models\User;
+use App\Support\CalendarFeed;
 use App\Support\Permissions;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 
 class CalendarController extends Controller
 {
@@ -43,6 +45,9 @@ class CalendarController extends Controller
             'weeks' => $days->chunk(7),
             'clients' => Client::active()->orderBy('nom')->get(),
             'techniciens' => User::where('is_active', true)->orderBy('nom')->get(),
+            'subscriptionUrl' => $subscriptionUrl = route('calendar.subscribe', ['token' => $request->user()->calendarToken()]),
+            // webcal:// makes Apple Calendar / Outlook open the "subscribe" dialog directly.
+            'webcalUrl' => preg_replace('#^https?://#', 'webcal://', $subscriptionUrl),
         ]);
     }
 
@@ -83,6 +88,34 @@ class CalendarController extends Controller
         $event->delete();
 
         return back()->with('success', 'Rendez-vous supprimé.');
+    }
+
+    /**
+     * Public, token-protected iCalendar feed for a technician's agenda.
+     * No session auth: the secret token in the URL grants read-only access so
+     * Apple Calendar / Outlook / Google Calendar can subscribe to it.
+     */
+    public function subscribe(string $token): Response
+    {
+        $user = User::where('calendar_token', $token)->firstOrFail();
+
+        $ics = (new CalendarFeed($user))->build();
+
+        return response($ics, 200, [
+            'Content-Type' => 'text/calendar; charset=utf-8',
+            'Content-Disposition' => 'inline; filename="agenda.ics"',
+            'Cache-Control' => 'no-cache, private',
+        ]);
+    }
+
+    /** Rotate the subscription link, invalidating every existing subscriber. */
+    public function rotateSubscription(Request $request)
+    {
+        $this->authorize(Permissions::CALENDAR_VIEW);
+
+        $request->user()->rotateCalendarToken();
+
+        return back()->with('success', 'Lien d’abonnement régénéré. L’ancien lien ne fonctionne plus.');
     }
 
     private function itemsBetween(Carbon $start, Carbon $end)

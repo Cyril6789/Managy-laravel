@@ -9,6 +9,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Carbon;
+use Illuminate\Support\Str;
 
 class User extends Authenticatable
 {
@@ -27,6 +29,7 @@ class User extends Authenticatable
         'two_factor_enabled',
         'chat_status',
         'preferences',
+        'calendar_token',
         'last_action_at',
     ];
 
@@ -82,7 +85,7 @@ class User extends Authenticatable
     }
 
     /** Whether the technician is absent at the given moment / window. */
-    public function isAbsentBetween(\Illuminate\Support\Carbon $start, ?\Illuminate\Support\Carbon $end = null): bool
+    public function isAbsentBetween(Carbon $start, ?Carbon $end = null): bool
     {
         $end = $end ?: $start->copy()->addMinute();
 
@@ -120,6 +123,29 @@ class User extends Authenticatable
     public function fullName(): string
     {
         return trim(($this->prenom ?? '').' '.$this->nom);
+    }
+
+    // ----- Calendar subscription --------------------------------------------
+
+    /**
+     * Secret token backing the read-only iCalendar subscription feed.
+     * Generated lazily on first access so every existing technician gets one.
+     */
+    public function calendarToken(): string
+    {
+        if (! $this->calendar_token) {
+            $this->forceFill(['calendar_token' => Str::random(48)])->save();
+        }
+
+        return $this->calendar_token;
+    }
+
+    /** Invalidate the current subscription link and mint a fresh one. */
+    public function rotateCalendarToken(): string
+    {
+        $this->forceFill(['calendar_token' => Str::random(48)])->save();
+
+        return $this->calendar_token;
     }
 
     public function initials(): string
