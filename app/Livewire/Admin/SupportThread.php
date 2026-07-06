@@ -82,7 +82,7 @@ class SupportThread extends Component
     public function render()
     {
         return view('livewire.admin.support-thread', [
-            'messages' => $this->ticket->messages()->with('user')->get(),
+            'messages' => $this->ticket->messages()->with('author')->get(),
         ]);
     }
 }

@@ -43,7 +43,7 @@
                      ? 'border-brand-200 bg-brand-50/60 dark:border-brand-900 dark:bg-brand-900/20'
                      : 'border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900' }}">
                 <div class="mb-1 flex items-center gap-2 text-sm">
-                    <span class="font-semibold">{{ $message->user?->fullName() ?: 'Utilisateur supprimé' }}</span>
+                    <span class="font-semibold">{{ $message->author?->fullName() ?: 'Utilisateur supprimé' }}</span>
                     @if ($message->is_staff)
                         <span class="rounded-full bg-brand-600 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white">Support</span>
                     @endif
