@@ -50,6 +50,9 @@ Route::get('/suivi/{token}/photos/{photo}', [InterventionPhotoController::class,
 Route::get('/satisfaction/{token}', [PublicSatisfactionController::class, 'show'])->name('public.satisfaction');
 Route::post('/satisfaction/{token}', [PublicSatisfactionController::class, 'store'])->name('public.satisfaction.store');
 
+// Read-only iCalendar subscription feed for a technician (secret token = auth).
+Route::get('/calendrier/abonnement/{token}.ics', [CalendarController::class, 'subscribe'])->name('calendar.subscribe');
+
 // ----- Guest auth ------------------------------------------------------------
 Route::middleware('guest')->group(function () {
     Route::get('/login', [LoginController::class, 'show'])->name('login');
@@ -159,6 +162,7 @@ Route::middleware(['auth', EnsureHasSociety::class, EnsureEmailVerified::class])
     Route::post('/calendrier/evenements', [CalendarController::class, 'store'])->name('calendar.store');
     Route::put('/calendrier/evenements/{event}', [CalendarController::class, 'update'])->name('calendar.update');
     Route::delete('/calendrier/evenements/{event}', [CalendarController::class, 'destroy'])->name('calendar.destroy');
+    Route::post('/calendrier/abonnement/regenerer', [CalendarController::class, 'rotateSubscription'])->name('calendar.subscribe.rotate');
 
     // Tasks (list + create/complete/delete handled by <livewire:tasks />)
     Route::get('tasks', [TaskController::class, 'index'])->name('tasks.index');

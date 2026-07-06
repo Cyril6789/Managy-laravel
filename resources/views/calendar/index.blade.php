@@ -7,6 +7,63 @@
             <x-button variant="secondary" :href="route('calendar.index', ['mois' => $cursor->copy()->subMonth()->format('Y-m')])">←</x-button>
             <x-button variant="secondary" :href="route('calendar.index')">Aujourd'hui</x-button>
             <x-button variant="secondary" :href="route('calendar.index', ['mois' => $cursor->copy()->addMonth()->format('Y-m')])">→</x-button>
+
+            {{-- Abonnement iCalendar : chaque technicien peut suivre son agenda en lecture seule --}}
+            <div x-data="{ open: false, copied: false }">
+                <x-button variant="secondary" @click="open = true">
+                    <x-icon name="calendar" class="h-4 w-4" /> S'abonner
+                </x-button>
+                <div x-show="open" x-cloak class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" @click.self="open = false" @keydown.escape.window="open = false">
+                    <div class="w-full max-w-lg rounded-xl bg-white p-6 shadow-xl dark:bg-gray-900">
+                        <h3 class="mb-1 text-lg font-semibold">S'abonner au calendrier</h3>
+                        <p class="mb-4 text-sm text-gray-500 dark:text-gray-400">
+                            Collez ce lien dans Apple Calendrier, Outlook ou Google Agenda pour suivre
+                            vos rendez-vous et interventions en lecture seule. La mise à jour est automatique.
+                        </p>
+
+                        <div class="flex items-stretch gap-2">
+                            <input type="text" readonly x-ref="url" value="{{ $subscriptionUrl }}"
+                                   @focus="$event.target.select()"
+                                   class="w-full rounded-lg border-gray-300 bg-gray-50 px-3 py-2 font-mono text-xs text-gray-700 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200">
+                            <x-button type="button" variant="secondary"
+                                      @click="navigator.clipboard.writeText($refs.url.value); copied = true; setTimeout(() => copied = false, 2000)">
+                                <span x-show="!copied">Copier</span>
+                                <span x-show="copied" x-cloak>Copié ✓</span>
+                            </x-button>
+                        </div>
+
+                        <div class="mt-3 flex flex-wrap gap-2">
+                            <x-button variant="secondary" :href="$webcalUrl">
+                                <x-icon name="calendar" class="h-4 w-4" /> Ouvrir dans Apple/Outlook
+                            </x-button>
+                            <x-button variant="secondary" href="https://calendar.google.com/calendar/u/0/r/settings/addbyurl" target="_blank" rel="noopener">
+                                Ajouter à Google Agenda
+                            </x-button>
+                        </div>
+
+                        <div class="mt-4 rounded-lg bg-gray-50 p-3 text-xs leading-relaxed text-gray-500 dark:bg-gray-800/60 dark:text-gray-400">
+                            <p class="mb-1 font-medium text-gray-600 dark:text-gray-300">Comment faire ?</p>
+                            <ul class="list-disc space-y-0.5 pl-4">
+                                <li><strong>Apple Calendrier</strong> : Fichier → Nouvel abonnement à un calendrier, puis collez le lien.</li>
+                                <li><strong>Google Agenda</strong> : Autres agendas → À partir d'une URL, puis collez le lien.</li>
+                                <li><strong>Outlook</strong> : Ajouter un calendrier → S'abonner à partir du Web, puis collez le lien.</li>
+                            </ul>
+                        </div>
+
+                        <div class="mt-5 flex items-center justify-between">
+                            <form action="{{ route('calendar.subscribe.rotate') }}" method="POST"
+                                  onsubmit="return confirm('Régénérer le lien invalidera tout abonnement existant. Continuer ?')">
+                                @csrf
+                                <button type="submit" class="text-xs font-medium text-red-600 hover:underline">
+                                    Régénérer le lien
+                                </button>
+                            </form>
+                            <x-button type="button" variant="secondary" @click="open = false">Fermer</x-button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             @can(\App\Support\Permissions::CALENDAR_MANAGE)
                 <div x-data="{ open: false }">
                     <x-button @click="open = true"><x-icon name="plus" class="h-4 w-4" /> Rendez-vous</x-button>
