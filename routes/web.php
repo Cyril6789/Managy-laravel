@@ -35,6 +35,7 @@ use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\StaffController;
 use App\Http\Controllers\StatsController;
 use App\Http\Controllers\StickyNoteController;
+use App\Http\Controllers\SupportController;
 use App\Http\Controllers\TaskController;
 use App\Http\Middleware\EnsureEmailVerified;
 use App\Http\Middleware\EnsureHasSociety;
@@ -96,6 +97,11 @@ Route::middleware(['auth', EnsureSuperAdmin::class])->prefix('admin')->name('adm
     Route::get('/compte', [AdminController::class, 'account'])->name('account');
     Route::put('/compte', [AdminController::class, 'updateAccount'])->name('account.update');
     Route::put('/compte/mot-de-passe', [AdminController::class, 'updatePassword'])->name('account.password');
+
+    // Assistance — global supervision of every société's support tickets.
+    // Replies and status changes run through Livewire components.
+    Route::get('/assistance', [App\Http\Controllers\Admin\SupportController::class, 'index'])->name('support.index');
+    Route::get('/assistance/{ticket}', [App\Http\Controllers\Admin\SupportController::class, 'show'])->name('support.show');
 });
 
 // ----- Business application (a société owner / technician) --------------------
@@ -166,6 +172,11 @@ Route::middleware(['auth', EnsureHasSociety::class, EnsureEmailVerified::class])
     // Notifications
     Route::post('/notifications/lire-tout', [NotificationController::class, 'readAll'])->name('notifications.read_all');
     Route::get('/notifications/{notification}/lire', [NotificationController::class, 'read'])->name('notifications.read');
+
+    // Assistance (support tickets) — open to every user of the société.
+    // All actions (create / reply / close) run through Livewire components.
+    Route::get('/assistance', [SupportController::class, 'index'])->name('support.index');
+    Route::get('/assistance/{ticket}', [SupportController::class, 'show'])->name('support.show');
 
     // Maintenance pack
     Route::get('/maintenance', [MaintenanceController::class, 'index'])->name('maintenance.index');
