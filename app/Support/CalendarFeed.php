@@ -90,10 +90,23 @@ class CalendarFeed
             start: $start,
             end: $end,
             summary: $summary,
-            location: $client?->adresseComplete() ?: '',
+            location: $this->interventionLocation($i),
             description: $this->interventionNotes($i),
             url: route('interventions.show', $i),
         );
+    }
+
+    /**
+     * A home visit points to the client's address; an in-shop job simply reads
+     * "Atelier" (the customer drops the device off at the workshop).
+     */
+    private function interventionLocation(Intervention $i): string
+    {
+        if (! $i->estDomicile()) {
+            return 'Atelier';
+        }
+
+        return $i->client?->adresseComplete() ?: '';
     }
 
     /** Location = client address, notes = reported fault + intervention details. */
@@ -102,7 +115,7 @@ class CalendarFeed
         $parts = [];
 
         if ($i->reference) {
-            $parts[] = 'Intervention n° '.$i->reference;
+            $parts[] = 'Intervention n° '.$this->preventAutoDetection($i->reference);
         }
 
         if ($i->panne) {
@@ -118,6 +131,17 @@ class CalendarFeed
             $parts[] = 'Téléphone : '.$phone;
         }
 
+        if ($client = $i->client) {
+            // How many jobs this client already went through (this one excluded).
+            $passees = $client->interventions()
+                ->whereKeyNot($i->id)
+                ->whereNotNull('closed_at')
+                ->count();
+            $parts[] = 'Interventions passées : '.$passees;
+
+            $parts[] = 'Solde pack maintenance : '.$this->formatHeures($client->soldeMaintenance());
+        }
+
         if ($i->note) {
             $parts[] = 'Note : '.$i->note;
         }
@@ -125,6 +149,14 @@ class CalendarFeed
         $parts[] = 'Fiche intervention : '.route('interventions.show', $i);
 
         return implode("\n", $parts);
+    }
+
+    /** Human-readable hours: "3 h", "1,5 h", "0 h". */
+    private function formatHeures(float $heures): string
+    {
+        $formatted = rtrim(rtrim(number_format($heures, 2, ',', ' '), '0'), ',');
+
+        return $formatted.' h';
     }
 
     /** @return array<int, string> */
@@ -192,6 +224,18 @@ class CalendarFeed
     private function stamp(CarbonInterface $date): string
     {
         return $date->copy()->utc()->format('Ymd\THis\Z');
+    }
+
+    /**
+     * iOS/macOS data detectors turn a reference like "2026-0004" into a tappable
+     * phone number (and surface a "call" shortcut at the top of the event).
+     * Weaving an invisible WORD JOINER (U+2060) between each character breaks the
+     * digit run so the detector no longer matches it — the text still reads the
+     * same, and the real phone number in the notes stays the only callable one.
+     */
+    private function preventAutoDetection(string $value): string
+    {
+        return implode("\u{2060}", mb_str_split($value));
     }
 
     /** Escape reserved iCalendar characters (RFC 5545 §3.3.11). */

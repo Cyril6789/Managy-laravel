@@ -3,6 +3,9 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    {{-- Stop iOS Safari from turning reference numbers (e.g. "2026-0005") into
+         tappable phone numbers. Explicit tel: links keep working. --}}
+    <meta name="format-detection" content="telephone=no">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', 'Tableau de bord') · {{ $appSettings['company_name'] ?? config('app.name') }}</title>
 

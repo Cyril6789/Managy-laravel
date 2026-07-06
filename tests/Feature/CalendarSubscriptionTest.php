@@ -44,6 +44,7 @@ class CalendarSubscriptionTest extends TestCase
 
         $intervention = Intervention::create([
             'client_id' => $client->id,
+            'type_lieu' => 'domicile',
             'rdv_debut' => now()->addDay()->setTime(9, 0),
             'rdv_fin' => now()->addDay()->setTime(10, 30),
             'panne' => 'Écran noir au démarrage',
@@ -69,16 +70,88 @@ class CalendarSubscriptionTest extends TestCase
 
         $this->assertStringContainsString('BEGIN:VCALENDAR', $body);
         $this->assertStringContainsString('SUMMARY:⚠ URGENT — Durand Marie', $body);
+        // A home visit points at the client's address.
         $this->assertStringContainsString('LOCATION:12 rue des Lilas\, 75011 Paris', $body);
-        // Reported fault ("panne constatée") lands in the notes. Long DESCRIPTION
-        // lines are folded at 75 octets (RFC 5545), so assert on the label only.
-        $this->assertStringContainsString('Panne constatée :', $body);
-        $this->assertStringContainsString('Intervention n° '.$intervention->reference, $body);
-        $this->assertStringContainsString('Fiche intervention', $body);
         $this->assertStringContainsString('UID:intervention-'.$intervention->id.'@managy', $body);
+
+        // DESCRIPTION lines are folded at 75 octets (RFC 5545); unfold before
+        // asserting on the notes' free text.
+        $notes = str_replace("\r\n ", '', $body);
+        $this->assertStringContainsString('Panne constatée :', $notes);
+        $this->assertStringContainsString('Intervention n°', $notes);
+        $this->assertStringContainsString('Fiche intervention', $notes);
+
+        // The reference is woven with WORD JOINER (U+2060) so iOS does not turn it
+        // into a phone number: the raw contiguous reference must NOT appear...
+        $this->assertStringNotContainsString('Intervention n° '.$intervention->reference, $notes);
+        // ...but stripping the invisible joiner brings it back verbatim.
+        $this->assertStringContainsString(
+            $intervention->reference,
+            str_replace("\u{2060}", '', $notes),
+        );
 
         // The intervention assigned to nobody stays out of this feed.
         $this->assertStringNotContainsString('intervention-'.$other->id.'@managy', $body);
+    }
+
+    public function test_notes_include_past_interventions_and_maintenance_balance(): void
+    {
+        $tech = $this->technician();
+        $this->actingAs($tech);
+
+        $client = Client::create(['type' => 'particulier', 'nom' => 'Moreau']);
+
+        // Two closed (past) jobs for this client, plus one still open (ignored).
+        Intervention::create(['client_id' => $client->id, 'closed_at' => now()->subMonth()]);
+        Intervention::create(['client_id' => $client->id, 'closed_at' => now()->subWeek()]);
+        Intervention::create(['client_id' => $client->id]);
+
+        // Maintenance pack: +5h credited, −1.5h consumed -> 3,5 h balance.
+        $client->maintenanceMovements()->create(['mouvement' => 5]);
+        $client->maintenanceMovements()->create(['mouvement' => -1.5]);
+
+        $upcoming = Intervention::create([
+            'client_id' => $client->id,
+            'rdv_debut' => now()->addDay()->setTime(9, 0),
+        ]);
+        $upcoming->techniciens()->attach($tech->id);
+
+        $body = $this->get(route('calendar.subscribe', ['token' => $tech->calendarToken()]))
+            ->assertOk()
+            ->getContent();
+        // Unfold (RFC 5545) and unescape the reserved comma before asserting.
+        $notes = str_replace(["\r\n ", '\\,'], ['', ','], $body);
+
+        $this->assertStringContainsString('Interventions passées : 2', $notes);
+        $this->assertStringContainsString('Solde pack maintenance : 3,5 h', $notes);
+    }
+
+    public function test_in_shop_intervention_shows_atelier_as_location(): void
+    {
+        $tech = $this->technician();
+        $this->actingAs($tech);
+
+        $client = Client::create([
+            'type' => 'particulier',
+            'nom' => 'Petit',
+            'adresse' => '9 rue du Commerce',
+            'ville' => 'Lyon',
+        ]);
+
+        $intervention = Intervention::create([
+            'client_id' => $client->id,
+            'type_lieu' => 'atelier',
+            'rdv_debut' => now()->addDay()->setTime(9, 0),
+        ]);
+        $intervention->techniciens()->attach($tech->id);
+
+        $body = $this->get(route('calendar.subscribe', ['token' => $tech->calendarToken()]))
+            ->assertOk()
+            ->getContent();
+
+        // In-shop job: the location reads "Atelier", not the client's address.
+        $this->assertStringContainsString('LOCATION:Atelier', $body);
+        $this->assertStringNotContainsString('9 rue du Commerce', $body);
     }
 
     public function test_feed_includes_the_technician_own_appointments(): void

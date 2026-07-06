@@ -337,6 +337,22 @@ class SmokeTest extends TestCase
         $this->assertEqualsWithDelta(0.5, Deplacement::prixKm(), 0.001);
     }
 
+    public function test_interface_disables_ios_phone_number_autodetection(): void
+    {
+        // iOS Safari must not turn intervention references (e.g. "2026-0005")
+        // into tappable phone numbers, everywhere they appear in the interface.
+        $this->actingAs($this->admin());
+        $this->get('/interventions')
+            ->assertOk()
+            ->assertSee('<meta name="format-detection" content="telephone=no">', false);
+
+        // The public tracking page carries the reference too.
+        $intervention = Intervention::first();
+        $this->get(route('public.intervention', $intervention->public_token))
+            ->assertOk()
+            ->assertSee('<meta name="format-detection" content="telephone=no">', false);
+    }
+
     public function test_public_intervention_link_is_accessible(): void
     {
         $intervention = Intervention::first();
