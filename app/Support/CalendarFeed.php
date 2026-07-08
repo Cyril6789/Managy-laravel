@@ -48,12 +48,14 @@ class CalendarFeed
     }
 
     /**
-     * Interventions the technician is assigned to that carry a scheduled slot.
-     * A rolling six-month history keeps the feed light while preserving context.
+     * The ongoing interventions the technician is assigned to that carry a
+     * scheduled slot. Closed ("terminées") jobs are excluded — the feed mirrors
+     * the calendar page, which only shows interventions still in progress.
+     * A rolling six-month floor keeps the feed light while preserving context.
      */
     private function interventions()
     {
-        return Intervention::query()
+        return Intervention::ouvertes()
             ->whereNotNull('rdv_debut')
             ->where('rdv_annule', false)
             ->where('rdv_debut', '>=', now()->subMonths(6))
