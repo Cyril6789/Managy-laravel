@@ -154,6 +154,36 @@ class CalendarSubscriptionTest extends TestCase
         $this->assertStringNotContainsString('9 rue du Commerce', $body);
     }
 
+    public function test_feed_excludes_closed_interventions(): void
+    {
+        // Only ongoing interventions belong in the feed; a terminated ("clôturée")
+        // job must not keep showing up in the technician's subscribed calendar.
+        $tech = $this->technician();
+        $this->actingAs($tech);
+
+        $client = Client::create(['type' => 'particulier', 'nom' => 'Lefevre']);
+
+        $open = Intervention::create([
+            'client_id' => $client->id,
+            'rdv_debut' => now()->addDay()->setTime(9, 0),
+        ]);
+        $open->techniciens()->attach($tech->id);
+
+        $closed = Intervention::create([
+            'client_id' => $client->id,
+            'rdv_debut' => now()->addDay()->setTime(14, 0),
+            'closed_at' => now(),
+        ]);
+        $closed->techniciens()->attach($tech->id);
+
+        $body = $this->get(route('calendar.subscribe', ['token' => $tech->calendarToken()]))
+            ->assertOk()
+            ->getContent();
+
+        $this->assertStringContainsString('UID:intervention-'.$open->id.'@managy', $body);
+        $this->assertStringNotContainsString('UID:intervention-'.$closed->id.'@managy', $body);
+    }
+
     public function test_feed_includes_the_technician_own_appointments(): void
     {
         $tech = $this->technician();
