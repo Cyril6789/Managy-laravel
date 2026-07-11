@@ -8,8 +8,8 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 
 /**
- * A SaaS tenant. Holds the company identity (name, SIRET, logo, ...) and owns
- * every business record through the society_id foreign key.
+ * A SaaS tenant. Holds the company identity and owns every business record
+ * through the society_id foreign key.
  */
 class Society extends Model
 {
@@ -33,7 +33,6 @@ class Society extends Model
             }
         });
 
-        // Company identity is exposed through Setting::all() (cached per société).
         static::saved(fn (Society $s) => Cache::forget('settings.all.'.$s->id));
         static::deleted(fn (Society $s) => Cache::forget('settings.all.'.$s->id));
     }
@@ -43,13 +42,32 @@ class Society extends Model
         return $this->hasMany(User::class);
     }
 
-    public static function uniqueSlug(string $name): string
+    public static function normalizeSlug(string $value): string
     {
-        $base = Str::slug($name) ?: 'societe';
+        return Str::slug($value);
+    }
+
+    public static function slugIsAvailable(string $slug, ?int $ignoreSocietyId = null): bool
+    {
+        $slug = static::normalizeSlug($slug);
+
+        if ($slug === '' || in_array($slug, config('saas.reserved_subdomains', []), true)) {
+            return false;
+        }
+
+        return ! static::query()
+            ->when($ignoreSocietyId, fn ($query) => $query->whereKeyNot($ignoreSocietyId))
+            ->where('slug', $slug)
+            ->exists();
+    }
+
+    public static function uniqueSlug(string $value, ?int $ignoreSocietyId = null): string
+    {
+        $base = static::normalizeSlug($value) ?: 'societe';
         $slug = $base;
         $i = 2;
 
-        while (static::where('slug', $slug)->exists()) {
+        while (! static::slugIsAvailable($slug, $ignoreSocietyId)) {
             $slug = $base.'-'.$i++;
         }
 

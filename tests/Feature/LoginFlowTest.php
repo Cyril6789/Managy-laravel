@@ -7,13 +7,14 @@ use App\Models\Society;
 use App\Models\SsoConnection;
 use App\Models\User;
 use App\Support\Tenancy;
+use App\Support\TenantUrl;
 use Database\Seeders\DatabaseSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 /**
- * Identifier-first login: a single e-mail routes to SSO or password, a société
- * has a dedicated /login/{slug} page, and SSO can be imposed (gérant excepted).
+ * Identifier-first login: a single e-mail routes to the correct tenant, a
+ * société has a dedicated subdomain login page, and SSO can be imposed.
  */
 class LoginFlowTest extends TestCase
 {
@@ -50,14 +51,13 @@ class LoginFlowTest extends TestCase
         );
     }
 
-    public function test_identify_redirects_straight_to_provider_for_an_sso_domain(): void
+    public function test_identify_redirects_to_the_tenant_login_for_an_sso_domain(): void
     {
         $this->makeMicrosoftConnection('contoso.com');
+        $society = $this->demoSociety();
 
-        $response = $this->post(route('login.identify'), ['email' => 'jdoe@contoso.com']);
-
-        $response->assertRedirect();
-        $this->assertStringContainsString('login.microsoftonline.com', $response->headers->get('Location'));
+        $this->post(route('login.identify'), ['email' => 'jdoe@contoso.com'])
+            ->assertRedirect(TenantUrl::forSociety($society, '/login'));
     }
 
     public function test_identify_reveals_the_password_step_for_a_non_sso_email(): void
@@ -69,15 +69,18 @@ class LoginFlowTest extends TestCase
         $this->get(route('login'))->assertOk()->assertSee('Mot de passe');
     }
 
-    public function test_dedicated_slug_page_shows_configured_methods(): void
+    public function test_legacy_slug_page_redirects_to_the_tenant_login(): void
     {
         $this->makeMicrosoftConnection();
         $society = $this->demoSociety();
 
         $this->get(route('login.society', $society->slug))
+            ->assertRedirect(TenantUrl::forSociety($society, '/login'));
+
+        $this->get(TenantUrl::forSociety($society, '/login'))
             ->assertOk()
             ->assertSee('Continuer avec Microsoft')
-            ->assertSee('Se connecter'); // password form (enabled by default)
+            ->assertSee('Se connecter');
     }
 
     public function test_unknown_slug_is_not_found(): void
@@ -98,9 +101,10 @@ class LoginFlowTest extends TestCase
     public function test_gerant_keeps_password_access_even_when_disabled(): void
     {
         $this->setPasswordEnabled(false);
+        $society = $this->demoSociety();
 
         $this->post(route('login'), ['email' => 'admin@exemple.fr', 'password' => 'password'])
-            ->assertRedirect(route('dashboard'));
+            ->assertRedirect(TenantUrl::forSociety($society, '/tableau-de-bord'));
 
         $this->assertAuthenticated();
     }

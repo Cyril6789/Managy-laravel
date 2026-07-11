@@ -3,18 +3,19 @@
 namespace App\Livewire\Settings;
 
 use App\Models\Setting;
+use App\Models\Society;
 use App\Models\Statut;
 use App\Support\Permissions;
+use App\Support\TenantUrl;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\Rule;
 use Livewire\Attributes\Locked;
 use Livewire\Component;
 use Livewire\WithFileUploads;
 
 /**
  * Livewire-driven settings panels (company, SMS, SMTP, automation, billing).
- * Each rendered instance handles a single `section` and saves inline, without
- * a full page reload. The reference lists keep their own dedicated component.
  */
 class GeneralSettings extends Component
 {
@@ -23,18 +24,23 @@ class GeneralSettings extends Component
     #[Locked]
     public string $section;
 
-    /** Scalar settings, keyed by setting name. */
     public array $data = [];
 
-    // Company logo (entreprise section only)
     public $logo = null;
 
     public bool $removeLogo = false;
 
-    // SMTP password is handled apart so a blank value keeps the current one.
     public string $mailPassword = '';
 
-    /** section => [ key => validation rules ]. */
+    public string $slug = '';
+
+    #[Locked]
+    public string $originalSlug = '';
+
+    public bool $slugAvailable = true;
+
+    public ?string $slugSuggestion = null;
+
     private const SECTIONS = [
         'entreprise' => [
             'company_name', 'company_email', 'company_phone', 'company_website',
@@ -64,7 +70,12 @@ class GeneralSettings extends Component
             $this->data[$key] = $all[$key] ?? null;
         }
 
-        // Sensible defaults so the selects show the right option.
+        if ($section === 'entreprise' && auth()->user()?->society) {
+            $society = auth()->user()->society;
+            $this->slug = $society->slug;
+            $this->originalSlug = $society->slug;
+        }
+
         $this->data['sms_provider'] ??= 'log';
         $this->data['mail_port'] ??= '587';
         $this->data['mail_encryption'] ??= 'tls';
@@ -80,6 +91,14 @@ class GeneralSettings extends Component
             ) + [
                 'data.company_email' => ['nullable', 'email', 'max:255'],
                 'logo' => ['nullable', 'image', 'max:2048'],
+                'slug' => auth()->user()?->is_admin ? [
+                    'required',
+                    'string',
+                    'max:63',
+                    'regex:/^[a-z0-9]+(?:-[a-z0-9]+)*$/',
+                    Rule::notIn(config('saas.reserved_subdomains', [])),
+                    Rule::unique('societies', 'slug')->ignore(auth()->user()->society_id),
+                ] : [],
             ],
             'sms' => [
                 'data.sms_provider' => ['required', 'in:log,smsmode,smsfactor'],
@@ -112,7 +131,31 @@ class GeneralSettings extends Component
         };
     }
 
-    public function save(): void
+    public function updatedSlug(string $value): void
+    {
+        if ($this->section !== 'entreprise' || ! auth()->user()?->is_admin) {
+            return;
+        }
+
+        $this->slug = Society::normalizeSlug($value);
+        $societyId = auth()->user()->society_id;
+        $this->slugAvailable = Society::slugIsAvailable($this->slug, $societyId);
+        $this->slugSuggestion = $this->slugAvailable || $this->slug === ''
+            ? null
+            : Society::uniqueSlug($this->slug, $societyId);
+
+        $this->resetValidation('slug');
+    }
+
+    public function useSlugSuggestion(): void
+    {
+        if ($this->slugSuggestion) {
+            $this->slug = $this->slugSuggestion;
+            $this->updatedSlug($this->slug);
+        }
+    }
+
+    public function save(): mixed
     {
         Gate::authorize(Permissions::SETTINGS_MANAGE);
         $this->validate();
@@ -121,8 +164,22 @@ class GeneralSettings extends Component
             Setting::put($key, $this->data[$key] ?? null);
         }
 
+        $redirectAfterSlugChange = false;
+        $society = null;
+
         if ($this->section === 'entreprise') {
             $this->handleLogo();
+
+            if (auth()->user()?->is_admin) {
+                $society = auth()->user()->society;
+                $newSlug = Society::normalizeSlug($this->slug);
+                $redirectAfterSlugChange = $newSlug !== $society->slug;
+
+                $society->update([
+                    'name' => $this->data['company_name'] ?: $society->name,
+                    'slug' => $newSlug,
+                ]);
+            }
         }
 
         if ($this->section === 'smtp' && $this->mailPassword !== '') {
@@ -130,7 +187,16 @@ class GeneralSettings extends Component
             $this->mailPassword = '';
         }
 
+        if ($redirectAfterSlugChange && $society) {
+            session()->flash('success', 'L’adresse de votre espace a été modifiée.');
+
+            return redirect()->away(TenantUrl::forSociety($society->fresh(), '/parametres'));
+        }
+
+        $this->originalSlug = $this->slug;
         $this->dispatch('settings-saved');
+
+        return null;
     }
 
     private function handleLogo(): void

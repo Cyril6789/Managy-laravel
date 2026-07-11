@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Middleware\EnsureCorrectEdition;
+use App\Http\Middleware\ResolveTenantFromHost;
 use App\Http\Middleware\TrackLastActivity;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -14,8 +15,8 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        // Trust the reverse proxy (Codespaces, Render, Fly, load balancers…) so
-        // Laravel detects HTTPS and generates correct asset / cookie URLs.
+        // Trust Traefik / reverse proxies so Laravel detects the original HTTPS
+        // request and generates secure tenant URLs and cookies.
         $middleware->trustProxies(at: '*');
 
         $middleware->web(prepend: [
@@ -23,6 +24,9 @@ return Application::configure(basePath: dirname(__DIR__))
             // environment's declared APP_EDITION. Runs before everything else.
             EnsureCorrectEdition::class,
         ], append: [
+            // Resolve {slug}.managy.fr after the session middleware is available,
+            // but before controllers and tenant-scoped models are executed.
+            ResolveTenantFromHost::class,
             TrackLastActivity::class,
         ]);
     })

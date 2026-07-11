@@ -6,27 +6,31 @@ return [
     |--------------------------------------------------------------------------
     | Edition guard
     |--------------------------------------------------------------------------
-    |
-    | 'edition' is baked into the branch and must NOT be edited per environment:
-    | it is 'saas' on the multi-tenant "saas" branch and 'standalone' on "main".
-    | 'expected' comes from the deployment's .env (APP_EDITION). The
-    | EnsureCorrectEdition middleware refuses to serve when they disagree, so a
-    | client server can never accidentally run the SaaS build and vice-versa.
-    |
     */
     'edition' => 'saas',
     'expected_edition' => env('APP_EDITION'),
 
     /*
     |--------------------------------------------------------------------------
-    | Platform super-admin
+    | Tenant domains
     |--------------------------------------------------------------------------
     |
-    | Credentials of the platform owner created by `php artisan db:seed` on the
-    | first deployment (user id 1, no société, supervises every space at /admin).
-    | Override these in .env before seeding production, then change the password
-    | from the app.
+    | The central platform is served from SAAS_DOMAIN while each society is
+    | served from {slug}.SAAS_DOMAIN. One wildcard DNS record and one Traefik
+    | HostRegexp router are enough for every current and future society.
     |
+    */
+    'domain' => env('SAAS_DOMAIN', parse_url(env('APP_URL', 'http://localhost'), PHP_URL_HOST) ?: 'localhost'),
+    'scheme' => env('SAAS_SCHEME', parse_url(env('APP_URL', 'http://localhost'), PHP_URL_SCHEME) ?: 'http'),
+    'reserved_subdomains' => array_values(array_filter(array_map(
+        'trim',
+        explode(',', env('SAAS_RESERVED_SUBDOMAINS', 'www,admin,api,mail')),
+    ))),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Platform super-admin
+    |--------------------------------------------------------------------------
     */
     'super_admin' => [
         'email' => env('SUPER_ADMIN_EMAIL', 'admin@managy.fr'),
@@ -38,12 +42,6 @@ return [
     |--------------------------------------------------------------------------
     | E-mail verification
     |--------------------------------------------------------------------------
-    |
-    | When enabled, a newly registered société owner must confirm their e-mail
-    | address before accessing the application. Kept OFF by default because the
-    | outgoing mail server is not wired up yet — flip SAAS_EMAIL_VERIFICATION to
-    | true in .env once SMTP is ready.
-    |
     */
     'email_verification' => env('SAAS_EMAIL_VERIFICATION', false),
 
@@ -51,9 +49,6 @@ return [
     |--------------------------------------------------------------------------
     | Open registration
     |--------------------------------------------------------------------------
-    |
-    | Allows anyone to create a new société from the public landing page.
-    |
     */
     'registration_enabled' => env('SAAS_REGISTRATION_ENABLED', true),
 

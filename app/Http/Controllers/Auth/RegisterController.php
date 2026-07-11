@@ -8,6 +8,7 @@ use App\Models\Society;
 use App\Models\User;
 use App\Services\SocietyProvisioner;
 use App\Support\Tenancy;
+use App\Support\TenantUrl;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -34,8 +35,6 @@ class RegisterController extends Controller
             return redirect()->route('dashboard');
         }
 
-        // Stamp the moment the form is served; the submit handler rejects
-        // anything that comes back implausibly fast (i.e. an automated bot).
         $request->session()->put('register_started_at', now()->timestamp);
 
         return view('auth.register');
@@ -47,9 +46,20 @@ class RegisterController extends Controller
 
         $this->ensureNotABot($request);
 
+        $request->merge([
+            'company_slug' => Society::normalizeSlug((string) $request->input('company_slug')),
+        ]);
+
         $data = $request->validate([
-            // Société
             'company_name' => ['required', 'string', 'max:255'],
+            'company_slug' => [
+                'required',
+                'string',
+                'max:63',
+                'regex:/^[a-z0-9]+(?:-[a-z0-9]+)*$/',
+                Rule::notIn(config('saas.reserved_subdomains', [])),
+                Rule::unique('societies', 'slug'),
+            ],
             'company_siret' => ['nullable', 'string', 'max:255'],
             'company_phone' => ['nullable', 'string', 'max:255'],
             'company_address' => ['nullable', 'string', 'max:255'],
@@ -57,15 +67,19 @@ class RegisterController extends Controller
             'company_city' => ['nullable', 'string', 'max:255'],
             'company_website' => ['nullable', 'string', 'max:255'],
             'logo' => ['nullable', 'image', 'max:2048'],
-            // Gérant (first user)
             'prenom' => ['nullable', 'string', 'max:255'],
             'nom' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', 'max:255', Rule::unique('users', 'email')->whereNull('deleted_at')],
             'password' => ['required', 'confirmed', Password::defaults()],
+        ], [
+            'company_slug.unique' => 'Cette adresse Managy vient d’être réservée. Choisissez-en une autre.',
+            'company_slug.not_in' => 'Cette adresse est réservée par la plateforme.',
+            'company_slug.regex' => 'Le slug ne peut contenir que des lettres minuscules, chiffres et tirets.',
         ]);
 
         $society = Society::create([
             'name' => $data['company_name'],
+            'slug' => $data['company_slug'],
             'siret' => $data['company_siret'] ?? null,
             'phone' => $data['company_phone'] ?? null,
             'address' => $data['company_address'] ?? null,
@@ -78,13 +92,12 @@ class RegisterController extends Controller
                 : null,
         ]);
 
-        // Create the owner *inside* the new tenant context so society_id is set.
         $user = app(Tenancy::class)->forSociety($society->id, fn () => User::create([
             'prenom' => $data['prenom'] ?? null,
             'nom' => $data['nom'],
             'email' => $data['email'],
             'password' => Hash::make($data['password']),
-            'is_admin' => true,      // first user is the "gérant"
+            'is_admin' => true,
             'is_active' => true,
         ]));
 
@@ -105,23 +118,15 @@ class RegisterController extends Controller
         if (config('saas.email_verification')) {
             $user->sendEmailVerificationNotification();
 
-            return redirect()->route('verification.notice');
+            return redirect()->away(TenantUrl::forSociety($society, '/email/verify'));
         }
 
         $user->forceFill(['email_verified_at' => now()])->save();
 
-        return redirect()->route('dashboard')
+        return redirect()->away(TenantUrl::forSociety($society, '/tableau-de-bord'))
             ->with('success', 'Bienvenue ! Votre espace '.$society->name.' est prêt.');
     }
 
-    /**
-     * Cheap, dependency-free bot screening for the public sign-up form:
-     *  - a hidden "homepage" honeypot no human ever fills, and
-     *  - a minimum think-time between rendering and submitting the form.
-     *
-     * Either signal points to automation, so we reject with a generic message
-     * rather than provisioning a throwaway société.
-     */
     private function ensureNotABot(Request $request): void
     {
         if (filled($request->input('homepage'))) {
