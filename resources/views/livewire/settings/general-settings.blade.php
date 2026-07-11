@@ -26,6 +26,45 @@
                 </div>
                 <x-field label="Nom de l'entreprise"><x-input wire:model="data.company_name" /></x-field>
                 <x-field label="E-mail"><x-input type="email" wire:model="data.company_email" />@error('data.company_email')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror</x-field>
+
+                @if (auth()->user()?->is_admin)
+                    <x-field label="Adresse de votre espace" class="md:col-span-2">
+                        <div class="flex overflow-hidden rounded-lg border border-gray-300 bg-white focus-within:border-brand-500 focus-within:ring-1 focus-within:ring-brand-500 dark:border-gray-700 dark:bg-gray-900">
+                            <input
+                                type="text"
+                                wire:model.live.debounce.400ms="slug"
+                                class="min-w-0 flex-1 border-0 bg-transparent px-3 py-2 text-sm text-gray-900 focus:ring-0 dark:text-gray-100"
+                                autocomplete="off"
+                            >
+                            <span class="flex items-center border-l border-gray-200 bg-gray-50 px-3 text-sm text-gray-500 dark:border-gray-700 dark:bg-gray-800">.{{ config('saas.domain') }}</span>
+                        </div>
+
+                        @if ($slug !== '')
+                            @if ($slugAvailable)
+                                <p class="mt-1 text-xs font-medium text-green-600">
+                                    {{ $slug === $originalSlug ? 'Adresse actuelle.' : 'Cette nouvelle adresse est disponible.' }}
+                                </p>
+                            @else
+                                <p class="mt-1 text-xs text-red-600">
+                                    Cette adresse n'est pas disponible.
+                                    @if ($slugSuggestion)
+                                        <button type="button" wire:click="useSlugSuggestion" class="font-medium underline">
+                                            Utiliser {{ $slugSuggestion }}.{{ config('saas.domain') }}
+                                        </button>
+                                    @endif
+                                </p>
+                            @endif
+                        @endif
+
+                        @error('slug')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
+                        @if ($slug !== $originalSlug && $slugAvailable)
+                            <p class="mt-2 text-xs text-amber-600 dark:text-amber-400">
+                                Après l'enregistrement, vous serez automatiquement redirigé vers la nouvelle adresse. L'ancienne ne sera plus accessible.
+                            </p>
+                        @endif
+                    </x-field>
+                @endif
+
                 <x-field label="Téléphone"><x-input wire:model="data.company_phone" /></x-field>
                 <x-field label="Site web"><x-input wire:model="data.company_website" /></x-field>
                 <x-field label="Adresse" class="md:col-span-2"><x-input wire:model="data.company_address" /></x-field>
