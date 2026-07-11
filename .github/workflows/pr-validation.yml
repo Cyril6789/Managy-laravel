@@ -24,13 +24,13 @@ jobs:
           coverage: none
 
       - name: Install Composer dependencies
-        run: composer install --no-interaction --prefer-dist --optimize-autoloader
+        run: composer install --no-interaction --prefer-dist --optimize-autoloader --quiet
 
       - name: Configure application
         run: |
           cp .env.example .env
           touch database/database.sqlite
-          php artisan key:generate
+          php artisan key:generate --quiet
           sed -i 's/^DB_CONNECTION=.*/DB_CONNECTION=sqlite/' .env
           sed -i 's|^#\? DB_DATABASE=.*|DB_DATABASE='"$GITHUB_WORKSPACE"'/database/database.sqlite|' .env
           sed -i 's/^APP_ENV=.*/APP_ENV=testing/' .env
@@ -40,16 +40,16 @@ jobs:
           sed -i 's/^QUEUE_CONNECTION=.*/QUEUE_CONNECTION=sync/' .env
 
       - name: Run migrations
-        run: php artisan migrate --force
+        run: php artisan migrate --force --quiet
 
       - name: Run PHP tests
-        run: php artisan test
+        run: php artisan test --stop-on-failure
 
       - name: Verify routes
-        run: php artisan route:list
+        run: php artisan route:list --except-vendor
 
       - name: Install Node dependencies
-        run: npm ci
+        run: npm ci --silent
 
       - name: Build assets
         run: npm run build
