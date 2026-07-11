@@ -9,6 +9,7 @@ use App\Models\SsoConnection;
 use App\Models\User;
 use App\Services\Sso\SsoDirectory;
 use App\Services\Sso\SsoProviderFactory;
+use App\Support\TenantUrl;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -19,13 +20,8 @@ use Illuminate\Validation\ValidationException;
 
 class LoginController extends Controller
 {
-    /** Failed attempts allowed per e-mail + IP before a temporary lockout. */
     private const MAX_ATTEMPTS = 5;
-
-    /** How long (seconds) a failed attempt keeps counting toward the lockout. */
     private const DECAY_SECONDS = 60;
-
-    /** Encrypted cookie remembering the last e-mail used, to prefill the field. */
     private const HINT_COOKIE = 'managy_login_hint';
 
     public function __construct(
@@ -33,20 +29,24 @@ class LoginController extends Controller
         private readonly SsoProviderFactory $providers,
     ) {}
 
-    /** Generic page: a single e-mail field (identifier-first). */
     public function show(Request $request)
     {
         if (Auth::check()) {
-            return redirect()->route(Auth::user()->is_super_admin ? 'admin.dashboard' : 'dashboard');
+            return $this->authenticatedRedirect(Auth::user());
         }
 
-        // "Changer d'e-mail" comes back to the e-mail step.
+        if ($society = $request->attributes->get('tenant')) {
+            return view('auth.login-society', [
+                'society' => $society,
+                'methods' => $this->directory->methodsFor($society),
+                'email' => $request->cookie(self::HINT_COOKIE),
+            ]);
+        }
+
         if ($request->boolean('fresh')) {
             $request->session()->forget(['login.step', 'login.email']);
         }
 
-        // The password step is kept in session so it survives a failed attempt
-        // (the form redirects back here on error).
         if ($request->session()->get('login.step') === 'password') {
             return view('auth.login', [
                 'step' => 'password',
@@ -60,51 +60,51 @@ class LoginController extends Controller
         ]);
     }
 
-    /**
-     * Resolve what to do with the typed e-mail: go straight to SSO when the
-     * domain maps to a provider, otherwise reveal the password field.
-     */
     public function identify(Request $request)
     {
         $request->validate(['email' => ['required', 'email']]);
         $email = (string) $request->input('email');
-
         $connections = $this->directory->connectionsForEmail($email);
 
         if ($connections->count() === 1) {
-            return $this->redirectToProvider($request, $connections->first());
-        }
-
-        if ($connections->count() > 1) {
-            // One société offering several providers → let the visitor choose on
-            // its dedicated page.
             $society = Society::find($connections->first()->society_id);
 
             if ($society) {
-                return redirect()->route('login.society', $society->slug);
+                return redirect()->away(TenantUrl::forSociety($society, '/login'));
             }
         }
 
-        // No SSO for this address → classic e-mail + password. Kept in session so
-        // the step (and a failed attempt) round-trips through GET /login.
+        if ($connections->count() > 1) {
+            $society = Society::find($connections->first()->society_id);
+
+            if ($society) {
+                return redirect()->away(TenantUrl::forSociety($society, '/login'));
+            }
+        }
+
         $request->session()->put('login.step', 'password');
         $request->session()->put('login.email', $email);
+
+        $user = User::withoutSocietyScope()
+            ->whereRaw('LOWER(email) = ?', [Str::lower($email)])
+            ->whereNull('deleted_at')
+            ->first();
+
+        if ($user && ! $user->is_super_admin && $user->society_id) {
+            $society = Society::find($user->society_id);
+
+            if ($society) {
+                return redirect()->away(TenantUrl::forSociety($society, '/login'));
+            }
+        }
 
         return redirect()->route('login');
     }
 
-    /** Dedicated per-société page reached through its unique slug. */
-    public function slug(Request $request, Society $society)
+    /** Backward compatibility for old /login/{slug} bookmarks. */
+    public function slug(Request $request, Society $society): RedirectResponse
     {
-        if (Auth::check()) {
-            return redirect()->route(Auth::user()->is_super_admin ? 'admin.dashboard' : 'dashboard');
-        }
-
-        return view('auth.login-society', [
-            'society' => $society,
-            'methods' => $this->directory->methodsFor($society),
-            'email' => $request->cookie(self::HINT_COOKIE),
-        ]);
+        return redirect()->away(TenantUrl::forSociety($society, '/login'), 302);
     }
 
     public function login(Request $request): RedirectResponse
@@ -114,12 +114,7 @@ class LoginController extends Controller
             'password' => ['required', 'string'],
         ]);
 
-        // A société may impose SSO: a non-gérant then cannot use a password.
-        // The gérant (and platform super-admin) always keep this emergency path.
         $this->ensurePasswordLoginAllowed($credentials['email']);
-
-        // Brute-force guard: refuse the attempt once too many failures piled up
-        // for this e-mail + IP, and tell the user how long to wait.
         $this->ensureIsNotRateLimited($request);
 
         $ok = Auth::attempt(
@@ -144,10 +139,7 @@ class LoginController extends Controller
             ]);
         }
 
-        // Successful login clears the counter so a legitimate user is never
-        // penalised for a few earlier typos.
         RateLimiter::clear($this->throttleKey($request));
-
         $request->session()->regenerate();
         $request->session()->forget(['login.step', 'login.email']);
         $this->rememberEmail($credentials['email']);
@@ -161,24 +153,33 @@ class LoginController extends Controller
             'created_at' => now(),
         ]);
 
-        // Platform super-admin lands on the supervision area, not a société app.
-        if (Auth::user()->is_super_admin) {
-            return redirect()->intended(route('admin.dashboard'));
-        }
-
-        return redirect()->intended(route('dashboard'));
+        return $this->authenticatedRedirect(Auth::user());
     }
 
     public function logout(Request $request): RedirectResponse
     {
+        $society = $request->attributes->get('tenant');
+
         Auth::logout();
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
-        return redirect()->route('login');
+        return $society
+            ? redirect()->away(TenantUrl::forSociety($society, '/login'))
+            : redirect()->away(TenantUrl::central('/login'));
     }
 
-    /** Start the OAuth flow for a resolved connection (mirrors SsoController). */
+    private function authenticatedRedirect(User $user): RedirectResponse
+    {
+        if ($user->is_super_admin) {
+            return redirect()->away(TenantUrl::central('/admin'));
+        }
+
+        $society = Society::findOrFail($user->society_id);
+
+        return redirect()->away(TenantUrl::forSociety($society, '/tableau-de-bord'));
+    }
+
     private function redirectToProvider(Request $request, SsoConnection $connection): RedirectResponse
     {
         $request->session()->put('sso.society_id', $connection->society_id);
@@ -188,10 +189,9 @@ class LoginController extends Controller
         return $this->providers->make($connection)->redirect();
     }
 
-    /** Refuse a password login when the société imposes SSO (gérant excepted). */
     private function ensurePasswordLoginAllowed(string $email): void
     {
-        $user = User::query()
+        $user = User::withoutSocietyScope()
             ->whereRaw('LOWER(email) = ?', [Str::lower($email)])
             ->whereNull('deleted_at')
             ->first();
@@ -207,16 +207,11 @@ class LoginController extends Controller
         }
     }
 
-    /** Persist the e-mail (encrypted cookie) to prefill it on the next visit. */
     private function rememberEmail(string $email): void
     {
         Cookie::queue(self::HINT_COOKIE, $email, 60 * 24 * 365);
     }
 
-    /**
-     * Stop the request when the e-mail + IP pair has exhausted its allowed
-     * attempts, surfacing the remaining lockout time to the user.
-     */
     private function ensureIsNotRateLimited(Request $request): void
     {
         if (! RateLimiter::tooManyAttempts($this->throttleKey($request), self::MAX_ATTEMPTS)) {
@@ -232,10 +227,6 @@ class LoginController extends Controller
         ]);
     }
 
-    /**
-     * Rate-limit bucket scoped to the submitted e-mail and the client IP, so a
-     * lockout targets a single credential guess instead of the whole IP.
-     */
     private function throttleKey(Request $request): string
     {
         return Str::transliterate(Str::lower((string) $request->input('email')).'|'.$request->ip());
