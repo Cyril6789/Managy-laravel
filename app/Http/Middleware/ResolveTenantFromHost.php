@@ -18,7 +18,26 @@ class ResolveTenantFromHost
         $baseDomain = strtolower(trim((string) config('saas.domain')));
         $host = strtolower($request->getHost());
 
-        if ($baseDomain === '' || $host === $baseDomain || ! str_ends_with($host, '.'.$baseDomain)) {
+        if ($baseDomain === '' || ($host !== $baseDomain && ! str_ends_with($host, '.'.$baseDomain))) {
+            return $next($request);
+        }
+
+        if ($host === $baseDomain) {
+            $user = $request->user();
+
+            // OAuth callbacks and signed verification links may deliberately use
+            // the central host. Once completed, any regular authenticated request
+            // is moved back to the user's own tenant while preserving its path.
+            if ($user && ! $user->is_super_admin && ! $request->is('email/verify*')) {
+                $society = Society::find($user->society_id);
+
+                if ($society) {
+                    $target = '/'.ltrim($request->getRequestUri(), '/');
+
+                    return redirect()->away(TenantUrl::forSociety($society, $target));
+                }
+            }
+
             return $next($request);
         }
 
