@@ -8,8 +8,8 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 
 /**
- * A SaaS tenant. Holds the company identity (name, SIRET, logo, ...) and owns
- * every business record through the society_id foreign key.
+ * A SaaS tenant. Holds the company identity and owns every business record
+ * through the society_id foreign key.
  */
 class Society extends Model
 {
@@ -33,7 +33,6 @@ class Society extends Model
             }
         });
 
-        // Company identity is exposed through Setting::all() (cached per société).
         static::saved(fn (Society $s) => Cache::forget('settings.all.'.$s->id));
         static::deleted(fn (Society $s) => Cache::forget('settings.all.'.$s->id));
     }
@@ -48,8 +47,9 @@ class Society extends Model
         $base = Str::slug($name) ?: 'societe';
         $slug = $base;
         $i = 2;
+        $reserved = config('saas.reserved_subdomains', []);
 
-        while (static::where('slug', $slug)->exists()) {
+        while (in_array($slug, $reserved, true) || static::where('slug', $slug)->exists()) {
             $slug = $base.'-'.$i++;
         }
 
