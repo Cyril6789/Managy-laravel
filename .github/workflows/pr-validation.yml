@@ -50,21 +50,7 @@ jobs:
         run: php artisan migrate --force --quiet
 
       - name: Run PHP tests
-        id: tests
-        shell: bash
-        run: |
-          set +e
-          php artisan test --stop-on-failure > test-output.txt 2>&1
-          status=$?
-          cat test-output.txt
-          exit $status
-
-      - name: Upload test output
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: php-test-output
-          path: test-output.txt
+        run: php artisan test
 
       - name: Verify routes
         run: php artisan route:list --except-vendor
