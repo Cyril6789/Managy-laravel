@@ -31,6 +31,7 @@ jobs:
           cp .env.example .env
           touch database/database.sqlite
           php artisan key:generate --quiet
+          sed -i 's|^APP_URL=.*|APP_URL=http://managy.test|' .env
           sed -i 's/^DB_CONNECTION=.*/DB_CONNECTION=sqlite/' .env
           sed -i 's|^#\? DB_DATABASE=.*|DB_DATABASE='"$GITHUB_WORKSPACE"'/database/database.sqlite|' .env
           sed -i 's/^APP_ENV=.*/APP_ENV=testing/' .env
@@ -38,6 +39,7 @@ jobs:
           sed -i 's/^CACHE_STORE=.*/CACHE_STORE=array/' .env
           sed -i 's/^SESSION_DRIVER=.*/SESSION_DRIVER=array/' .env
           sed -i 's/^QUEUE_CONNECTION=.*/QUEUE_CONNECTION=sync/' .env
+          printf '\nSAAS_DOMAIN=managy.test\nSAAS_SCHEME=http\n' >> .env
 
       - name: Run migrations
         run: php artisan migrate --force --quiet
