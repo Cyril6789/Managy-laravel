@@ -27,7 +27,6 @@ class AuthHardeningTest extends TestCase
 
     public function test_login_locks_out_after_too_many_failed_attempts(): void
     {
-        // Exhaust the allowed failures with a wrong password.
         for ($i = 0; $i < 5; $i++) {
             $this->post(route('login'), [
                 'email' => 'admin@exemple.fr',
@@ -36,8 +35,6 @@ class AuthHardeningTest extends TestCase
             $this->assertGuest();
         }
 
-        // Even the *correct* password is now refused: the lockout kicks in
-        // before the credentials are ever checked.
         $response = $this->post(route('login'), [
             'email' => 'admin@exemple.fr',
             'password' => 'password',
@@ -62,8 +59,6 @@ class AuthHardeningTest extends TestCase
 
         $society = Society::whereHas('users', fn ($query) => $query->where('email', 'admin@exemple.fr'))->firstOrFail();
 
-        // Under the threshold, the right password still gets in, moves the user
-        // to their tenant host, and clears the rate-limit counter.
         $this->post(route('login'), [
             'email' => 'admin@exemple.fr',
             'password' => 'password',
@@ -90,7 +85,6 @@ class AuthHardeningTest extends TestCase
     {
         $before = Society::count();
 
-        // Form stamped "now" then submitted instantly → below the think-time floor.
         $this->withSession(['register_started_at' => now()->timestamp])
             ->post(route('register'), $this->validSignup())
             ->assertSessionHasErrors('email');
@@ -101,14 +95,14 @@ class AuthHardeningTest extends TestCase
 
     public function test_a_genuine_signup_passes_the_anti_bot_guard(): void
     {
-        // A human who took a moment to fill the form, honeypot untouched.
-        $this->withSession(['register_started_at' => now()->subMinute()->timestamp])
-            ->post(route('register'), $this->validSignup())
-            ->assertRedirect(TenantUrl::forSlug('new-co', '/tableau-de-bord'));
+        $response = $this->withSession(['register_started_at' => now()->subMinute()->timestamp])
+            ->post(route('register'), $this->validSignup());
 
+        $society = Society::where('slug', 'new-co')->firstOrFail();
+
+        $response->assertRedirect(TenantUrl::forSociety($society, '/tableau-de-bord'));
         $this->assertAuthenticated();
         $this->assertDatabaseHas('users', ['email' => 'newco@example.test']);
-        $this->assertDatabaseHas('societies', ['slug' => 'new-co']);
     }
 
     /** @param array<string, mixed> $overrides */
