@@ -40,6 +40,12 @@ jobs:
           sed -i 's/^QUEUE_CONNECTION=.*/QUEUE_CONNECTION=sync/' .env
           printf '\nSAAS_DOMAIN=managy.test\nSAAS_SCHEME=http\n' >> .env
 
+      - name: Install Node dependencies
+        run: npm ci --silent
+
+      - name: Build assets
+        run: npm run build
+
       - name: Run migrations
         run: php artisan migrate --force --quiet
 
@@ -62,9 +68,3 @@ jobs:
 
       - name: Verify routes
         run: php artisan route:list --except-vendor
-
-      - name: Install Node dependencies
-        run: npm ci --silent
-
-      - name: Build assets
-        run: npm run build
