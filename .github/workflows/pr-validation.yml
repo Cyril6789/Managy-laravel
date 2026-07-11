@@ -1,0 +1,55 @@
+name: PR validation
+
+on:
+  pull_request:
+    branches:
+      - saas
+  push:
+    branches:
+      - agent/tenant-subdomains
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: mbstring, dom, fileinfo, sqlite, pdo_sqlite
+          coverage: none
+
+      - name: Install Composer dependencies
+        run: composer install --no-interaction --prefer-dist --optimize-autoloader
+
+      - name: Configure application
+        run: |
+          cp .env.example .env
+          touch database/database.sqlite
+          php artisan key:generate
+          sed -i 's/^DB_CONNECTION=.*/DB_CONNECTION=sqlite/' .env
+          sed -i 's|^#\? DB_DATABASE=.*|DB_DATABASE='"$GITHUB_WORKSPACE"'/database/database.sqlite|' .env
+          sed -i 's/^APP_ENV=.*/APP_ENV=testing/' .env
+          sed -i 's/^APP_DEBUG=.*/APP_DEBUG=false/' .env
+          sed -i 's/^CACHE_STORE=.*/CACHE_STORE=array/' .env
+          sed -i 's/^SESSION_DRIVER=.*/SESSION_DRIVER=array/' .env
+          sed -i 's/^QUEUE_CONNECTION=.*/QUEUE_CONNECTION=sync/' .env
+
+      - name: Run migrations
+        run: php artisan migrate --force
+
+      - name: Run PHP tests
+        run: php artisan test
+
+      - name: Verify routes
+        run: php artisan route:list
+
+      - name: Install Node dependencies
+        run: npm ci
+
+      - name: Build assets
+        run: npm run build
