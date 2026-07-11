@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\Society;
 use App\Models\User;
+use App\Support\TenantUrl;
 use Database\Seeders\DatabaseSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\RateLimiter;
@@ -59,12 +60,14 @@ class AuthHardeningTest extends TestCase
             ]);
         }
 
-        // Under the threshold, the right password still gets in and the
-        // counter is cleared on success.
+        $society = Society::whereHas('users', fn ($query) => $query->where('email', 'admin@exemple.fr'))->firstOrFail();
+
+        // Under the threshold, the right password still gets in, moves the user
+        // to their tenant host, and clears the rate-limit counter.
         $this->post(route('login'), [
             'email' => 'admin@exemple.fr',
             'password' => 'password',
-        ])->assertRedirect(route('dashboard'));
+        ])->assertRedirect(TenantUrl::forSociety($society, '/tableau-de-bord'));
 
         $this->assertAuthenticated();
         $this->assertSame(0, RateLimiter::attempts('admin@exemple.fr|127.0.0.1'));
@@ -101,10 +104,11 @@ class AuthHardeningTest extends TestCase
         // A human who took a moment to fill the form, honeypot untouched.
         $this->withSession(['register_started_at' => now()->subMinute()->timestamp])
             ->post(route('register'), $this->validSignup())
-            ->assertRedirect(route('dashboard'));
+            ->assertRedirect(TenantUrl::forSlug('new-co', '/tableau-de-bord'));
 
         $this->assertAuthenticated();
         $this->assertDatabaseHas('users', ['email' => 'newco@example.test']);
+        $this->assertDatabaseHas('societies', ['slug' => 'new-co']);
     }
 
     /** @param array<string, mixed> $overrides */
@@ -112,6 +116,7 @@ class AuthHardeningTest extends TestCase
     {
         return array_merge([
             'company_name' => 'New Co',
+            'company_slug' => 'new-co',
             'nom' => 'Doe',
             'email' => 'newco@example.test',
             'password' => 'Sup3r-Secret!',
