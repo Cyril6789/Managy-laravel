@@ -122,6 +122,8 @@ class SettingsController extends Controller
             'deplacement_forfait' => ['nullable', 'numeric', 'min:0'],
             'deplacement_prix_km' => ['nullable', 'numeric', 'min:0'],
             'deplacement_villes_gratuites' => ['nullable', 'string'],
+            'invoice_number_format' => ['sometimes', 'required', 'string', 'max:60', 'regex:/#+/'],
+            'invoice_next_number' => ['sometimes', 'required', 'integer', 'min:1'],
         ]);
 
         foreach ($data as $key => $value) {

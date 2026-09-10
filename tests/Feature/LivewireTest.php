@@ -11,15 +11,17 @@ use App\Livewire\InterventionCloture;
 use App\Livewire\InterventionPanel;
 use App\Livewire\InterventionReport;
 use App\Livewire\Tasks;
-use App\Models\Task;
 use App\Models\Client;
 use App\Models\Intervention;
+use App\Models\Invoice;
 use App\Models\Prestation;
 use App\Models\Setting;
 use App\Models\Statut;
+use App\Models\Task;
 use App\Models\User;
 use Database\Seeders\DatabaseSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Storage;
 use Livewire\Livewire;
 use Tests\TestCase;
 
@@ -261,7 +263,7 @@ class LivewireTest extends TestCase
             ->assertDontSeeHtml('wire:click="openEdit"'); // and hidden again when cleared
     }
 
-    public function test_facturation_marks_intervention_as_invoiced(): void
+    public function test_facturation_lists_closed_intervention_to_generate(): void
     {
         $intervention = Intervention::create([
             'client_id' => Client::first()->id,
@@ -271,9 +273,22 @@ class LivewireTest extends TestCase
 
         Livewire::test(Facturation::class)
             ->assertSee($intervention->reference)
-            ->call('facturer', $intervention->id);
+            ->assertSee('Générer le PDF');
+    }
 
-        $this->assertTrue($intervention->fresh()->facturee);
+    public function test_facturation_generates_and_opens_pdf_in_modal(): void
+    {
+        Storage::fake('local');
+        $intervention = Intervention::create([
+            'client_id' => Client::first()->id,
+            'closed_at' => now(),
+            'montant_total' => 0,
+        ]);
+
+        Livewire::test(Facturation::class)
+            ->call('generate', $intervention->id)
+            ->assertSet('pdfUrl', route('invoices.pdf', Invoice::latest('id')->firstOrFail()))
+            ->assertSee('Aperçu de la facture');
     }
 
     public function test_staff_chat_and_public_chat_share_the_same_thread(): void

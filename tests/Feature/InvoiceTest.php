@@ -1,0 +1,95 @@
+<?php
+
+namespace Tests\Feature;
+
+use App\Models\Client;
+use App\Models\Intervention;
+use App\Models\Invoice;
+use App\Models\Setting;
+use App\Models\User;
+use Database\Seeders\DatabaseSeeder;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Storage;
+use Tests\TestCase;
+
+class InvoiceTest extends TestCase
+{
+    use RefreshDatabase;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->seed(DatabaseSeeder::class);
+        $this->actingAs(User::where('pseudo', 'admin')->firstOrFail());
+        Storage::fake('local');
+        Storage::fake('public');
+    }
+
+    public function test_it_generates_numbered_immutable_pdf_invoice_from_intervention(): void
+    {
+        Setting::put('company_name', 'Dépannage Martin');
+        Setting::put('company_address', '1 rue des Tests');
+        Setting::put('company_siret', '123 456 789 00012');
+        Setting::put('invoice_number_format', 'F-{YY}-{MM}-###');
+        Setting::put('invoice_next_number', 42);
+
+        $client = Client::create([
+            'type' => 'particulier',
+            'nom' => 'Dupont',
+            'prenom' => 'Alice',
+            'adresse' => '12 rue du Client',
+            'code_postal' => '75001',
+            'ville' => 'Paris',
+            'telephone_mobile' => '0612345678',
+        ]);
+        $intervention = Intervention::create([
+            'client_id' => $client->id,
+            'closed_at' => now(),
+            'montant_prestations' => 120,
+            'montant_pieces' => 40,
+            'montant_deplacement' => 15,
+            'montant_total' => 175,
+            'facturee' => false,
+        ]);
+        $intervention->prestations()->create([
+            'designation' => 'Dépannage informatique',
+            'duree' => 2,
+            'tarif' => 60,
+        ]);
+        $intervention->pieces()->create([
+            'designation' => 'Disque SSD',
+            'quantite' => 1,
+            'prix' => 40,
+        ]);
+
+        $response = $this->post(route('invoices.store', $intervention));
+
+        $invoice = Invoice::sole();
+        $response->assertRedirect(route('invoices.pdf', $invoice));
+        $this->assertSame('F-'.now()->format('y-m').'-042', $invoice->number);
+        $this->assertSame('Dépannage Martin', $invoice->issuer['name']);
+        $this->assertSame('Alice', explode(' ', $invoice->customer['name'])[1]);
+        $this->assertSame('175.00', $invoice->total_ht);
+        $this->assertStringContainsString('293 B', $invoice->legal_notice);
+        $this->assertTrue($intervention->fresh()->facturee);
+        $this->assertSame('43', Setting::get('invoice_next_number'));
+        Storage::disk('local')->assertExists($invoice->pdf_path);
+        $this->assertStringStartsWith('%PDF-', Storage::disk('local')->get($invoice->pdf_path));
+
+        $client->update(['nom' => 'Nom modifié']);
+        $this->post(route('invoices.store', $intervention));
+        $this->assertSame(1, Invoice::count());
+        $this->assertSame('Dupont Alice', $invoice->fresh()->customer['name']);
+    }
+
+    public function test_archived_pdf_is_viewable_by_authorized_user(): void
+    {
+        $intervention = Intervention::cloturees()->firstOrFail();
+        $this->post(route('invoices.store', $intervention));
+        $invoice = Invoice::sole();
+
+        $this->get(route('invoices.pdf', $invoice))
+            ->assertOk()
+            ->assertHeader('content-type', 'application/pdf');
+    }
+}

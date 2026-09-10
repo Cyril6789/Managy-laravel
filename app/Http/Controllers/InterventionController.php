@@ -292,7 +292,6 @@ class InterventionController extends Controller
         $data = $request->validate([
             'signataire_nom' => ['nullable', 'string', 'max:255'],
             'signature' => ['nullable', 'string'], // PNG data URL
-            'facturee' => ['nullable', 'boolean'],
             'payee' => ['nullable', 'boolean'],
             'paiement_mode' => ['nullable', Rule::in(['especes', 'cb', 'cheque', 'virement', 'autre'])],
             'montant_deplacement' => ['nullable', 'numeric', 'min:0'],
@@ -355,8 +354,8 @@ class InterventionController extends Controller
             'payee' => $payee,
             'montant_paye' => $payee ? ($data['montant_paye'] ?? $breakdown['total']) : null,
             'paiement_mode' => $payee ? ($data['paiement_mode'] ?? null) : null,
-            // Workshop interventions can be flagged "facturée" straight from the modal.
-            'facturee' => $request->boolean('facturee'),
+            // A real archived invoice is the only operation that sets this flag.
+            'facturee' => false,
         ]);
 
         $this->log($intervention, 'a restitué et clôturé l\'intervention'.($signaturePath ? ' (signée)' : ''));
@@ -422,6 +421,10 @@ class InterventionController extends Controller
     {
         $this->authorize(Permissions::INTERVENTIONS_DECLOTURE);
 
+        if ($intervention->invoice()->exists()) {
+            return back()->with('error', 'Impossible de déclôturer une intervention ayant une facture archivée.');
+        }
+
         $intervention->update(['closed_at' => null, 'restituted_at' => null, 'restituted_by' => null]);
         $this->log($intervention, 'a déclôturé l\'intervention');
 
@@ -433,16 +436,6 @@ class InterventionController extends Controller
         $this->authorize(Permissions::INTERVENTIONS_FACTURATION);
 
         return view('facturation.index');
-    }
-
-    public function toggleFacturation(Intervention $intervention)
-    {
-        $this->authorize(Permissions::INTERVENTIONS_FACTURATION);
-
-        $intervention->update(['facturee' => ! $intervention->facturee]);
-        $this->log($intervention, $intervention->facturee ? 'a marqué comme facturée' : 'a retiré la facturation');
-
-        return back();
     }
 
     /**

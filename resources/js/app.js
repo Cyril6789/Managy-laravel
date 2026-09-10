@@ -207,7 +207,6 @@ document.addEventListener('alpine:init', () => {
         payee: false,
         montantPaye: 0,
         paiementMode: 'especes',
-        facturee: false,
 
         // Signature pad state
         drawing: false,

@@ -107,6 +107,21 @@
 
     {{-- Billing --}}
     @elseif ($section === 'billing')
+        <x-card title="Numérotation des factures">
+            <div class="grid grid-cols-1 gap-5 md:grid-cols-2">
+                <x-field label="Format du numéro" hint="Utilisez {YYYY} pour l'année sur 4 chiffres, {YY} sur 2 chiffres, {MM} pour le mois et des # pour le numéro séquentiel.">
+                    <x-input wire:model="data.invoice_number_format" placeholder="FAC-{YYYY}-####" />
+                    @error('data.invoice_number_format')<p class="mt-1 text-xs text-red-600">Le format doit contenir au moins un caractère #.</p>@enderror
+                </x-field>
+                <x-field label="Prochain numéro" hint="Ce compteur est incrémenté automatiquement après chaque facture générée.">
+                    <x-input type="number" min="1" step="1" wire:model="data.invoice_next_number" />
+                    @error('data.invoice_next_number')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
+                </x-field>
+            </div>
+            <p class="mt-3 text-xs text-gray-400">Exemple : <code>FAC-{YYYY}-{MM}-###</code> avec le prochain numéro à <code>42</code> produira <code>FAC-{{ now()->format('Y-m') }}-042</code>.</p>
+            @include('livewire.settings._save-bar')
+        </x-card>
+
         <x-card title="Frais de déplacement (interventions à domicile)">
             <div x-data="{ mode: @js($data['deplacement_mode'] ?? 'aucun') }" class="space-y-5">
                 <div class="grid grid-cols-1 gap-5 md:grid-cols-3">

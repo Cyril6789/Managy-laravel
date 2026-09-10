@@ -43,6 +43,11 @@ class Society extends Model
         return $this->hasMany(User::class);
     }
 
+    public function invoices(): HasMany
+    {
+        return $this->hasMany(Invoice::class);
+    }
+
     public static function uniqueSlug(string $name): string
     {
         $base = Str::slug($name) ?: 'societe';

@@ -5,7 +5,7 @@
         ['interventions.index', 'Interventions', 'wrench', \App\Support\Permissions::INTERVENTIONS_VIEW],
         ['reception.commandes', 'Commandes en cours', 'box', \App\Support\Permissions::COMMANDES_RECEPTION],
         ['reception.sous_traitances', 'Sous-traitance en cours', 'truck', \App\Support\Permissions::SOUS_TRAITANCES_RECEPTION],
-        ['facturation.index', 'Facturation', 'list', \App\Support\Permissions::INTERVENTIONS_FACTURATION],
+        ['facturation.index', 'Factures', 'list', \App\Support\Permissions::INTERVENTIONS_FACTURATION],
         ['calendar.index', 'Calendrier', 'calendar', \App\Support\Permissions::CALENDAR_VIEW],
         ['disponibilites.index', 'Disponibilités', 'clock', null],
         ['clients.index', 'Clients', 'users', \App\Support\Permissions::CLIENTS_VIEW],

@@ -1,0 +1,46 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\Intervention;
+use App\Models\InterventionLog;
+use App\Models\Invoice;
+use App\Services\InvoiceGenerator;
+use App\Support\Permissions;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
+
+class InvoiceController extends Controller
+{
+    public function store(Intervention $intervention, InvoiceGenerator $generator)
+    {
+        $this->authorize(Permissions::INTERVENTIONS_FACTURATION);
+
+        $invoice = $generator->generate($intervention);
+
+        if ($invoice->wasRecentlyCreated) {
+            InterventionLog::create([
+                'intervention_id' => $intervention->id,
+                'user_id' => Auth::id(),
+                'texte' => 'a généré la facture '.$invoice->number,
+                'created_at' => now(),
+            ]);
+        }
+
+        return redirect()->route('invoices.pdf', $invoice);
+    }
+
+    public function pdf(Invoice $invoice)
+    {
+        $this->authorize(Permissions::INTERVENTIONS_FACTURATION);
+
+        abort_unless(Storage::disk('local')->exists($invoice->pdf_path), 404, 'Le fichier PDF archivé est introuvable.');
+
+        $fileName = trim(preg_replace('/[^A-Za-z0-9._-]+/', '-', $invoice->number), '-').'.pdf';
+
+        return response()->file(Storage::disk('local')->path($invoice->pdf_path), [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => 'inline; filename="'.$fileName.'"',
+        ]);
+    }
+}

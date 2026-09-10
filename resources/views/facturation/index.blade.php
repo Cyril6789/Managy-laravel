@@ -2,7 +2,7 @@
 @section('title', 'Facturation')
 
 @section('content')
-    <x-page-header title="Facturation" subtitle="Interventions clôturées en attente de facturation" />
+    <x-page-header title="Factures" subtitle="Générez et consultez les factures PDF de vos interventions" />
 
     <livewire:facturation />
 @endsection

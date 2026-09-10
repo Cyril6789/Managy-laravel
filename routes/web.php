@@ -17,6 +17,7 @@ use App\Http\Controllers\Intervention\MessageController as InterventionChatContr
 use App\Http\Controllers\Intervention\SousTraitanceController;
 use App\Http\Controllers\InterventionController;
 use App\Http\Controllers\InterventionPhotoController;
+use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\LogController;
 use App\Http\Controllers\MaintenanceController;
 use App\Http\Controllers\MediaController;
@@ -130,6 +131,8 @@ Route::middleware(['auth', EnsureHasSociety::class, EnsureEmailVerified::class])
 
     // Interventions
     Route::get('/facturation', [InterventionController::class, 'facturationIndex'])->name('facturation.index');
+    Route::post('/factures/interventions/{intervention}', [InvoiceController::class, 'store'])->name('invoices.store');
+    Route::get('/factures/{invoice}/pdf', [InvoiceController::class, 'pdf'])->name('invoices.pdf');
     Route::get('interventions/contexte-client/{client}', [InterventionController::class, 'clientContext'])->name('interventions.client_context');
     Route::resource('interventions', InterventionController::class);
     Route::get('interventions/{intervention}/impression/{type}', [InterventionController::class, 'print'])->name('interventions.print')->where('type', 'depot|rapport');
@@ -144,7 +147,6 @@ Route::middleware(['auth', EnsureHasSociety::class, EnsureEmailVerified::class])
     Route::post('interventions/{intervention}/annuler-finalisation', [InterventionController::class, 'annulerFinalisation'])->name('interventions.annuler_finalisation');
     Route::post('interventions/{intervention}/restituer', [InterventionController::class, 'restituer'])->name('interventions.restituer');
     Route::post('interventions/{intervention}/decloturer', [InterventionController::class, 'decloturer'])->name('interventions.decloturer');
-    Route::post('interventions/{intervention}/facturation', [InterventionController::class, 'toggleFacturation'])->name('interventions.facturation');
     Route::post('interventions/{intervention}/message-client', [MessageController::class, 'store'])->name('interventions.message_client');
 
     // Intervention sub-resources

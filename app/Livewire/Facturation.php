@@ -4,6 +4,8 @@ namespace App\Livewire;
 
 use App\Models\Intervention;
 use App\Models\InterventionLog;
+use App\Models\Invoice;
+use App\Services\InvoiceGenerator;
 use App\Support\Permissions;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
@@ -18,6 +20,8 @@ class Facturation extends Component
 
     public string $q = '';
 
+    public ?string $pdfUrl = null;
+
     public function updating($name): void
     {
         if (in_array($name, ['filtre', 'q'], true)) {
@@ -25,59 +29,67 @@ class Facturation extends Component
         }
     }
 
-    public function facturer(int $id): void
+    public function generate(int $id, InvoiceGenerator $generator): void
     {
         Gate::authorize(Permissions::INTERVENTIONS_FACTURATION);
         $intervention = Intervention::cloturees()->findOrFail($id);
-        $intervention->update(['facturee' => true]);
-        $this->log($intervention, 'a marqué comme facturée');
+        $invoice = $generator->generate($intervention);
+
+        if ($invoice->wasRecentlyCreated) {
+            InterventionLog::create([
+                'intervention_id' => $intervention->id,
+                'user_id' => Auth::id(),
+                'texte' => 'a généré la facture '.$invoice->number,
+                'created_at' => now(),
+            ]);
+        }
+
+        $this->pdfUrl = route('invoices.pdf', $invoice);
     }
 
-    public function annuler(int $id): void
+    public function openPdf(int $id): void
     {
         Gate::authorize(Permissions::INTERVENTIONS_FACTURATION);
-        $intervention = Intervention::cloturees()->findOrFail($id);
-        $intervention->update(['facturee' => false]);
-        $this->log($intervention, 'a retiré la facturation');
+        $this->pdfUrl = route('invoices.pdf', Invoice::findOrFail($id));
     }
 
-    public function facturerTout(): void
+    public function closePdf(): void
     {
-        Gate::authorize(Permissions::INTERVENTIONS_FACTURATION);
-
-        Intervention::cloturees()->where('facturee', false)->get()
-            ->each(function (Intervention $i) {
-                $i->update(['facturee' => true]);
-                $this->log($i, 'a marqué comme facturée');
-            });
-    }
-
-    private function log(Intervention $intervention, string $texte): void
-    {
-        InterventionLog::create([
-            'intervention_id' => $intervention->id,
-            'user_id' => Auth::id(),
-            'texte' => $texte,
-            'created_at' => now(),
-        ]);
+        $this->pdfUrl = null;
     }
 
     public function render()
     {
-        $interventions = Intervention::cloturees()
-            ->where('facturee', $this->filtre === 'facturees')
-            ->when($this->q !== '', function ($query) {
-                $term = '%'.trim($this->q).'%';
-                $query->where(fn ($w) => $w->where('reference', 'like', $term)
-                    ->orWhereHas('client', fn ($c) => $c->where('nom', 'like', $term)->orWhere('prenom', 'like', $term)));
-            })
-            ->with(['client', 'prestations'])
-            ->latest('closed_at')
-            ->paginate(20);
+        Gate::authorize(Permissions::INTERVENTIONS_FACTURATION);
+
+        $term = '%'.trim($this->q).'%';
+        $interventions = null;
+        $invoices = null;
+
+        if ($this->filtre === 'a_facturer') {
+            $interventions = Intervention::cloturees()
+                ->whereDoesntHave('invoice')
+                ->when($this->q !== '', fn ($query) => $query->where(fn ($w) => $w
+                    ->where('reference', 'like', $term)
+                    ->orWhereHas('client', fn ($c) => $c->where('nom', 'like', $term)->orWhere('prenom', 'like', $term))))
+                ->with(['client', 'prestations'])
+                ->latest('closed_at')
+                ->paginate(20);
+        } else {
+            $invoices = Invoice::query()
+                ->when($this->q !== '', fn ($query) => $query->where(fn ($w) => $w
+                    ->where('number', 'like', $term)
+                    ->orWhereHas('intervention', fn ($i) => $i->where('reference', 'like', $term)
+                        ->orWhereHas('client', fn ($c) => $c->where('nom', 'like', $term)->orWhere('prenom', 'like', $term)))))
+                ->with(['intervention.client'])
+                ->latest('issued_at')->latest('id')
+                ->paginate(20);
+        }
 
         return view('livewire.facturation', [
             'interventions' => $interventions,
-            'totalAFacturer' => Intervention::cloturees()->where('facturee', false)->count(),
+            'invoices' => $invoices,
+            'totalAFacturer' => Intervention::cloturees()->whereDoesntHave('invoice')->count(),
         ]);
     }
 }

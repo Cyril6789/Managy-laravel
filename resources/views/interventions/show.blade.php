@@ -53,9 +53,13 @@
                 @if ($i->payee)<span>· payé{{ $i->paiement_mode ? ' par '.$i->paiement_mode : '' }}</span>@endif
             @endif
             @can(\App\Support\Permissions::INTERVENTIONS_FACTURATION)
-                <form action="{{ route('interventions.facturation', $i) }}" method="POST" class="ml-auto">@csrf
-                    <button class="font-medium underline">{{ $i->facturee ? 'Marquée facturée ✓' : 'Marquer comme facturée' }}</button>
-                </form>
+                @if ($i->invoice)
+                    <a href="{{ route('invoices.pdf', $i->invoice) }}" target="_blank" class="ml-auto font-medium underline">Facture {{ $i->invoice->number }} ↗</a>
+                @else
+                    <form action="{{ route('invoices.store', $i) }}" method="POST" target="_blank" class="ml-auto">@csrf
+                        <button class="font-medium underline" onclick="return confirm('Générer la facture définitive ?')">Générer la facture PDF</button>
+                    </form>
+                @endif
             @endcan
         </div>
     @endif

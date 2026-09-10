@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Settings;
 
+use App\Models\Invoice;
 use App\Models\Setting;
 use App\Models\Statut;
 use App\Support\Permissions;
@@ -50,6 +51,7 @@ class GeneralSettings extends Component
         ],
         'billing' => [
             'deplacement_mode', 'deplacement_forfait', 'deplacement_prix_km', 'deplacement_villes_gratuites',
+            'invoice_number_format', 'invoice_next_number',
         ],
     ];
 
@@ -69,6 +71,10 @@ class GeneralSettings extends Component
         $this->data['mail_port'] ??= '587';
         $this->data['mail_encryption'] ??= 'tls';
         $this->data['deplacement_mode'] ??= 'aucun';
+        $this->data['invoice_number_format'] ??= 'FAC-{YYYY}-####';
+        $this->data['invoice_next_number'] ??= max(1, Invoice::query()->pluck('number')
+            ->map(fn (string $number) => preg_match('/-(\d+)$/', $number, $match) ? (int) $match[1] : 0)
+            ->max() + 1);
     }
 
     protected function rules(): array
@@ -107,6 +113,8 @@ class GeneralSettings extends Component
                 'data.deplacement_forfait' => ['nullable', 'numeric', 'min:0'],
                 'data.deplacement_prix_km' => ['nullable', 'numeric', 'min:0'],
                 'data.deplacement_villes_gratuites' => ['nullable', 'string'],
+                'data.invoice_number_format' => ['required', 'string', 'max:60', 'regex:/#+/'],
+                'data.invoice_next_number' => ['required', 'integer', 'min:1'],
             ],
             default => [],
         };
