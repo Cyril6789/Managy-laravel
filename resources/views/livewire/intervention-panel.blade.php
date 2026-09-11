@@ -32,10 +32,11 @@
     <x-card>
         <div class="flex flex-wrap items-center gap-3">
             <span class="text-sm text-gray-500">Statut :</span>
-            <select wire:model="statutId" wire:change="changeStatut" @disabled(! $peutGerer)
-                    class="w-56 rounded-lg border-gray-300 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:border-gray-700 dark:bg-gray-800">
-                @foreach ($statuts as $s)<option value="{{ $s->id }}">{{ $s->nom }}</option>@endforeach
-            </select>
+            <div class="w-64">
+                <x-searchable-select name="statut_id_live" wire:model.change="statutId" wire:change="changeStatut"
+                    :selected="$statutId" :options="$statuts->pluck('nom', 'id')" :allow-empty="false"
+                    search-placeholder="Rechercher un statut…" @disabled(! $peutGerer) />
+            </div>
             <span wire:loading wire:target="changeStatut" class="text-xs text-amber-600">…</span>
             @if ($i->urgente)<x-badge color="#ef4444">Urgent</x-badge>@endif
             @if ($i->garantie)<x-badge>Garantie</x-badge>@endif
@@ -165,10 +166,9 @@
                     @if ($peutGerer && ! $i->estCloturee())
                         <form wire:submit="addPrestation" class="flex flex-wrap items-end gap-2 border-t border-gray-100 pt-4 dark:border-gray-800">
                             <x-field label="Prestation" class="flex-1 min-w-48">
-                                <x-select wire:model="presta.prestation_id" wire:change="selectPrestation">
-                                    <option value="">— Saisie libre —</option>
-                                    @foreach ($catalogue as $pc)<option value="{{ $pc->id }}">{{ $pc->designation }}</option>@endforeach
-                                </x-select>
+                                <x-searchable-select name="prestation_catalogue_live" wire:model.change="presta.prestation_id" wire:change="selectPrestation"
+                                    :selected="$presta['prestation_id']" :options="$catalogue->pluck('designation', 'id')"
+                                    placeholder="— Saisie libre —" search-placeholder="Rechercher une prestation…" />
                             </x-field>
                             <x-field label="Désignation" class="flex-1 min-w-40"><x-input wire:model="presta.designation" /></x-field>
                             <x-field label="Durée (h)" class="w-24"><x-input wire:model="presta.duree" type="text" inputmode="decimal" /></x-field>

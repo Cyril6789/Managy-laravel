@@ -37,12 +37,14 @@
             this.value = option.value;
             this.open = false;
             this.query = '';
+            this.$nextTick(() => this.$refs.input.dispatchEvent(new Event('change', { bubbles: true })));
             this.$nextTick(() => this.$refs.trigger.focus());
         },
         clear() {
             this.value = '';
             this.open = false;
             this.query = '';
+            this.$nextTick(() => this.$refs.input.dispatchEvent(new Event('change', { bubbles: true })));
             this.$nextTick(() => this.$refs.trigger.focus());
         },
     }"
@@ -50,7 +52,7 @@
     x-on:keydown.escape.window="open = false"
     class="relative"
 >
-    <input type="hidden" name="{{ $name }}" x-model="value">
+    <input type="hidden" name="{{ $name }}" x-ref="input" x-model="value" {{ $attributes->except(['class', 'disabled']) }}>
 
     <button
         type="button"
@@ -58,6 +60,7 @@
         x-on:click="show()"
         x-bind:aria-expanded="open"
         aria-haspopup="listbox"
+        @disabled($attributes->has('disabled'))
         {{ $attributes->class(['flex w-full items-center justify-between gap-2 rounded-lg border border-gray-300 bg-white px-3 py-2 text-left text-sm shadow-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100']) }}
     >
         <span x-text="selectedLabel || @js($placeholder)" x-bind:class="selectedLabel ? '' : 'text-gray-400'" class="truncate"></span>

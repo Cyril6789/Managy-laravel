@@ -1,5 +1,5 @@
 - [x] lors de la création d'une intervention, je clique sur client, le focus doit se faire dans le champ de recherche immédiatement(, idem pour matériel, os, antivirus, etc...)
-- [ ] sur une fiche intervention, les champ dropdown doivent aussi etre alpine 2 searchable avec focus sur la recherche (notamment les préstation ajoutables)
+- [x] sur une fiche intervention, les champ dropdown doivent aussi etre alpine 2 searchable avec focus sur la recherche (notamment les préstation ajoutables)
 - [ ] le nouveau module de facturation qu'on a rajouté hier doit pouvoir s'activer depuis le compte super admin (compte de gestion du saas) sur les comptes entreprises manuellement. ceux pour qui c'est pas activé ils récupère l'ancien système (qui est une simple mise à jour du statut de facturation)
 - [ ] lorsque que la facturation est activée pour une société, le manager de la société doit pouvoir choisir s'il utilise la TVA ou non (Auto entrepreneur ou non) et choisir le taux de la TVA (la mention auto entrepreneur des factures varie en fonction de ça)
 - [ ] sur le profile super admin (gestion saas), je ne vois pas les logos des entreprises, le nombre d'intervention et de clients sont faux et c'est ici que j'ajoute ou non la possibilité de facturer
