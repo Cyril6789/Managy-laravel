@@ -11,6 +11,7 @@ use App\Models\Prestation;
 use App\Models\Setting;
 use App\Models\User;
 use App\Services\InvoiceGenerator;
+use App\Services\InvoicePaymentService;
 use Database\Seeders\DatabaseSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Storage;
@@ -332,6 +333,37 @@ class InvoiceTest extends TestCase
             ->dispatch('open-invoice-viewer', invoiceId: $invoice->id)
             ->assertSet('pdfUrl', route('invoices.pdf', $invoice))
             ->assertSet('generatedInvoiceId', $invoice->id);
+    }
+
+    public function test_client_page_highlights_invoice_statuses_and_outstanding_balance(): void
+    {
+        $intervention = Intervention::cloturees()->firstOrFail();
+        $intervention->prestations()->create(['designation' => 'Dépannage', 'duree' => 1, 'tarif' => 100]);
+        $intervention->update(['montant_prestations' => 100, 'montant_total' => 100]);
+        $this->post(route('invoices.store', $intervention));
+        $invoice = Invoice::sole();
+
+        $this->get(route('clients.show', $intervention->client))
+            ->assertOk()
+            ->assertSee('1 facture est en attente de règlement')
+            ->assertSee('Solde total restant')
+            ->assertSee('En attente de paiement')
+            ->assertSee('#d97706', false);
+
+        $paymentService = app(InvoicePaymentService::class);
+        $paymentService->record($invoice, (float) $invoice->total_ttc / 2, 'cb', now());
+
+        $this->get(route('clients.show', $intervention->client))
+            ->assertSee('Partiellement payée')
+            ->assertSee('#ea580c', false)
+            ->assertSee('1 facture est en attente de règlement');
+
+        $paymentService->record($invoice, $invoice->balanceDue(), 'virement', now());
+
+        $this->get(route('clients.show', $intervention->client))
+            ->assertSee('Payée')
+            ->assertSee('#16a34a', false)
+            ->assertDontSee('facture est en attente de règlement');
     }
 
     public function test_vat_exempt_pdf_only_displays_ht_columns_and_totals(): void

@@ -2,6 +2,19 @@
 @section('title', $client->nomComplet())
 
 @section('content')
+    @if(auth()->user()->society?->invoice_enabled && $outstandingInvoiceCount > 0)
+        <div class="mb-6 flex items-start justify-between gap-4 rounded-xl border border-amber-300 bg-amber-50 px-5 py-4 text-amber-950 shadow-sm dark:border-amber-700 dark:bg-amber-950/40 dark:text-amber-100" role="status">
+            <div class="flex min-w-0 items-start gap-3">
+                <x-icon name="clock" class="mt-0.5 h-5 w-5 shrink-0 text-amber-600 dark:text-amber-400" />
+                <div>
+                    <p class="font-semibold">{{ $outstandingInvoiceCount }} {{ $outstandingInvoiceCount > 1 ? 'factures sont en attente de règlement' : 'facture est en attente de règlement' }}</p>
+                    <p class="mt-0.5 text-sm text-amber-800 dark:text-amber-200">Solde total restant : {{ number_format($outstandingInvoiceBalance, 2, ',', ' ') }} €</p>
+                </div>
+            </div>
+            <button type="button" class="shrink-0 text-sm font-semibold text-amber-800 hover:underline dark:text-amber-200" x-data x-on:click="document.querySelector('[data-client-tabs]')?.scrollIntoView({ behavior: 'smooth' }); document.querySelector('[data-invoices-tab]')?.click()">Voir les factures</button>
+        </div>
+    @endif
+
     <x-page-header :title="$client->nomComplet()" :subtitle="$client->type === 'professionnel' ? 'Professionnel' : 'Particulier'">
         <x-slot:actions>
             @can(\App\Support\Permissions::INTERVENTIONS_CREATE)
@@ -82,12 +95,12 @@
             @endcan
         </div>
 
-        <div class="lg:col-span-2" x-data="{ tab: 'inter' }">
+        <div class="lg:col-span-2" x-data="{ tab: 'inter' }" data-client-tabs>
             <div class="mb-4 flex gap-1 border-b border-gray-200 dark:border-gray-800">
                 <button @click="tab='inter'" :class="tab==='inter' ? 'border-brand-600 text-brand-600' : 'border-transparent text-gray-500'" class="border-b-2 px-4 py-2 text-sm font-medium">Interventions ({{ $interventions->count() }})</button>
                 <button @click="tab='comm'" :class="tab==='comm' ? 'border-brand-600 text-brand-600' : 'border-transparent text-gray-500'" class="border-b-2 px-4 py-2 text-sm font-medium">Communications ({{ $messages->count() }})</button>
                 @if(auth()->user()->society?->invoice_enabled)
-                    <button @click="tab='invoices'" :class="tab==='invoices' ? 'border-brand-600 text-brand-600' : 'border-transparent text-gray-500'" class="border-b-2 px-4 py-2 text-sm font-medium">Factures ({{ $invoices->count() }})</button>
+                    <button @click="tab='invoices'" :class="tab==='invoices' ? 'border-brand-600 text-brand-600' : 'border-transparent text-gray-500'" class="border-b-2 px-4 py-2 text-sm font-medium" data-invoices-tab>Factures ({{ $invoices->count() }})</button>
                 @endif
             </div>
 
@@ -135,10 +148,25 @@
                 <x-card :padding="false" x-show="tab==='invoices'" x-cloak>
                     <div class="divide-y divide-gray-100 dark:divide-gray-800">
                         @forelse($invoices as $invoice)
-                            <div class="flex items-center justify-between gap-4 px-5 py-4">
-                                <div><p class="font-semibold">{{ $invoice->number }}</p><p class="text-xs text-gray-500">{{ $invoice->issued_at->format('d/m/Y') }}{{ $invoice->intervention ? ' · '.$invoice->intervention->reference : ' · Facture libre' }}</p></div>
-                                <div class="text-right"><p class="font-medium">{{ number_format($invoice->total_ttc, 2, ',', ' ') }} €</p><p class="text-xs text-gray-500">{{ $invoice->paymentStatusLabel() }}</p></div>
-                                <x-button type="button" variant="secondary" x-on:click="Livewire.dispatch('open-invoice-viewer', { invoiceId: {{ $invoice->id }} })">Ouvrir la facture</x-button>
+                            @php
+                                $paymentStatus = $invoice->paymentStatus();
+                                $statusColor = ['paid' => '#16a34a', 'partial' => '#ea580c', 'pending' => '#d97706'][$paymentStatus];
+                                $invoiceTotal = $invoice->vat_enabled ? $invoice->total_ttc : $invoice->total_ht;
+                            @endphp
+                            <div class="grid gap-4 border-l-4 px-5 py-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center" style="border-left-color: {{ $statusColor }};">
+                                <div class="min-w-0">
+                                    <div class="flex flex-wrap items-center gap-2">
+                                        <p class="font-semibold text-gray-900 dark:text-white">{{ $invoice->number }}</p>
+                                        <x-badge :color="$statusColor">{{ $invoice->paymentStatusLabel() }}</x-badge>
+                                    </div>
+                                    <p class="mt-1 text-xs text-gray-500">Émise le {{ $invoice->issued_at->format('d/m/Y') }}{{ $invoice->intervention ? ' · Intervention '.$invoice->intervention->reference : ' · Facture libre' }}</p>
+                                    <div class="mt-3 flex flex-wrap gap-x-5 gap-y-1 text-sm">
+                                        <span><span class="text-gray-500">Total</span> <strong>{{ number_format($invoiceTotal, 2, ',', ' ') }} € {{ $invoice->vat_enabled ? 'TTC' : 'HT' }}</strong></span>
+                                        @if($paymentStatus !== 'pending')<span><span class="text-gray-500">Réglé</span> <strong class="text-green-700 dark:text-green-400">{{ number_format($invoice->paidAmount(), 2, ',', ' ') }} €</strong></span>@endif
+                                        @if($paymentStatus !== 'paid')<span><span class="text-gray-500">Reste</span> <strong class="text-amber-700 dark:text-amber-400">{{ number_format($invoice->balanceDue(), 2, ',', ' ') }} €</strong></span>@endif
+                                    </div>
+                                </div>
+                                <x-button class="w-full justify-center sm:w-auto" type="button" variant="secondary" x-on:click="Livewire.dispatch('open-invoice-viewer', { invoiceId: {{ $invoice->id }} })">Ouvrir la facture</x-button>
                             </div>
                         @empty
                             <x-empty-state icon="list" title="Aucune facture" />

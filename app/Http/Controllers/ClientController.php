@@ -103,12 +103,15 @@ class ClientController extends Controller
                 ->orWhereHas('intervention', fn ($intervention) => $intervention->where('client_id', $client->id)))
             ->with(['payments', 'intervention'])
             ->latest('issued_at')->latest('id')->get();
+        $outstandingInvoices = $invoices->filter(fn (Invoice $invoice) => $invoice->balanceDue() > 0.001);
 
         return view('clients.show', [
             'client' => $client,
             'interventions' => $interventions,
             'messages' => $messages,
             'invoices' => $invoices,
+            'outstandingInvoiceCount' => $outstandingInvoices->count(),
+            'outstandingInvoiceBalance' => $outstandingInvoices->sum(fn (Invoice $invoice) => $invoice->balanceDue()),
             'soldeMaintenance' => $client->soldeMaintenance(),
             'aPackMaintenance' => $client->maintenanceMovements()->exists(),
         ]);

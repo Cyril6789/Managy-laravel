@@ -60,3 +60,4 @@
 
 ## Autre
 - [x] Les factures doivent aussi être visible dans la fiche client, et dans la fiche inter
+- [x] Améliorer l’affichage des factures dans la fiche client avec leurs statuts colorés et signaler en haut les règlements en attente.
