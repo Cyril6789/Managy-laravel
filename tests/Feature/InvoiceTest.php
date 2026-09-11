@@ -273,6 +273,8 @@ class InvoiceTest extends TestCase
 
     public function test_invoice_add_line_toolbar_does_not_clip_dropdowns_or_force_horizontal_scroll(): void
     {
+        Setting::put('invoice_vat_enabled', true);
+
         Livewire::test(ManualInvoice::class)
             ->call('open')
             ->assertSeeHtml('xl:grid-cols-[minmax(165px,1.25fr)')
@@ -355,6 +357,9 @@ class InvoiceTest extends TestCase
         $this->assertStringContainsString('Aucun escompte accordé', $html);
         $this->assertStringContainsString('indemnité forfaitaire de 40 €', $html);
         $this->assertStringContainsString('article 293 B', $html);
+        $this->assertStringContainsString('class="invoice-bottom ', $html);
+        $this->assertStringNotContainsString('class="invoice-bottom new-page"', $html);
+        $this->assertLessThan(strpos($html, 'class="totals"'), strpos($html, 'class="conditions"'));
     }
 
     public function test_vat_exempt_editor_hides_all_vat_and_ttc_controls(): void
@@ -368,5 +373,25 @@ class InvoiceTest extends TestCase
             ->assertDontSee('Total TTC')
             ->assertSee('Prix unitaire')
             ->assertSee('Total HT');
+    }
+
+    public function test_long_invoice_moves_its_indivisible_bottom_block_to_a_new_page(): void
+    {
+        $intervention = Intervention::cloturees()->firstOrFail();
+        $this->post(route('invoices.store', $intervention));
+        $invoice = Invoice::sole();
+        $line = $invoice->lines[0];
+        $invoice->setAttribute('lines', array_fill(0, 13, $line));
+
+        $html = view('invoices.pdf', [
+            'invoice' => $invoice,
+            'logoDataUri' => null,
+            'payments' => null,
+            'paymentStatus' => null,
+        ])->render();
+
+        $this->assertStringContainsString('class="invoice-bottom new-page"', $html);
+        $this->assertStringContainsString('page-break-inside: avoid', $html);
+        $this->assertStringContainsString('page-break-before: always', $html);
     }
 }

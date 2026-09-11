@@ -36,11 +36,31 @@
         .payment-stamp.partial { border-color: #d97706; color: #d97706; }
         .payment-history { border-collapse: collapse; font-size: 8px; margin-top: 14px; width: 55%; }
         .payment-history th, .payment-history td { border-bottom: 1px solid #e5e7eb; padding: 4px; text-align: left; }
+        .invoice-bottom { page-break-inside: avoid; }
+        .invoice-bottom.new-page { page-break-before: always; }
     </style>
 </head>
 <body>
-    @php($issuer = $invoice->issuer)
-    @php($customer = $invoice->customer)
+    @php
+        $issuer = $invoice->issuer;
+        $customer = $invoice->customer;
+        $paymentCount = $payments?->count() ?? 0;
+        $lineHeight = collect($invoice->lines)->sum(function (array $line) {
+            return 28 + max(0, (int) ceil(mb_strlen((string) ($line['description'] ?? '')) / 58) - 1) * 12;
+        });
+        $termsHeight = 55
+            + (int) ceil(mb_strlen((string) $invoice->terms) / 75) * 10
+            + (int) ceil(mb_strlen((string) $invoice->payment_terms) / 75) * 10;
+        $paymentHeight = $paymentCount > 0 ? 30 + $paymentCount * 21 : 0;
+        $bottomHeight = max(115, $termsHeight) + $paymentHeight;
+        $usablePageHeight = 940;
+        $usedHeight = 245 + 34 + $lineHeight;
+        $remainingHeight = $usablePageHeight - fmod($usedHeight, $usablePageHeight);
+        $bottomOnNewPage = count($invoice->lines) > 12 || $remainingHeight < $bottomHeight + 35;
+        $bottomSpacer = $bottomOnNewPage
+            ? max(20, $usablePageHeight - $bottomHeight - 25)
+            : max(20, $remainingHeight - $bottomHeight - 25);
+    @endphp
     @if($paymentStatus)
         <div class="payment-stamp {{ $paymentStatus }}">{{ $paymentStatus === 'paid' ? 'PAYÉE' : 'PARTIELLEMENT PAYÉE' }}</div>
     @endif
@@ -105,6 +125,18 @@
         </tbody>
     </table>
 
+    <div class="invoice-bottom {{ $bottomOnNewPage ? 'new-page' : '' }}" style="padding-top: {{ $bottomSpacer }}px">
+    @if($payments && $payments->isNotEmpty())
+        <table class="payment-history">
+            <thead><tr><th>Date</th><th>Mode</th><th>Référence</th><th style="text-align:right">Montant</th></tr></thead>
+            <tbody>
+                @foreach($payments as $payment)
+                    <tr><td>{{ $payment->paid_at->format('d/m/Y') }}</td><td>{{ $payment->methodLabel() }}</td><td>{{ $payment->reference ?: '—' }}</td><td style="text-align:right">{{ number_format($payment->amount, 2, ',', ' ') }} €</td></tr>
+                @endforeach
+            </tbody>
+        </table>
+    @endif
+
     <table class="summary">
         <tr>
             <td class="conditions">
@@ -135,17 +167,7 @@
             </td>
         </tr>
     </table>
-
-    @if($payments && $payments->isNotEmpty())
-        <table class="payment-history">
-            <thead><tr><th>Date</th><th>Mode</th><th>Référence</th><th style="text-align:right">Montant</th></tr></thead>
-            <tbody>
-                @foreach($payments as $payment)
-                    <tr><td>{{ $payment->paid_at->format('d/m/Y') }}</td><td>{{ $payment->methodLabel() }}</td><td>{{ $payment->reference ?: '—' }}</td><td style="text-align:right">{{ number_format($payment->amount, 2, ',', ' ') }} €</td></tr>
-                @endforeach
-            </tbody>
-        </table>
-    @endif
+    </div>
 
     <div class="footer">
         @if ($invoice->legal_notice){{ $invoice->legal_notice }}@endif

@@ -8,6 +8,7 @@ use App\Models\Intervention;
 use App\Models\Invoice;
 use App\Models\InvoicePayment;
 use App\Models\User;
+use App\Services\InvoiceGenerator;
 use App\Services\InvoicePaymentService;
 use Database\Seeders\DatabaseSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -42,6 +43,9 @@ class InvoicePaymentTest extends TestCase
         $this->assertSame('partial', $invoice->paymentStatus());
         $this->assertEqualsWithDelta(60, $invoice->balanceDue(), 0.001);
         Storage::disk('local')->assertExists($first->state_pdf_path);
+
+        $stateHtml = app(InvoiceGenerator::class)->renderPdf($invoice, $invoice->payments()->get(), $invoice->paymentStatus());
+        $this->assertStringStartsWith('%PDF-', $stateHtml);
 
         $second = $service->record($invoice, 60, 'virement', now(), 'VIR-002');
         $this->assertSame('paid', $invoice->paymentStatus());
