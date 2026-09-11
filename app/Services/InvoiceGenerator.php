@@ -76,6 +76,8 @@ class InvoiceGenerator
                 'total_ttc' => $totalTtc,
                 'currency' => 'EUR',
                 'legal_notice' => $vatEnabled ? '' : self::LEGAL_NOTICE,
+                'terms' => Setting::get('invoice_terms'),
+                'payment_terms' => Setting::get('invoice_payment_terms'),
                 'pdf_path' => "invoices/{$intervention->society_id}/{$year}/{$fileNumber}.pdf",
             ]);
 
@@ -133,6 +135,8 @@ class InvoiceGenerator
                 'total_ttc' => $totalTtc,
                 'currency' => 'EUR',
                 'legal_notice' => $vatEnabled ? '' : self::LEGAL_NOTICE,
+                'terms' => Setting::get('invoice_terms'),
+                'payment_terms' => Setting::get('invoice_payment_terms'),
                 'pdf_path' => "invoices/{$client->society_id}/{$year}/{$fileNumber}.pdf",
             ]);
 

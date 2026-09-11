@@ -14,7 +14,7 @@ class Invoice extends Model
         'society_id', 'intervention_id', 'client_id', 'created_by', 'number', 'issued_at',
         'issuer', 'customer', 'lines', 'subtotal_ht', 'total_ht', 'vat_enabled',
         'vat_rate', 'vat_amount', 'total_ttc', 'currency',
-        'legal_notice', 'pdf_path',
+        'legal_notice', 'terms', 'payment_terms', 'pdf_path',
     ];
 
     protected function casts(): array

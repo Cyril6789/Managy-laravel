@@ -53,6 +53,7 @@ class GeneralSettings extends Component
             'deplacement_mode', 'deplacement_forfait', 'deplacement_prix_km', 'deplacement_villes_gratuites',
             'invoice_number_format', 'invoice_next_number',
             'invoice_vat_enabled', 'invoice_vat_rate',
+            'invoice_terms', 'invoice_payment_terms',
         ],
     ];
 
@@ -78,6 +79,8 @@ class GeneralSettings extends Component
             ->max() + 1);
         $this->data['invoice_vat_enabled'] ??= false;
         $this->data['invoice_vat_rate'] ??= 20;
+        $this->data['invoice_terms'] ??= 'Aucun escompte accordé pour paiement anticipé.';
+        $this->data['invoice_payment_terms'] ??= 'Paiement à réception de la facture. Pour les clients professionnels, tout retard entraîne des pénalités au taux de trois fois le taux d’intérêt légal et une indemnité forfaitaire de 40 € pour frais de recouvrement.';
     }
 
     protected function rules(): array
@@ -120,6 +123,8 @@ class GeneralSettings extends Component
                 'data.invoice_next_number' => ['required', 'integer', 'min:1'],
                 'data.invoice_vat_enabled' => ['required', 'boolean'],
                 'data.invoice_vat_rate' => ['required', 'numeric', 'min:0', 'max:100'],
+                'data.invoice_terms' => ['nullable', 'string', 'max:2000'],
+                'data.invoice_payment_terms' => ['nullable', 'string', 'max:2000'],
             ],
             default => [],
         };

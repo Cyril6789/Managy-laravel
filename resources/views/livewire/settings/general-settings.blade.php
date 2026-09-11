@@ -139,6 +139,21 @@
             </div>
             @include('livewire.settings._save-bar')
         </x-card>
+
+        <x-card title="Mentions et conditions de facturation">
+            <div class="grid grid-cols-1 gap-5 md:grid-cols-2">
+                <x-field label="Conditions générales" hint="Ce texte est figé sur chaque facture lors de sa génération.">
+                    <x-textarea rows="5" maxlength="2000" wire:model="data.invoice_terms" />
+                    @error('data.invoice_terms')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
+                </x-field>
+                <x-field label="Conditions de paiement" hint="Indiquez notamment l'échéance et les pénalités de retard.">
+                    <x-textarea rows="5" maxlength="2000" wire:model="data.invoice_payment_terms" />
+                    @error('data.invoice_payment_terms')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
+                </x-field>
+            </div>
+            <p class="mt-3 text-xs text-gray-400">Ces mentions apparaissent dans le bloc inférieur gauche du PDF.</p>
+            @include('livewire.settings._save-bar')
+        </x-card>
         @endif
 
         <x-card title="Frais de déplacement (interventions à domicile)">

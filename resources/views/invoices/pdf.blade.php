@@ -20,7 +20,13 @@
         .lines th { background: #315ee7; color: white; padding: 8px 7px; text-align: left; }
         .lines td { border-bottom: 1px solid #e5e7eb; padding: 8px 7px; }
         .lines .num { text-align: right; white-space: nowrap; }
-        .totals { margin-left: auto; margin-top: 18px; width: 43%; }
+        .summary { margin-top: 18px; width: 100%; }
+        .summary > tbody > tr > td { vertical-align: top; }
+        .conditions { color: #4b5563; font-size: 8px; line-height: 1.45; padding-right: 24px; width: 55%; }
+        .conditions-title { color: #172033; font-size: 8px; font-weight: bold; margin: 0 0 4px; text-transform: uppercase; }
+        .conditions-section + .conditions-section { margin-top: 10px; }
+        .totals-cell { width: 45%; }
+        .totals { border-collapse: collapse; width: 100%; }
         .totals td { padding: 7px 8px; }
         .totals .grand { background: #eef2ff; color: #2347b6; font-size: 15px; font-weight: bold; }
         .footer { border-top: 1px solid #dce2ee; bottom: 20px; color: #6b7280; font-size: 8px; left: 42px; padding-top: 10px; position: fixed; right: 42px; text-align: center; }
@@ -86,13 +92,33 @@
         </tbody>
     </table>
 
-    <table class="totals">
-        <tr><td>Sous-total HT</td><td class="num">{{ number_format($invoice->subtotal_ht, 2, ',', ' ') }} €</td></tr>
-        <tr><td>Total HT</td><td class="num">{{ number_format($invoice->total_ht, 2, ',', ' ') }} €</td></tr>
-        @if ($invoice->vat_enabled)
-            <tr><td>TVA ({{ number_format($invoice->vat_rate, 2, ',', ' ') }} %)</td><td class="num">{{ number_format($invoice->vat_amount, 2, ',', ' ') }} €</td></tr>
-        @endif
-        <tr class="grand"><td>Total TTC</td><td class="num">{{ number_format($invoice->total_ttc, 2, ',', ' ') }} €</td></tr>
+    <table class="summary">
+        <tr>
+            <td class="conditions">
+                @if($invoice->terms)
+                    <div class="conditions-section">
+                        <div class="conditions-title">Conditions générales</div>
+                        {!! nl2br(e($invoice->terms)) !!}
+                    </div>
+                @endif
+                @if($invoice->payment_terms)
+                    <div class="conditions-section">
+                        <div class="conditions-title">Conditions de paiement</div>
+                        {!! nl2br(e($invoice->payment_terms)) !!}
+                    </div>
+                @endif
+            </td>
+            <td class="totals-cell">
+                <table class="totals">
+                    <tr><td>Sous-total HT</td><td class="num">{{ number_format($invoice->subtotal_ht, 2, ',', ' ') }} €</td></tr>
+                    <tr><td>Total HT</td><td class="num">{{ number_format($invoice->total_ht, 2, ',', ' ') }} €</td></tr>
+                    @if ($invoice->vat_enabled)
+                        <tr><td>TVA ({{ number_format($invoice->vat_rate, 2, ',', ' ') }} %)</td><td class="num">{{ number_format($invoice->vat_amount, 2, ',', ' ') }} €</td></tr>
+                    @endif
+                    <tr class="grand"><td>Total TTC</td><td class="num">{{ number_format($invoice->total_ttc, 2, ',', ' ') }} €</td></tr>
+                </table>
+            </td>
+        </tr>
     </table>
 
     <div class="footer">

@@ -126,6 +126,8 @@ class SettingsController extends Controller
             'invoice_next_number' => ['sometimes', 'required', 'integer', 'min:1'],
             'invoice_vat_enabled' => ['sometimes', 'required', 'boolean'],
             'invoice_vat_rate' => ['sometimes', 'required', 'numeric', 'min:0', 'max:100'],
+            'invoice_terms' => ['sometimes', 'nullable', 'string', 'max:2000'],
+            'invoice_payment_terms' => ['sometimes', 'nullable', 'string', 'max:2000'],
         ]);
 
         foreach ($data as $key => $value) {

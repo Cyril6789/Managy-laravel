@@ -47,6 +47,8 @@ class InvoiceTest extends TestCase
         Setting::put('company_siret', '123 456 789 00012');
         Setting::put('invoice_number_format', 'F-{YY}-{MM}-###');
         Setting::put('invoice_next_number', 42);
+        Setting::put('invoice_terms', 'Conditions générales personnalisées.');
+        Setting::put('invoice_payment_terms', 'Paiement sous 30 jours.');
 
         $client = Client::create([
             'type' => 'particulier',
@@ -88,15 +90,19 @@ class InvoiceTest extends TestCase
         $this->assertSame('175.00', $invoice->total_ttc);
         $this->assertFalse($invoice->vat_enabled);
         $this->assertStringContainsString('293 B', $invoice->legal_notice);
+        $this->assertSame('Conditions générales personnalisées.', $invoice->terms);
+        $this->assertSame('Paiement sous 30 jours.', $invoice->payment_terms);
         $this->assertTrue($intervention->fresh()->facturee);
         $this->assertSame('43', Setting::get('invoice_next_number'));
         Storage::disk('local')->assertExists($invoice->pdf_path);
         $this->assertStringStartsWith('%PDF-', Storage::disk('local')->get($invoice->pdf_path));
 
         $client->update(['nom' => 'Nom modifié']);
+        Setting::put('invoice_terms', 'Texte modifié après émission.');
         $this->post(route('invoices.store', $intervention));
         $this->assertSame(1, Invoice::count());
         $this->assertSame('Dupont Alice', $invoice->fresh()->customer['name']);
+        $this->assertSame('Conditions générales personnalisées.', $invoice->fresh()->terms);
     }
 
     public function test_archived_pdf_is_viewable_by_authorized_user(): void
