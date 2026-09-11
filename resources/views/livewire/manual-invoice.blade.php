@@ -120,9 +120,9 @@
 
     @if ($pdfUrl)
         <div class="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 p-3 md:p-6" wire:key="manual-invoice-pdf" wire:click.self="closePdf" x-on:keydown.escape.window="$wire.closePdf()">
-            <div class="flex h-full max-h-[94vh] w-full max-w-6xl flex-col overflow-hidden rounded-xl bg-white shadow-2xl dark:bg-gray-900">
+            <div class="flex h-full max-h-[94vh] w-full max-w-[95rem] flex-col overflow-hidden rounded-xl bg-white shadow-2xl dark:bg-gray-900">
                 <div class="flex items-center justify-between border-b border-gray-200 px-4 py-3 dark:border-gray-700"><h2 class="font-semibold">Aperçu de la facture</h2><button type="button" wire:click="closePdf" class="text-2xl text-gray-400">×</button></div>
-                <iframe src="{{ $pdfUrl }}" title="Aperçu de la facture PDF" class="min-h-0 flex-1 bg-gray-100"></iframe>
+                <div class="flex min-h-0 flex-1"><iframe src="{{ $pdfUrl }}" title="Aperçu de la facture PDF" class="min-h-0 flex-1 bg-gray-100"></iframe>@if($generatedInvoiceId)<aside class="w-[380px] shrink-0 overflow-y-auto border-l border-gray-200 dark:border-gray-700"><livewire:invoice-payments :invoice="\App\Models\Invoice::findOrFail($generatedInvoiceId)" :key="'new-invoice-payments-'.$generatedInvoiceId" /></aside>@endif</div>
             </div>
         </div>
     @endif

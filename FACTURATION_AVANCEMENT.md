@@ -5,6 +5,7 @@
 - [x] Utiliser la même grande modale pour une facture libre et une facture issue d’une intervention.
 - [ ] La modale ne doit pas pouvoir se fermer en cliquant ailleur
 - [ ] les élements de création d'une ligne faturable, doivent visuellement se trouver une seule ligne (Catalogue, designation, quantité, prix u, unité, prix saisi, tva) pas sur deux ligne
+- [ ] Rajoute aussi un bouton "Enregistrer le brouillon", et donc le statut associé (en brouillon) (sans numérotation du coup) editable plus tard
 - [x] Préremplir le client et toutes les lignes facturables de l’intervention sans créer de facture à l’ouverture.
 - [x] Permettre l’ajout d’une prestation du catalogue ou d’une ligne entièrement libre.
 - [x] Permettre la modification de la désignation, quantité, unité, prix HT et TVA de chaque ligne.
@@ -24,31 +25,31 @@
 
 ## Suivi des paiements
 
-- [ ] Ajouter un historique append-only des règlements avec date, montant, mode, référence et note facultative.
-- [ ] Autoriser plusieurs règlements et plusieurs modes de paiement sur une même facture.
-- [ ] Proposer les modes espèces, carte bancaire, chèque, virement et autre.
-- [ ] Calculer automatiquement le total réglé et le solde restant.
-- [ ] Calculer automatiquement les statuts « En attente de paiement », « Partiellement payée » et « Payée ».
-- [ ] Empêcher un règlement nul, négatif ou supérieur au solde restant.
-- [ ] Afficher le statut et les montants réglé/restant dans l’historique des factures.
-- [ ] Ajouter l’interface de saisie et l’historique des règlements depuis la consultation d’une facture.
+- [x] Ajouter un historique append-only des règlements avec date, montant, mode, référence et note facultative.
+- [x] Autoriser plusieurs règlements et plusieurs modes de paiement sur une même facture.
+- [x] Proposer les modes espèces, carte bancaire, chèque, virement et autre.
+- [x] Calculer automatiquement le total réglé et le solde restant.
+- [x] Calculer automatiquement les statuts « En attente de paiement », « Partiellement payée » et « Payée ».
+- [x] Empêcher un règlement nul, négatif ou supérieur au solde restant.
+- [x] Afficher le statut et les montants réglé/restant dans l’historique des factures.
+- [x] Ajouter l’interface de saisie et l’historique des règlements depuis la consultation d’une facture.
 
 ## PDF acquitté sans altérer l’original
 
-- [ ] Conserver le PDF commercial original comme archive immuable.
-- [ ] Générer une copie d’état distincte après chaque règlement, sans écraser les versions précédentes.
-- [ ] Afficher un tampon « PARTIELLEMENT PAYÉE » ou « PAYÉE » sur la copie d’état.
-- [ ] Afficher sur la copie d’état les dates, montants et modes des règlements.
-- [ ] Permettre de consulter/télécharger l’original et la dernière copie d’état.
+- [x] Conserver le PDF commercial original comme archive immuable.
+- [x] Générer une copie d’état distincte après chaque règlement, sans écraser les versions précédentes.
+- [x] Afficher un tampon « PARTIELLEMENT PAYÉE » ou « PAYÉE » sur la copie d’état.
+- [x] Afficher sur la copie d’état les dates, montants et modes des règlements.
+- [x] Permettre de consulter/télécharger l’original et la dernière copie d’état.
 
 ## Vérifications
 
-- [ ] Tester une facture libre avec lignes catalogue et libres, remises par ligne et remise globale.
+- [x] Tester une facture libre avec lignes catalogue et libres, remises par ligne et remise globale.
 - [x] Tester une facture d’intervention préremplie, réordonnée puis générée.
 - [x] Tester qu’une facture émise ne peut être ni modifiée, ni supprimée, ni générée deux fois.
-- [ ] Tester les trois statuts de paiement et plusieurs règlements successifs.
-- [ ] Tester que chaque copie d’état est créée séparément et que le PDF original reste byte-à-byte identique.
-- [ ] Exécuter la suite PHP complète et le build frontend.
+- [x] Tester les trois statuts de paiement et plusieurs règlements successifs.
+- [x] Tester que chaque copie d’état est créée séparément et que le PDF original reste byte-à-byte identique.
+- [x] Exécuter la suite PHP complète et le build frontend.
 
 ## Autre
 - [ ] Les factures doivent aussi être visible dans la fiche client, et dans la fiche inter 

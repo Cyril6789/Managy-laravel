@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Intervention;
 use App\Models\InterventionLog;
 use App\Models\Invoice;
+use App\Models\InvoicePayment;
 use App\Services\InvoiceGenerator;
 use App\Support\Permissions;
 use Illuminate\Support\Facades\Auth;
@@ -43,6 +44,18 @@ class InvoiceController extends Controller
         return response()->file(Storage::disk('local')->path($invoice->pdf_path), [
             'Content-Type' => 'application/pdf',
             'Content-Disposition' => 'inline; filename="'.$fileName.'"',
+        ]);
+    }
+
+    public function paymentState(Invoice $invoice, InvoicePayment $payment)
+    {
+        $this->authorize(Permissions::INTERVENTIONS_FACTURATION);
+        abort_unless(request()->user()->society?->invoice_enabled, 404);
+        abort_unless($payment->invoice_id === $invoice->id && Storage::disk('local')->exists($payment->state_pdf_path), 404);
+
+        return response()->file(Storage::disk('local')->path($payment->state_pdf_path), [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => 'inline; filename="'.$invoice->number.'-etat-paiement.pdf"',
         ]);
     }
 }

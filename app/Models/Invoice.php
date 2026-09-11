@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Models\Concerns\BelongsToSociety;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Invoice extends Model
 {
@@ -52,5 +53,32 @@ class Invoice extends Model
     public function client(): BelongsTo
     {
         return $this->belongsTo(Client::class);
+    }
+
+    public function payments(): HasMany
+    {
+        return $this->hasMany(InvoicePayment::class)->orderBy('paid_at')->orderBy('id');
+    }
+
+    public function paidAmount(): float
+    {
+        return round((float) ($this->relationLoaded('payments') ? $this->payments->sum('amount') : $this->payments()->sum('amount')), 2);
+    }
+
+    public function balanceDue(): float
+    {
+        return round(max(0, (float) $this->total_ttc - $this->paidAmount()), 2);
+    }
+
+    public function paymentStatus(): string
+    {
+        $paid = $this->paidAmount();
+
+        return $paid <= 0 ? 'pending' : ($paid + 0.001 >= (float) $this->total_ttc ? 'paid' : 'partial');
+    }
+
+    public function paymentStatusLabel(): string
+    {
+        return ['pending' => 'En attente de paiement', 'partial' => 'Partiellement payée', 'paid' => 'Payée'][$this->paymentStatus()];
     }
 }

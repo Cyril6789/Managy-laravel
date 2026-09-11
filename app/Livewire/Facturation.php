@@ -23,6 +23,8 @@ class Facturation extends Component
 
     public ?string $pdfUrl = null;
 
+    public ?int $selectedInvoiceId = null;
+
     public bool $invoiceEnabled = false;
 
     public function mount(): void
@@ -54,18 +56,30 @@ class Facturation extends Component
         }
 
         $this->pdfUrl = route('invoices.pdf', $invoice);
+        $this->selectedInvoiceId = $invoice->id;
     }
 
     public function openPdf(int $id): void
     {
         Gate::authorize(Permissions::INTERVENTIONS_FACTURATION);
         abort_unless($this->invoiceEnabled, 404);
-        $this->pdfUrl = route('invoices.pdf', Invoice::findOrFail($id));
+        $invoice = Invoice::findOrFail($id);
+        $this->selectedInvoiceId = $invoice->id;
+        $this->pdfUrl = route('invoices.pdf', $invoice);
     }
 
     public function closePdf(): void
     {
         $this->pdfUrl = null;
+        $this->selectedInvoiceId = null;
+    }
+
+    #[On('invoice-pdf-selected')]
+    #[On('invoice-payment-recorded')]
+    public function selectPdf(string $url, ?int $invoiceId = null): void
+    {
+        $this->pdfUrl = $url;
+        $this->selectedInvoiceId = $invoiceId ?? $this->selectedInvoiceId;
     }
 
     #[On('invoice-created')]
@@ -155,7 +169,7 @@ class Facturation extends Component
                     ->orWhereHas('intervention', fn ($i) => $i->where('reference', 'like', $term)
                         ->orWhereHas('client', fn ($c) => $c->where('nom', 'like', $term)->orWhere('prenom', 'like', $term)))
                     ->orWhereHas('client', fn ($c) => $c->where('nom', 'like', $term)->orWhere('prenom', 'like', $term))))
-                ->with(['intervention.client', 'client'])
+                ->with(['intervention.client', 'client', 'payments'])
                 ->latest('issued_at')->latest('id')
                 ->paginate(20);
         } else {

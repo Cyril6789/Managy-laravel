@@ -30,6 +30,8 @@ class ManualInvoice extends Component
 
     public ?string $pdfUrl = null;
 
+    public ?int $generatedInvoiceId = null;
+
     public string $totalDiscountType = 'euro';
 
     public string $totalDiscountValue = '';
@@ -155,6 +157,7 @@ class ManualInvoice extends Component
         }
         $this->show = false;
         $this->pdfUrl = route('invoices.pdf', $invoice);
+        $this->generatedInvoiceId = $invoice->id;
         $this->dispatch('invoice-created');
         $this->resetEditor();
     }
@@ -162,6 +165,14 @@ class ManualInvoice extends Component
     public function closePdf(): void
     {
         $this->pdfUrl = null;
+        $this->generatedInvoiceId = null;
+    }
+
+    #[On('invoice-pdf-selected')]
+    #[On('invoice-payment-recorded')]
+    public function selectPdf(string $url): void
+    {
+        $this->pdfUrl = $url;
     }
 
     private function resetDraft(): void

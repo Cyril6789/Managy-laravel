@@ -6,6 +6,7 @@ use App\Livewire\ManualInvoice;
 use App\Models\Client;
 use App\Models\Intervention;
 use App\Models\Invoice;
+use App\Models\Prestation;
 use App\Models\Setting;
 use App\Models\User;
 use Database\Seeders\DatabaseSeeder;
@@ -220,5 +221,34 @@ class InvoiceTest extends TestCase
 
         $this->assertSame($originalPdf, Storage::disk('local')->get($invoice->pdf_path));
         $this->assertSame(1, Invoice::count());
+    }
+
+    public function test_free_invoice_combines_catalogue_free_lines_and_both_discount_levels(): void
+    {
+        $client = Client::firstOrFail();
+        $catalogue = Prestation::create(['designation' => 'Forfait catalogue', 'duree_defaut' => 1, 'tarif' => 100]);
+
+        Livewire::test(ManualInvoice::class)
+            ->call('open')
+            ->set('clientId', $client->id)
+            ->set('draft.catalogue_id', $catalogue->id)
+            ->call('selectCatalogue')
+            ->call('addLine')
+            ->set('draft.description', 'Ligne libre')
+            ->set('draft.quantity', 1)
+            ->set('draft.unit_price', 50)
+            ->call('addLine')
+            ->set('lines.0.discount_type', 'euro')
+            ->set('lines.0.discount_value', 5)
+            ->set('totalDiscountType', 'pourcent')
+            ->set('totalDiscountValue', 10)
+            ->call('generate')
+            ->assertHasNoErrors();
+
+        $invoice = Invoice::sole();
+        $this->assertNull($invoice->intervention_id);
+        $this->assertSame('5.00', number_format($invoice->lines[0]['discount_amount'], 2, '.', ''));
+        $this->assertSame('130.50', $invoice->total_ht);
+        $this->assertSame('Remise globale (10 %)', $invoice->lines[2]['description']);
     }
 }

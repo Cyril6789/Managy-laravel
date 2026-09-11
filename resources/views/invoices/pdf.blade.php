@@ -31,11 +31,19 @@
         .totals .grand { background: #eef2ff; color: #2347b6; font-size: 15px; font-weight: bold; }
         .footer { border-top: 1px solid #dce2ee; bottom: 20px; color: #6b7280; font-size: 8px; left: 42px; padding-top: 10px; position: fixed; right: 42px; text-align: center; }
         .reference { color: #6b7280; margin-bottom: 12px; }
+        .payment-stamp { border: 4px solid; font-size: 22px; font-weight: bold; opacity: .72; padding: 8px 14px; position: fixed; right: 48px; top: 115px; transform: rotate(-8deg); }
+        .payment-stamp.paid { border-color: #15803d; color: #15803d; }
+        .payment-stamp.partial { border-color: #d97706; color: #d97706; }
+        .payment-history { border-collapse: collapse; font-size: 8px; margin-top: 14px; width: 55%; }
+        .payment-history th, .payment-history td { border-bottom: 1px solid #e5e7eb; padding: 4px; text-align: left; }
     </style>
 </head>
 <body>
     @php($issuer = $invoice->issuer)
     @php($customer = $invoice->customer)
+    @if($paymentStatus)
+        <div class="payment-stamp {{ $paymentStatus }}">{{ $paymentStatus === 'paid' ? 'PAYÉE' : 'PARTIELLEMENT PAYÉE' }}</div>
+    @endif
     <table class="header">
         <tr>
             <td>
@@ -125,6 +133,17 @@
             </td>
         </tr>
     </table>
+
+    @if($payments && $payments->isNotEmpty())
+        <table class="payment-history">
+            <thead><tr><th>Date</th><th>Mode</th><th>Référence</th><th style="text-align:right">Montant</th></tr></thead>
+            <tbody>
+                @foreach($payments as $payment)
+                    <tr><td>{{ $payment->paid_at->format('d/m/Y') }}</td><td>{{ $payment->methodLabel() }}</td><td>{{ $payment->reference ?: '—' }}</td><td style="text-align:right">{{ number_format($payment->amount, 2, ',', ' ') }} €</td></tr>
+                @endforeach
+            </tbody>
+        </table>
+    @endif
 
     <div class="footer">
         @if ($invoice->legal_notice){{ $invoice->legal_notice }}@endif

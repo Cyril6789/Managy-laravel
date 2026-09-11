@@ -135,6 +135,7 @@ Route::middleware(['auth', EnsureHasSociety::class, EnsureEmailVerified::class])
     Route::get('/facturation', [InterventionController::class, 'facturationIndex'])->name('facturation.index');
     Route::post('/factures/interventions/{intervention}', [InvoiceController::class, 'store'])->name('invoices.store');
     Route::get('/factures/{invoice}/pdf', [InvoiceController::class, 'pdf'])->name('invoices.pdf');
+    Route::get('/factures/{invoice}/etat-paiement/{payment}', [InvoiceController::class, 'paymentState'])->name('invoices.payment-state');
     Route::get('interventions/contexte-client/{client}', [InterventionController::class, 'clientContext'])->name('interventions.client_context');
     Route::resource('interventions', InterventionController::class);
     Route::get('interventions/{intervention}/impression/{type}', [InterventionController::class, 'print'])->name('interventions.print')->where('type', 'depot|rapport');

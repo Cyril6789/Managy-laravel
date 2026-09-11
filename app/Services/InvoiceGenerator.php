@@ -324,7 +324,7 @@ class InvoiceGenerator
         return compact('description', 'quantity', 'unit', 'unitPrice', 'total') + ['unit_price_ht' => round($unitPrice, 2), 'total_ht' => round($total, 2)];
     }
 
-    private function renderPdf(Invoice $invoice): string
+    public function renderPdf(Invoice $invoice, $payments = null, ?string $paymentStatus = null): string
     {
         $logoDataUri = null;
         $logoPath = Setting::get('company_logo');
@@ -338,7 +338,7 @@ class InvoiceGenerator
         $options->set('isRemoteEnabled', false);
 
         $dompdf = new Dompdf($options);
-        $dompdf->loadHtml(view('invoices.pdf', compact('invoice', 'logoDataUri'))->render(), 'UTF-8');
+        $dompdf->loadHtml(view('invoices.pdf', compact('invoice', 'logoDataUri', 'payments', 'paymentStatus'))->render(), 'UTF-8');
         $dompdf->setPaper('A4');
         $dompdf->render();
 
