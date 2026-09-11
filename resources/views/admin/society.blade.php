@@ -7,6 +7,24 @@
         <a href="{{ route('admin.dashboard') }}" class="text-sm text-gray-500 hover:text-brand-600">← Retour à la supervision</a>
     </div>
 
+    <div class="mt-6 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-gray-900">
+        <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+                <h2 class="font-semibold">Module de facturation PDF</h2>
+                <p class="mt-1 text-sm text-gray-500">
+                    {{ $society->invoice_enabled
+                        ? 'Activé : génération de factures numérotées, PDF et historique.'
+                        : 'Désactivé : la société utilise le simple statut « facturée ».' }}
+                </p>
+            </div>
+            <form action="{{ route('admin.society.invoice.toggle', $society) }}" method="POST">@csrf
+                <button type="submit" class="rounded-lg px-4 py-2 text-sm font-semibold ring-1 ring-inset {{ $society->invoice_enabled ? 'text-red-700 ring-red-300 hover:bg-red-50 dark:text-red-300 dark:ring-red-800' : 'text-green-700 ring-green-300 hover:bg-green-50 dark:text-green-300 dark:ring-green-800' }}">
+                    {{ $society->invoice_enabled ? 'Désactiver la facturation PDF' : 'Activer la facturation PDF' }}
+                </button>
+            </form>
+        </div>
+    </div>
+
     <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div class="flex items-center gap-4">
             @if ($society->logo)

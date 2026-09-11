@@ -17,12 +17,12 @@ class Society extends Model
 
     protected $fillable = [
         'name', 'slug', 'email', 'phone', 'address', 'postal_code', 'city',
-        'siret', 'vat', 'website', 'logo', 'is_active',
+        'siret', 'vat', 'website', 'logo', 'is_active', 'invoice_enabled',
     ];
 
     protected function casts(): array
     {
-        return ['is_active' => 'boolean'];
+        return ['is_active' => 'boolean', 'invoice_enabled' => 'boolean'];
     }
 
     protected static function booted(): void

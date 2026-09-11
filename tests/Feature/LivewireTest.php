@@ -265,6 +265,7 @@ class LivewireTest extends TestCase
 
     public function test_facturation_lists_closed_intervention_to_generate(): void
     {
+        auth()->user()->society->update(['invoice_enabled' => true]);
         $intervention = Intervention::create([
             'client_id' => Client::first()->id,
             'closed_at' => now(),
@@ -278,6 +279,7 @@ class LivewireTest extends TestCase
 
     public function test_facturation_generates_and_opens_pdf_in_modal(): void
     {
+        auth()->user()->society->update(['invoice_enabled' => true]);
         Storage::fake('local');
         $intervention = Intervention::create([
             'client_id' => Client::first()->id,
@@ -289,6 +291,23 @@ class LivewireTest extends TestCase
             ->call('generate', $intervention->id)
             ->assertSet('pdfUrl', route('invoices.pdf', Invoice::latest('id')->firstOrFail()))
             ->assertSee('Aperçu de la facture');
+    }
+
+    public function test_legacy_facturation_only_updates_status_when_module_is_disabled(): void
+    {
+        $intervention = Intervention::create([
+            'client_id' => Client::first()->id,
+            'closed_at' => now(),
+            'facturee' => false,
+        ]);
+
+        Livewire::test(Facturation::class)
+            ->assertSee('Marquer facturée')
+            ->assertDontSee('Générer le PDF')
+            ->call('markInvoiced', $intervention->id);
+
+        $this->assertTrue($intervention->fresh()->facturee);
+        $this->assertDatabaseCount('invoices', 0);
     }
 
     public function test_staff_chat_and_public_chat_share_the_same_thread(): void

@@ -19,6 +19,10 @@ class InvoiceGenerator
 
     public function generate(Intervention $intervention): Invoice
     {
+        if (! $intervention->society?->invoice_enabled) {
+            throw ValidationException::withMessages(['invoice' => 'Le module de facturation PDF n’est pas activé pour cette société.']);
+        }
+
         if (! $intervention->closed_at) {
             throw ValidationException::withMessages(['invoice' => 'Seule une intervention clôturée peut être facturée.']);
         }

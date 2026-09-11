@@ -190,7 +190,17 @@
                             'hint' => 'Laissez à 0 pour ne pas débiter le pack.',
                         ])
 
-                        <p class="text-xs text-gray-400">Après clôture, la facture pourra être générée depuis l'onglet « Factures ».</p>
+                        @if (auth()->user()->society?->invoice_enabled)
+                            <p class="text-xs text-gray-400">Après clôture, la facture pourra être générée depuis l'onglet « Factures ».</p>
+                        @else
+                            <div>
+                                <label class="flex items-center gap-2 text-sm">
+                                    <input type="checkbox" x-model="facturee" class="rounded border-gray-300 text-brand-600 dark:border-gray-700 dark:bg-gray-800">
+                                    L'intervention a déjà été facturée
+                                </label>
+                                <input type="hidden" name="facturee" :value="facturee ? 1 : 0">
+                            </div>
+                        @endif
                     @endif
 
                     <div class="flex justify-end">

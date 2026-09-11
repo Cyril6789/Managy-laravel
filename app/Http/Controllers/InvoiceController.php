@@ -15,6 +15,7 @@ class InvoiceController extends Controller
     public function store(Intervention $intervention, InvoiceGenerator $generator)
     {
         $this->authorize(Permissions::INTERVENTIONS_FACTURATION);
+        abort_unless(request()->user()->society?->invoice_enabled, 404);
 
         $invoice = $generator->generate($intervention);
 
@@ -33,6 +34,7 @@ class InvoiceController extends Controller
     public function pdf(Invoice $invoice)
     {
         $this->authorize(Permissions::INTERVENTIONS_FACTURATION);
+        abort_unless(request()->user()->society?->invoice_enabled, 404);
 
         abort_unless(Storage::disk('local')->exists($invoice->pdf_path), 404, 'Le fichier PDF archivé est introuvable.');
 

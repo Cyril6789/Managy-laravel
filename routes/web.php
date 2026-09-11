@@ -96,6 +96,7 @@ Route::middleware(['auth', EnsureSuperAdmin::class])->prefix('admin')->name('adm
     Route::get('/', [AdminController::class, 'dashboard'])->name('dashboard');
     Route::get('/societes/{society}', [AdminController::class, 'society'])->name('society');
     Route::post('/societes/{society}/toggle', [AdminController::class, 'toggle'])->name('society.toggle');
+    Route::post('/societes/{society}/facturation', [AdminController::class, 'toggleInvoiceModule'])->name('society.invoice.toggle');
 
     // Super-admin account (the regular /profil area is société-scoped).
     Route::get('/compte', [AdminController::class, 'account'])->name('account');
@@ -147,6 +148,7 @@ Route::middleware(['auth', EnsureHasSociety::class, EnsureEmailVerified::class])
     Route::post('interventions/{intervention}/annuler-finalisation', [InterventionController::class, 'annulerFinalisation'])->name('interventions.annuler_finalisation');
     Route::post('interventions/{intervention}/restituer', [InterventionController::class, 'restituer'])->name('interventions.restituer');
     Route::post('interventions/{intervention}/decloturer', [InterventionController::class, 'decloturer'])->name('interventions.decloturer');
+    Route::post('interventions/{intervention}/facturation', [InterventionController::class, 'toggleFacturation'])->name('interventions.facturation');
     Route::post('interventions/{intervention}/message-client', [MessageController::class, 'store'])->name('interventions.message_client');
 
     // Intervention sub-resources

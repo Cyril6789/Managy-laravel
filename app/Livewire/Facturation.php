@@ -22,6 +22,13 @@ class Facturation extends Component
 
     public ?string $pdfUrl = null;
 
+    public bool $invoiceEnabled = false;
+
+    public function mount(): void
+    {
+        $this->invoiceEnabled = (bool) Auth::user()->society?->invoice_enabled;
+    }
+
     public function updating($name): void
     {
         if (in_array($name, ['filtre', 'q'], true)) {
@@ -32,6 +39,7 @@ class Facturation extends Component
     public function generate(int $id, InvoiceGenerator $generator): void
     {
         Gate::authorize(Permissions::INTERVENTIONS_FACTURATION);
+        abort_unless($this->invoiceEnabled, 404);
         $intervention = Intervention::cloturees()->findOrFail($id);
         $invoice = $generator->generate($intervention);
 
@@ -50,12 +58,41 @@ class Facturation extends Component
     public function openPdf(int $id): void
     {
         Gate::authorize(Permissions::INTERVENTIONS_FACTURATION);
+        abort_unless($this->invoiceEnabled, 404);
         $this->pdfUrl = route('invoices.pdf', Invoice::findOrFail($id));
     }
 
     public function closePdf(): void
     {
         $this->pdfUrl = null;
+    }
+
+    public function markInvoiced(int $id): void
+    {
+        Gate::authorize(Permissions::INTERVENTIONS_FACTURATION);
+        abort_if($this->invoiceEnabled, 404);
+        $intervention = Intervention::cloturees()->findOrFail($id);
+        $intervention->update(['facturee' => true]);
+        $this->logLegacy($intervention, 'a marqué comme facturée');
+    }
+
+    public function unmarkInvoiced(int $id): void
+    {
+        Gate::authorize(Permissions::INTERVENTIONS_FACTURATION);
+        abort_if($this->invoiceEnabled, 404);
+        $intervention = Intervention::cloturees()->findOrFail($id);
+        $intervention->update(['facturee' => false]);
+        $this->logLegacy($intervention, 'a retiré la facturation');
+    }
+
+    private function logLegacy(Intervention $intervention, string $text): void
+    {
+        InterventionLog::create([
+            'intervention_id' => $intervention->id,
+            'user_id' => Auth::id(),
+            'texte' => $text,
+            'created_at' => now(),
+        ]);
     }
 
     public function render()
@@ -66,7 +103,16 @@ class Facturation extends Component
         $interventions = null;
         $invoices = null;
 
-        if ($this->filtre === 'a_facturer') {
+        if (! $this->invoiceEnabled) {
+            $interventions = Intervention::cloturees()
+                ->where('facturee', $this->filtre === 'facturees')
+                ->when($this->q !== '', fn ($query) => $query->where(fn ($w) => $w
+                    ->where('reference', 'like', $term)
+                    ->orWhereHas('client', fn ($c) => $c->where('nom', 'like', $term)->orWhere('prenom', 'like', $term))))
+                ->with(['client', 'prestations'])
+                ->latest('closed_at')
+                ->paginate(20);
+        } elseif ($this->filtre === 'a_facturer') {
             $interventions = Intervention::cloturees()
                 ->whereDoesntHave('invoice')
                 ->when($this->q !== '', fn ($query) => $query->where(fn ($w) => $w
@@ -89,7 +135,9 @@ class Facturation extends Component
         return view('livewire.facturation', [
             'interventions' => $interventions,
             'invoices' => $invoices,
-            'totalAFacturer' => Intervention::cloturees()->whereDoesntHave('invoice')->count(),
+            'totalAFacturer' => $this->invoiceEnabled
+                ? Intervention::cloturees()->whereDoesntHave('invoice')->count()
+                : Intervention::cloturees()->where('facturee', false)->count(),
         ]);
     }
 }

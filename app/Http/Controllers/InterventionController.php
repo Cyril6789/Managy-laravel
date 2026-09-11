@@ -292,6 +292,7 @@ class InterventionController extends Controller
         $data = $request->validate([
             'signataire_nom' => ['nullable', 'string', 'max:255'],
             'signature' => ['nullable', 'string'], // PNG data URL
+            'facturee' => ['nullable', 'boolean'],
             'payee' => ['nullable', 'boolean'],
             'paiement_mode' => ['nullable', Rule::in(['especes', 'cb', 'cheque', 'virement', 'autre'])],
             'montant_deplacement' => ['nullable', 'numeric', 'min:0'],
@@ -354,8 +355,9 @@ class InterventionController extends Controller
             'payee' => $payee,
             'montant_paye' => $payee ? ($data['montant_paye'] ?? $breakdown['total']) : null,
             'paiement_mode' => $payee ? ($data['paiement_mode'] ?? null) : null,
-            // A real archived invoice is the only operation that sets this flag.
-            'facturee' => false,
+            // With the PDF module, only a real archived invoice sets this flag.
+            // Legacy societies keep the historical manual checkbox.
+            'facturee' => $request->user()->society?->invoice_enabled ? false : $request->boolean('facturee'),
         ]);
 
         $this->log($intervention, 'a restitué et clôturé l\'intervention'.($signaturePath ? ' (signée)' : ''));
@@ -436,6 +438,17 @@ class InterventionController extends Controller
         $this->authorize(Permissions::INTERVENTIONS_FACTURATION);
 
         return view('facturation.index');
+    }
+
+    public function toggleFacturation(Intervention $intervention)
+    {
+        $this->authorize(Permissions::INTERVENTIONS_FACTURATION);
+        abort_if(auth()->user()->society?->invoice_enabled, 404);
+
+        $intervention->update(['facturee' => ! $intervention->facturee]);
+        $this->log($intervention, $intervention->facturee ? 'a marqué comme facturée' : 'a retiré la facturation');
+
+        return back();
     }
 
     /**

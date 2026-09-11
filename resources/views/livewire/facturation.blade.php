@@ -1,4 +1,7 @@
 <div>
+    @if (! $invoiceEnabled)
+        @include('livewire.partials.legacy-facturation')
+    @else
     <x-card :padding="false">
         <div class="flex flex-wrap items-center gap-2 border-b border-gray-100 p-4 dark:border-gray-800">
             <div class="inline-flex rounded-lg border border-gray-200 p-0.5 text-sm dark:border-gray-700">
@@ -79,5 +82,6 @@
                 <iframe src="{{ $pdfUrl }}" title="Aperçu de la facture PDF" class="min-h-0 flex-1 bg-gray-100"></iframe>
             </div>
         </div>
+    @endif
     @endif
 </div>

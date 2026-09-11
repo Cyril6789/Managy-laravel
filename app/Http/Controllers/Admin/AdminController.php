@@ -10,6 +10,7 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Password as PasswordRule;
 
 /**
@@ -78,6 +79,15 @@ class AdminController extends Controller
             : 'Société suspendue.');
     }
 
+    public function toggleInvoiceModule(Society $society)
+    {
+        $society->update(['invoice_enabled' => ! $society->invoice_enabled]);
+
+        return back()->with('success', $society->invoice_enabled
+            ? 'Module de facturation PDF activé.'
+            : 'Module de facturation PDF désactivé : l’ancien suivi de statut est utilisé.');
+    }
+
     /**
      * Account page for the super-admin. The regular /profil area lives behind
      * the "has a société" middleware, which the super-admin never satisfies, so
@@ -95,7 +105,7 @@ class AdminController extends Controller
         $data = $request->validate([
             'prenom' => ['nullable', 'string', 'max:255'],
             'nom' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'email', \Illuminate\Validation\Rule::unique('users', 'email')->ignore($user)->whereNull('deleted_at')],
+            'email' => ['required', 'email', Rule::unique('users', 'email')->ignore($user)->whereNull('deleted_at')],
         ]);
 
         $user->update($data);

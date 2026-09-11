@@ -20,9 +20,22 @@ class InvoiceTest extends TestCase
     {
         parent::setUp();
         $this->seed(DatabaseSeeder::class);
-        $this->actingAs(User::where('pseudo', 'admin')->firstOrFail());
+        $admin = User::where('pseudo', 'admin')->firstOrFail();
+        $admin->society->update(['invoice_enabled' => true]);
+        $this->actingAs($admin);
         Storage::fake('local');
         Storage::fake('public');
+    }
+
+    public function test_super_admin_can_enable_invoice_module_for_a_society(): void
+    {
+        $society = User::where('pseudo', 'admin')->firstOrFail()->society;
+        $society->update(['invoice_enabled' => false]);
+        $this->actingAs(User::withoutGlobalScope('society')->where('is_super_admin', true)->firstOrFail());
+
+        $this->post(route('admin.society.invoice.toggle', $society))->assertRedirect();
+
+        $this->assertTrue($society->fresh()->invoice_enabled);
     }
 
     public function test_it_generates_numbered_immutable_pdf_invoice_from_intervention(): void

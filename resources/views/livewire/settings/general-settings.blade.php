@@ -107,6 +107,7 @@
 
     {{-- Billing --}}
     @elseif ($section === 'billing')
+        @if (auth()->user()->society?->invoice_enabled)
         <x-card title="Numérotation des factures">
             <div class="grid grid-cols-1 gap-5 md:grid-cols-2">
                 <x-field label="Format du numéro" hint="Utilisez {YYYY} pour l'année sur 4 chiffres, {YY} sur 2 chiffres, {MM} pour le mois et des # pour le numéro séquentiel.">
@@ -121,6 +122,7 @@
             <p class="mt-3 text-xs text-gray-400">Exemple : <code>FAC-{YYYY}-{MM}-###</code> avec le prochain numéro à <code>42</code> produira <code>FAC-{{ now()->format('Y-m') }}-042</code>.</p>
             @include('livewire.settings._save-bar')
         </x-card>
+        @endif
 
         <x-card title="Frais de déplacement (interventions à domicile)">
             <div x-data="{ mode: @js($data['deplacement_mode'] ?? 'aucun') }" class="space-y-5">

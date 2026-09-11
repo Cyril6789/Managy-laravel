@@ -19,7 +19,9 @@ class DashboardController extends Controller
             'ouvertes' => Intervention::ouvertes()->count(),
             'urgentes' => Intervention::ouvertes()->where('urgente', true)->count(),
             'cloturees_mois' => Intervention::cloturees()->where('closed_at', '>=', now()->startOfMonth())->count(),
-            'a_facturer' => Intervention::cloturees()->whereDoesntHave('invoice')->count(),
+            'a_facturer' => $request->user()->society?->invoice_enabled
+                ? Intervention::cloturees()->whereDoesntHave('invoice')->count()
+                : Intervention::cloturees()->where('facturee', false)->count(),
         ];
 
         // My ongoing interventions

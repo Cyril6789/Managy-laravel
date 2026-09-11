@@ -231,11 +231,11 @@ class SmokeTest extends TestCase
         $this->post(route('interventions.finaliser', $intervention))->assertRedirect();
         $this->assertNotNull($intervention->fresh()->finalisee_at);
 
-        // Closing never marks an intervention invoiced without a real archived invoice.
+        // Legacy mode keeps the historical "already invoiced" checkbox.
         $this->post(route('interventions.restituer', $intervention), ['facturee' => 1])->assertRedirect();
         $intervention->refresh();
         $this->assertTrue($intervention->estCloturee());
-        $this->assertFalse($intervention->facturee);
+        $this->assertTrue($intervention->facturee);
     }
 
     public function test_domicile_restitution_records_travel_and_payment(): void
