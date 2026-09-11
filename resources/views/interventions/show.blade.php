@@ -55,7 +55,7 @@
             @can(\App\Support\Permissions::INTERVENTIONS_FACTURATION)
                 @if (auth()->user()->society?->invoice_enabled)
                     @if ($i->invoice)
-                        <a href="{{ route('invoices.pdf', $i->invoice) }}" target="_blank" class="ml-auto font-medium underline">Facture {{ $i->invoice->number }} ↗</a>
+                        <button type="button" class="ml-auto font-medium underline" x-on:click="Livewire.dispatch('open-invoice-viewer', { invoiceId: {{ $i->invoice->id }} })">Ouvrir la facture {{ $i->invoice->number }}</button>
                     @else
                         <button type="button" class="ml-auto font-medium underline" x-on:click="Livewire.dispatch('open-invoice-editor', { interventionId: {{ $i->id }} })">Préparer la facture</button>
                     @endif
@@ -68,7 +68,7 @@
         </div>
     @endif
 
-    @if (auth()->user()->society?->invoice_enabled && ! $i->invoice)
+    @if (auth()->user()->society?->invoice_enabled)
         <livewire:manual-invoice :launcher="false" />
     @endif
 

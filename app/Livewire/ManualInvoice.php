@@ -5,6 +5,7 @@ namespace App\Livewire;
 use App\Models\Client;
 use App\Models\Intervention;
 use App\Models\InterventionLog;
+use App\Models\Invoice;
 use App\Models\InvoiceDraft;
 use App\Models\Prestation;
 use App\Models\Setting;
@@ -77,6 +78,15 @@ class ManualInvoice extends Component
     {
         Gate::authorize(Permissions::INTERVENTIONS_FACTURATION);
         $this->loadDraft(InvoiceDraft::findOrFail($draftId));
+    }
+
+    #[On('open-invoice-viewer')]
+    public function openViewer(int $invoiceId): void
+    {
+        Gate::authorize(Permissions::INTERVENTIONS_FACTURATION);
+        $invoice = Invoice::findOrFail($invoiceId);
+        $this->generatedInvoiceId = $invoice->id;
+        $this->pdfUrl = route('invoices.pdf', $invoice);
     }
 
     public function selectCatalogue(): void

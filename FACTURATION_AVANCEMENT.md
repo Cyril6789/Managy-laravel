@@ -52,4 +52,4 @@
 - [x] Exécuter la suite PHP complète et le build frontend.
 
 ## Autre
-- [ ] Les factures doivent aussi être visible dans la fiche client, et dans la fiche inter 
+- [x] Les factures doivent aussi être visible dans la fiche client, et dans la fiche inter

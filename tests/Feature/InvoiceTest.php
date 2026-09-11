@@ -299,4 +299,25 @@ class InvoiceTest extends TestCase
         $this->assertDatabaseCount('invoice_drafts', 0);
         $this->assertSame('Conseil personnalisé', Invoice::sole()->lines[0]['description']);
     }
+
+    public function test_invoice_is_visible_and_opens_from_client_and_intervention_pages(): void
+    {
+        $intervention = Intervention::cloturees()->firstOrFail();
+        $this->post(route('invoices.store', $intervention));
+        $invoice = Invoice::sole();
+
+        $this->get(route('clients.show', $intervention->client))
+            ->assertOk()
+            ->assertSee($invoice->number)
+            ->assertSee('Ouvrir la facture');
+
+        $this->get(route('interventions.show', $intervention))
+            ->assertOk()
+            ->assertSee('Ouvrir la facture '.$invoice->number);
+
+        Livewire::test(ManualInvoice::class, ['launcher' => false])
+            ->dispatch('open-invoice-viewer', invoiceId: $invoice->id)
+            ->assertSet('pdfUrl', route('invoices.pdf', $invoice))
+            ->assertSet('generatedInvoiceId', $invoice->id);
+    }
 }

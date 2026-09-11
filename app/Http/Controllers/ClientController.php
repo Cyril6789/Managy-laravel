@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Client;
+use App\Models\Invoice;
 use App\Support\Permissions;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -97,11 +98,17 @@ class ClientController extends Controller
         $client->load(['contacts', 'companies']);
         $interventions = $client->interventions()->with('statut')->latest('opened_at')->limit(25)->get();
         $messages = $client->messages()->with('intervention')->limit(50)->get();
+        $invoices = Invoice::query()
+            ->where(fn ($query) => $query->where('client_id', $client->id)
+                ->orWhereHas('intervention', fn ($intervention) => $intervention->where('client_id', $client->id)))
+            ->with(['payments', 'intervention'])
+            ->latest('issued_at')->latest('id')->get();
 
         return view('clients.show', [
             'client' => $client,
             'interventions' => $interventions,
             'messages' => $messages,
+            'invoices' => $invoices,
             'soldeMaintenance' => $client->soldeMaintenance(),
             'aPackMaintenance' => $client->maintenanceMovements()->exists(),
         ]);

@@ -86,6 +86,9 @@
             <div class="mb-4 flex gap-1 border-b border-gray-200 dark:border-gray-800">
                 <button @click="tab='inter'" :class="tab==='inter' ? 'border-brand-600 text-brand-600' : 'border-transparent text-gray-500'" class="border-b-2 px-4 py-2 text-sm font-medium">Interventions ({{ $interventions->count() }})</button>
                 <button @click="tab='comm'" :class="tab==='comm' ? 'border-brand-600 text-brand-600' : 'border-transparent text-gray-500'" class="border-b-2 px-4 py-2 text-sm font-medium">Communications ({{ $messages->count() }})</button>
+                @if(auth()->user()->society?->invoice_enabled)
+                    <button @click="tab='invoices'" :class="tab==='invoices' ? 'border-brand-600 text-brand-600' : 'border-transparent text-gray-500'" class="border-b-2 px-4 py-2 text-sm font-medium">Factures ({{ $invoices->count() }})</button>
+                @endif
             </div>
 
             <x-card :padding="false" x-show="tab==='inter'">
@@ -127,6 +130,25 @@
                     @endforelse
                 </div>
             </x-card>
+
+            @if(auth()->user()->society?->invoice_enabled)
+                <x-card :padding="false" x-show="tab==='invoices'" x-cloak>
+                    <div class="divide-y divide-gray-100 dark:divide-gray-800">
+                        @forelse($invoices as $invoice)
+                            <div class="flex items-center justify-between gap-4 px-5 py-4">
+                                <div><p class="font-semibold">{{ $invoice->number }}</p><p class="text-xs text-gray-500">{{ $invoice->issued_at->format('d/m/Y') }}{{ $invoice->intervention ? ' · '.$invoice->intervention->reference : ' · Facture libre' }}</p></div>
+                                <div class="text-right"><p class="font-medium">{{ number_format($invoice->total_ttc, 2, ',', ' ') }} €</p><p class="text-xs text-gray-500">{{ $invoice->paymentStatusLabel() }}</p></div>
+                                <x-button type="button" variant="secondary" x-on:click="Livewire.dispatch('open-invoice-viewer', { invoiceId: {{ $invoice->id }} })">Ouvrir la facture</x-button>
+                            </div>
+                        @empty
+                            <x-empty-state icon="list" title="Aucune facture" />
+                        @endforelse
+                    </div>
+                </x-card>
+            @endif
         </div>
     </div>
+    @if(auth()->user()->society?->invoice_enabled)
+        <livewire:manual-invoice :launcher="false" />
+    @endif
 @endsection
