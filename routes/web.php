@@ -97,6 +97,7 @@ Route::middleware(['auth', EnsureSuperAdmin::class])->prefix('admin')->name('adm
     Route::get('/societes/{society}', [AdminController::class, 'society'])->name('society');
     Route::post('/societes/{society}/toggle', [AdminController::class, 'toggle'])->name('society.toggle');
     Route::post('/societes/{society}/facturation', [AdminController::class, 'toggleInvoiceModule'])->name('society.invoice.toggle');
+    Route::get('/societes/{society}/logo', [AdminController::class, 'logo'])->name('society.logo');
 
     // Super-admin account (the regular /profil area is société-scoped).
     Route::get('/compte', [AdminController::class, 'account'])->name('account');

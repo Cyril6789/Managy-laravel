@@ -28,7 +28,7 @@
     <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div class="flex items-center gap-4">
             @if ($society->logo)
-                <img src="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($society->logo) }}" class="h-14 w-14 rounded-xl object-cover" alt="">
+                <img src="{{ route('admin.society.logo', $society) }}" class="h-14 w-14 rounded-xl object-contain" alt="Logo de {{ $society->name }}">
             @else
                 <span class="flex h-14 w-14 items-center justify-center rounded-xl bg-brand-100 text-lg font-bold text-brand-700 dark:bg-brand-900/40 dark:text-brand-300">{{ mb_strtoupper(mb_substr($society->name, 0, 2)) }}</span>
             @endif

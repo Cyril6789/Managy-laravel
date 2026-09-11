@@ -8,8 +8,8 @@ use App\Models\Intervention;
 use App\Models\Society;
 use App\Models\User;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Password as PasswordRule;
 
@@ -24,31 +24,25 @@ class AdminController extends Controller
 {
     public function dashboard()
     {
-        $usersBySociety = User::query()->withoutGlobalScope('society')
-            ->select('society_id', DB::raw('count(*) as c'))
-            ->whereNotNull('society_id')->groupBy('society_id')->pluck('c', 'society_id');
-
-        $interventionsBySociety = Intervention::query()->withoutGlobalScope('society')
-            ->select('society_id', DB::raw('count(*) as c'))
-            ->groupBy('society_id')->pluck('c', 'society_id');
-
-        $clientsBySociety = Client::query()->withoutGlobalScope('society')
-            ->select('society_id', DB::raw('count(*) as c'))
-            ->groupBy('society_id')->pluck('c', 'society_id');
-
-        $societies = Society::query()->orderByDesc('created_at')->get()->map(fn (Society $s) => [
-            'society' => $s,
-            'users' => (int) ($usersBySociety[$s->id] ?? 0),
-            'interventions' => (int) ($interventionsBySociety[$s->id] ?? 0),
-            'clients' => (int) ($clientsBySociety[$s->id] ?? 0),
-        ]);
+        $societies = Society::query()
+            ->withCount([
+                'users' => fn ($query) => $query->withTrashed(),
+                'interventions' => fn ($query) => $query->withTrashed(),
+                'clients' => fn ($query) => $query->withTrashed(),
+            ])
+            ->orderByDesc('created_at')->get()->map(fn (Society $s) => [
+                'society' => $s,
+                'users' => $s->users_count,
+                'interventions' => $s->interventions_count,
+                'clients' => $s->clients_count,
+            ]);
 
         $stats = [
             'societies' => $societies->count(),
             'active' => $societies->filter(fn ($r) => $r['society']->is_active)->count(),
-            'users' => (int) $usersBySociety->sum(),
-            'interventions' => (int) $interventionsBySociety->sum(),
-            'clients' => (int) $clientsBySociety->sum(),
+            'users' => (int) $societies->sum('users'),
+            'interventions' => (int) $societies->sum('interventions'),
+            'clients' => (int) $societies->sum('clients'),
             'last7days' => Society::where('created_at', '>=', now()->subDays(7))->count(),
         ];
 
@@ -63,8 +57,8 @@ class AdminController extends Controller
             'society' => $society,
             'users' => User::query()->withoutGlobalScope('society')
                 ->where('society_id', $society->id)->orderByDesc('is_admin')->orderBy('nom')->get(),
-            'interventions' => $context(Intervention::query())->count(),
-            'clients' => $context(Client::query())->count(),
+            'interventions' => $context(Intervention::withTrashed())->count(),
+            'clients' => $context(Client::withTrashed())->count(),
         ];
 
         return view('admin.society', $data);
@@ -86,6 +80,15 @@ class AdminController extends Controller
         return back()->with('success', $society->invoice_enabled
             ? 'Module de facturation PDF activé.'
             : 'Module de facturation PDF désactivé : l’ancien suivi de statut est utilisé.');
+    }
+
+    public function logo(Society $society)
+    {
+        abort_unless($society->logo && Storage::disk('public')->exists($society->logo), 404);
+
+        return response()->file(Storage::disk('public')->path($society->logo), [
+            'Cache-Control' => 'private, max-age=3600',
+        ]);
     }
 
     /**

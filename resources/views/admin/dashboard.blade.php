@@ -52,7 +52,7 @@
                         <td class="px-5 py-3">
                             <a href="{{ route('admin.society', $row['society']) }}" class="flex items-center gap-3 font-medium text-gray-900 hover:text-brand-600 dark:text-gray-100">
                                 @if ($row['society']->logo)
-                                    <img src="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($row['society']->logo) }}" class="h-8 w-8 rounded-lg object-cover" alt="">
+                                    <img src="{{ route('admin.society.logo', $row['society']) }}" class="h-8 w-8 rounded-lg object-contain" alt="Logo de {{ $row['society']->name }}">
                                 @else
                                     <span class="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-100 text-xs font-bold text-brand-700 dark:bg-brand-900/40 dark:text-brand-300">{{ mb_strtoupper(mb_substr($row['society']->name, 0, 2)) }}</span>
                                 @endif
@@ -72,7 +72,14 @@
                             @endif
                         </td>
                         <td class="px-5 py-3 text-right">
-                            <a href="{{ route('admin.society', $row['society']) }}" class="text-xs font-medium text-brand-600 hover:underline">Détail →</a>
+                            <div class="flex items-center justify-end gap-3">
+                                <form action="{{ route('admin.society.invoice.toggle', $row['society']) }}" method="POST">@csrf
+                                    <button type="submit" class="text-xs font-medium {{ $row['society']->invoice_enabled ? 'text-green-600' : 'text-gray-400' }} hover:underline">
+                                        Factures PDF : {{ $row['society']->invoice_enabled ? 'oui' : 'non' }}
+                                    </button>
+                                </form>
+                                <a href="{{ route('admin.society', $row['society']) }}" class="text-xs font-medium text-brand-600 hover:underline">Détail →</a>
+                            </div>
                         </td>
                     </tr>
                 @empty
