@@ -59,4 +59,29 @@ class PublicInterventionSatisfactionTest extends TestCase
 
         $this->assertDatabaseMissing('satisfactions', ['intervention_id' => $i->id]);
     }
+
+    public function test_public_page_colors_the_maintenance_balance_and_hides_it_without_history(): void
+    {
+        $i = $this->intervention(closed: false);
+
+        $this->get("/suivi/{$i->public_token}")
+            ->assertOk()
+            ->assertDontSee('Solde du pack maintenance');
+
+        $i->client->maintenanceMovements()->create(['mouvement' => 5, 'description' => 'Pack initial']);
+        $this->get("/suivi/{$i->public_token}")
+            ->assertSee('Solde du pack maintenance')
+            ->assertSee('5,00 h')
+            ->assertSee('border-green-200', false);
+
+        $i->client->maintenanceMovements()->create(['mouvement' => -5, 'description' => 'Pack consommé']);
+        $this->get("/suivi/{$i->public_token}")
+            ->assertSee('0,00 h')
+            ->assertSee('border-amber-200', false);
+
+        $i->client->maintenanceMovements()->create(['mouvement' => -1, 'description' => 'Dépassement']);
+        $this->get("/suivi/{$i->public_token}")
+            ->assertSee('-1,00 h')
+            ->assertSee('border-red-200', false);
+    }
 }

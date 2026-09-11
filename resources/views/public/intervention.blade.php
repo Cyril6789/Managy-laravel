@@ -36,6 +36,21 @@
             @endforeach
         </div>
 
+        @if ($maintenance)
+            @php
+                $maintenanceBalance = (float) $maintenance['balance'];
+                $maintenanceClasses = $maintenanceBalance > 0
+                    ? 'border-green-200 bg-green-50 text-green-800 dark:border-green-800 dark:bg-green-950/40 dark:text-green-200'
+                    : ($maintenanceBalance < 0
+                        ? 'border-red-200 bg-red-50 text-red-800 dark:border-red-800 dark:bg-red-950/40 dark:text-red-200'
+                        : 'border-amber-200 bg-amber-50 text-amber-800 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-200');
+            @endphp
+            <div class="mt-6 flex items-center justify-between gap-4 rounded-lg border px-4 py-3 text-sm {{ $maintenanceClasses }}" role="status">
+                <span class="font-semibold">Solde du pack maintenance</span>
+                <span class="text-base font-bold">{{ number_format($maintenanceBalance, 2, ',', ' ') }} h</span>
+            </div>
+        @endif
+
         {{-- Pending alerts --}}
         @if (! $i->estCloturee() && ($commandeEnAttente || $sstEnAttente))
             <div class="mt-6 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-900 dark:bg-amber-900/20 dark:text-amber-300">

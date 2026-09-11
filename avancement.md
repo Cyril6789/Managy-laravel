@@ -12,3 +12,4 @@
 - [x] ajouter un suivi complet des règlements (plusieurs dates, montants et modes), les statuts en attente / partiellement payée / payée et des copies PDF d’état tamponnées sans modifier le PDF original
 - [x] afficher l’alerte des factures en attente lors de la sélection d’un client dans la création d’intervention
 - [x] ajouter un raccourci de création d’intervention dans la barre supérieure, à gauche de la recherche
+- [x] afficher le solde du pack maintenance sur le suivi public : vert si positif, jaune à zéro, rouge si négatif et absent sans historique

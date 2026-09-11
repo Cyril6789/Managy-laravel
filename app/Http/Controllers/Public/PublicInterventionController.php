@@ -22,6 +22,10 @@ class PublicInterventionController extends Controller
         // Customer-facing alerts: pending supplier orders / subcontracting returns.
         $commandeEnAttente = $intervention->commandes()->where('recue', false)->min('commande_le');
         $sstEnAttente = $intervention->sousTraitances()->where('retournee', false)->exists();
+        $maintenance = null;
+        if ($intervention->client->maintenanceMovements()->exists()) {
+            $maintenance = ['balance' => $intervention->client->soldeMaintenance()];
+        }
 
         // Once the job is closed, offer a satisfaction survey (created on demand,
         // idempotently — the public token already gates access to this page).
@@ -33,6 +37,6 @@ class PublicInterventionController extends Controller
             );
         }
 
-        return view('public.intervention', compact('intervention', 'commandeEnAttente', 'sstEnAttente', 'satisfaction'));
+        return view('public.intervention', compact('intervention', 'commandeEnAttente', 'sstEnAttente', 'maintenance', 'satisfaction'));
     }
 }
