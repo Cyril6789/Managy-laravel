@@ -35,6 +35,9 @@ class GeneralSettings extends Component
     // SMTP password is handled apart so a blank value keeps the current one.
     public string $mailPassword = '';
 
+    /** @var array<int, array{name: string, price: string|float, cities: array<int, string>}> */
+    public array $cityGroups = [];
+
     /** section => [ key => validation rules ]. */
     private const SECTIONS = [
         'entreprise' => [
@@ -81,6 +84,11 @@ class GeneralSettings extends Component
         $this->data['invoice_vat_rate'] ??= 20;
         $this->data['invoice_terms'] ??= 'Aucun escompte accordé pour paiement anticipé.';
         $this->data['invoice_payment_terms'] ??= 'Paiement à réception de la facture. Pour les clients professionnels, tout retard entraîne des pénalités au taux de trois fois le taux d’intérêt légal et une indemnité forfaitaire de 40 € pour frais de recouvrement.';
+
+        if ($section === 'billing') {
+            $groups = json_decode((string) Setting::get('deplacement_city_groups', '[]'), true);
+            $this->cityGroups = is_array($groups) ? array_values($groups) : [];
+        }
     }
 
     protected function rules(): array
@@ -115,7 +123,7 @@ class GeneralSettings extends Component
                 'data.statut_finalise_id' => ['nullable', 'exists:statuts,id'],
             ],
             'billing' => [
-                'data.deplacement_mode' => ['required', 'in:aucun,forfait,km'],
+                'data.deplacement_mode' => ['required', 'in:aucun,forfait,km,groupes'],
                 'data.deplacement_forfait' => ['nullable', 'numeric', 'min:0'],
                 'data.deplacement_prix_km' => ['nullable', 'numeric', 'min:0'],
                 'data.deplacement_villes_gratuites' => ['nullable', 'string'],
@@ -125,6 +133,11 @@ class GeneralSettings extends Component
                 'data.invoice_vat_rate' => ['required', 'numeric', 'min:0', 'max:100'],
                 'data.invoice_terms' => ['nullable', 'string', 'max:2000'],
                 'data.invoice_payment_terms' => ['nullable', 'string', 'max:2000'],
+                'cityGroups' => ['array'],
+                'cityGroups.*.name' => ['required', 'string', 'max:100'],
+                'cityGroups.*.price' => ['required', 'numeric', 'min:0'],
+                'cityGroups.*.cities' => ['required', 'array', 'min:1'],
+                'cityGroups.*.cities.*' => ['required', 'string', 'max:255'],
             ],
             default => [],
         };
@@ -139,6 +152,10 @@ class GeneralSettings extends Component
             Setting::put($key, $this->data[$key] ?? null);
         }
 
+        if ($this->section === 'billing') {
+            Setting::put('deplacement_city_groups', json_encode(array_values($this->cityGroups), JSON_UNESCAPED_UNICODE));
+        }
+
         if ($this->section === 'entreprise') {
             $this->handleLogo();
         }
@@ -149,6 +166,37 @@ class GeneralSettings extends Component
         }
 
         $this->dispatch('settings-saved');
+    }
+
+    public function addCityGroup(): void
+    {
+        $this->cityGroups[] = ['name' => '', 'price' => '', 'cities' => []];
+    }
+
+    public function removeCityGroup(int $index): void
+    {
+        unset($this->cityGroups[$index]);
+        $this->cityGroups = array_values($this->cityGroups);
+    }
+
+    public function addCityToGroup(int $index, string $city): void
+    {
+        $city = trim($city);
+        if ($city === '' || ! isset($this->cityGroups[$index])) {
+            return;
+        }
+
+        $cities = $this->cityGroups[$index]['cities'] ?? [];
+        if (! collect($cities)->contains(fn (string $existing) => mb_strtolower($existing) === mb_strtolower($city))) {
+            $cities[] = $city;
+        }
+        $this->cityGroups[$index]['cities'] = array_values($cities);
+    }
+
+    public function removeCityFromGroup(int $groupIndex, int $cityIndex): void
+    {
+        unset($this->cityGroups[$groupIndex]['cities'][$cityIndex]);
+        $this->cityGroups[$groupIndex]['cities'] = array_values($this->cityGroups[$groupIndex]['cities']);
     }
 
     private function handleLogo(): void

@@ -118,10 +118,11 @@ class SettingsController extends Controller
         $this->authorize(Permissions::SETTINGS_MANAGE);
 
         $data = $request->validate([
-            'deplacement_mode' => ['required', 'in:aucun,forfait,km'],
+            'deplacement_mode' => ['required', 'in:aucun,forfait,km,groupes'],
             'deplacement_forfait' => ['nullable', 'numeric', 'min:0'],
             'deplacement_prix_km' => ['nullable', 'numeric', 'min:0'],
             'deplacement_villes_gratuites' => ['nullable', 'string'],
+            'deplacement_city_groups' => ['sometimes', 'nullable', 'json'],
             'invoice_number_format' => ['sometimes', 'required', 'string', 'max:60', 'regex:/#+/'],
             'invoice_next_number' => ['sometimes', 'required', 'integer', 'min:1'],
             'invoice_vat_enabled' => ['sometimes', 'required', 'boolean'],

@@ -10,6 +10,7 @@ use App\Livewire\Facturation;
 use App\Livewire\InterventionCloture;
 use App\Livewire\InterventionPanel;
 use App\Livewire\InterventionReport;
+use App\Livewire\Settings\GeneralSettings;
 use App\Livewire\Tasks;
 use App\Models\Client;
 use App\Models\Intervention;
@@ -19,6 +20,7 @@ use App\Models\Setting;
 use App\Models\Statut;
 use App\Models\Task;
 use App\Models\User;
+use App\Support\Deplacement;
 use Database\Seeders\DatabaseSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Storage;
@@ -371,6 +373,25 @@ class LivewireTest extends TestCase
         $this->actingAs(User::where('pseudo', 'admin')->firstOrFail());
         Livewire::test(ClientChat::class, ['intervention' => $intervention])
             ->assertSee('Bonjour, est-ce prêt ?');
+    }
+
+    public function test_manager_can_configure_travel_city_groups_without_invoice_module(): void
+    {
+        auth()->user()->society->update(['invoice_enabled' => false]);
+
+        Livewire::test(GeneralSettings::class, ['section' => 'billing'])
+            ->assertSee('Par groupe de villes')
+            ->set('data.deplacement_mode', 'groupes')
+            ->call('addCityGroup')
+            ->set('cityGroups.0.name', 'Zone proche')
+            ->set('cityGroups.0.price', '25.50')
+            ->call('addCityToGroup', 0, 'Saint-Étienne')
+            ->call('save')
+            ->assertHasNoErrors();
+
+        $this->assertSame('groupes', Setting::get('deplacement_mode'));
+        $this->assertEqualsWithDelta(25.50, Deplacement::montant('saint etienne'), 0.001);
+        $this->assertEqualsWithDelta(0.0, Deplacement::montant('Lyon'), 0.001);
     }
 
     public function test_tasks_component_creates_toggles_and_deletes(): void
