@@ -40,6 +40,7 @@
 - [x] Conserver le PDF commercial original comme archive immuable.
 - [x] Générer une copie d’état distincte après chaque règlement, sans écraser les versions précédentes.
 - [x] Afficher un tampon « PARTIELLEMENT PAYÉE » ou « PAYÉE » sur la copie d’état.
+- [x] Positionner les tampons de paiement sous le bloc d’adresses, dans une zone blanche du PDF.
 - [x] Afficher sur la copie d’état les dates, montants et modes des règlements.
 - [x] Permettre de consulter/télécharger l’original et la dernière copie d’état.
 

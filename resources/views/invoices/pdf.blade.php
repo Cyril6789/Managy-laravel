@@ -31,7 +31,7 @@
         .totals .grand { background: #eef2ff; color: #2347b6; font-size: 15px; font-weight: bold; }
         .footer { border-top: 1px solid #dce2ee; bottom: 20px; color: #6b7280; font-size: 8px; left: 42px; padding-top: 10px; position: fixed; right: 42px; text-align: center; }
         .reference { color: #6b7280; margin-bottom: 12px; }
-        .payment-stamp { border: 4px solid; font-size: 22px; font-weight: bold; opacity: .72; padding: 8px 14px; position: fixed; right: 48px; top: 115px; transform: rotate(-8deg); }
+        .payment-stamp { border: 4px solid; font-size: 22px; font-weight: bold; opacity: .72; padding: 8px 14px; position: fixed; right: 52px; top: 215px; transform: rotate(-8deg); }
         .payment-stamp.paid { border-color: #15803d; color: #15803d; }
         .payment-stamp.partial { border-color: #d97706; color: #d97706; }
         .payment-history { border-collapse: collapse; font-size: 8px; margin-top: 14px; width: 55%; }
