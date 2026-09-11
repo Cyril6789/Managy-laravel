@@ -5,6 +5,7 @@
     'placeholder' => '— Sélectionner —',
     'searchPlaceholder' => 'Rechercher…',
     'allowEmpty' => true,
+    'disabled' => false,
 ])
 
 @php
@@ -60,8 +61,8 @@
         x-on:click="show()"
         x-bind:aria-expanded="open"
         aria-haspopup="listbox"
-        @disabled($attributes->has('disabled'))
-        {{ $attributes->class(['flex w-full items-center justify-between gap-2 rounded-lg border border-gray-300 bg-white px-3 py-2 text-left text-sm shadow-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100']) }}
+        @disabled($disabled)
+        {{ $attributes->except('disabled')->class(['flex w-full items-center justify-between gap-2 rounded-lg border border-gray-300 bg-white px-3 py-2 text-left text-sm shadow-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100']) }}
     >
         <span x-text="selectedLabel || @js($placeholder)" x-bind:class="selectedLabel ? '' : 'text-gray-400'" class="truncate"></span>
         <svg class="h-4 w-4 shrink-0 text-gray-400" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5"/></svg>

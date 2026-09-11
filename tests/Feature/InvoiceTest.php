@@ -259,4 +259,13 @@ class InvoiceTest extends TestCase
             ->assertSeeHtml('wire:key="manual-invoice-modal"')
             ->assertDontSeeHtml('wire:click.self="$set(\'show\', false)"');
     }
+
+    public function test_free_invoice_client_selector_is_enabled(): void
+    {
+        Livewire::test(ManualInvoice::class)
+            ->call('open')
+            ->assertSeeHtml('name="manual_invoice_client"')
+            ->assertSeeHtml('x-ref="trigger"')
+            ->assertDontSeeHtml('x-ref="trigger" disabled');
+    }
 }

@@ -65,7 +65,7 @@
                                 @php($paymentStatus = $invoice->paymentStatus())
                                 <td class="px-5 py-3"><span class="rounded-full px-2 py-1 text-xs font-medium {{ $paymentStatus === 'paid' ? 'bg-green-100 text-green-700' : ($paymentStatus === 'partial' ? 'bg-amber-100 text-amber-700' : 'bg-gray-100 text-gray-600') }}">{{ $invoice->paymentStatusLabel() }}</span><div class="mt-1 text-xs text-gray-400">Reste {{ number_format($invoice->balanceDue(), 2, ',', ' ') }} €</div></td>
                                 <td class="px-5 py-3 text-right font-medium">{{ number_format($invoice->vat_enabled ? $invoice->total_ttc : $invoice->total_ht, 2, ',', ' ') }} € {{ $invoice->vat_enabled ? 'TTC' : 'HT' }}</td>
-                                <td class="px-5 py-3 text-right"><button type="button" wire:click="openPdf({{ $invoice->id }})" class="font-medium text-brand-600 hover:underline">Voir le PDF</button></td>
+                                <td class="px-5 py-3 text-right"><button type="button" wire:click="openPdf({{ $invoice->id }})" class="font-medium text-brand-600 hover:underline">Ouvrir la facture</button></td>
                             </tr>
                         @empty
                             <tr><td colspan="7"><x-empty-state icon="list" title="Aucune facture générée" /></td></tr>

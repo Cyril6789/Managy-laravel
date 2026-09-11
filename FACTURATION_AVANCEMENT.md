@@ -4,7 +4,7 @@
 
 - [x] Utiliser la même grande modale pour une facture libre et une facture issue d’une intervention.
 - [x] La modale ne doit pas pouvoir se fermer en cliquant ailleur
-- [ ] les élements de création d'une ligne faturable, doivent visuellement se trouver une seule ligne (Catalogue, designation, quantité, prix u, unité, prix saisi, tva) pas sur deux ligne
+- [x] les élements de création d'une ligne faturable, doivent visuellement se trouver une seule ligne (Catalogue, designation, quantité, prix u, unité, prix saisi, tva) pas sur deux ligne
 - [ ] Rajoute aussi un bouton "Enregistrer le brouillon", et donc le statut associé (en brouillon) (sans numérotation du coup) editable plus tard
 - [x] Préremplir le client et toutes les lignes facturables de l’intervention sans créer de facture à l’ouverture.
 - [x] Permettre l’ajout d’une prestation du catalogue ou d’une ligne entièrement libre.
