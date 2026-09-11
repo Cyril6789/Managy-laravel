@@ -20,7 +20,7 @@ class DashboardController extends Controller
             'urgentes' => Intervention::ouvertes()->where('urgente', true)->count(),
             'cloturees_mois' => Intervention::cloturees()->where('closed_at', '>=', now()->startOfMonth())->count(),
             'a_facturer' => $request->user()->society?->invoice_enabled
-                ? Intervention::cloturees()->whereDoesntHave('invoice')->count()
+                ? Intervention::cloturees()->whereNull('invoice_ignored_at')->whereDoesntHave('invoice')->count()
                 : Intervention::cloturees()->where('facturee', false)->count(),
         ];
 

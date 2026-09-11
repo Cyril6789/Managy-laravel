@@ -23,6 +23,10 @@ class InvoiceGenerator
             throw ValidationException::withMessages(['invoice' => 'Le module de facturation PDF n’est pas activé pour cette société.']);
         }
 
+        if ($intervention->invoice_ignored_at) {
+            throw ValidationException::withMessages(['invoice' => 'Cette intervention est ignorée de la facturation. Réintégrez-la avant de générer une facture.']);
+        }
+
         if (! $intervention->closed_at) {
             throw ValidationException::withMessages(['invoice' => 'Seule une intervention clôturée peut être facturée.']);
         }

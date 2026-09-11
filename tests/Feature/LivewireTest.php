@@ -310,6 +310,25 @@ class LivewireTest extends TestCase
         $this->assertDatabaseCount('invoices', 0);
     }
 
+    public function test_invoice_intervention_can_be_ignored_and_reintegrated(): void
+    {
+        auth()->user()->society->update(['invoice_enabled' => true]);
+        $intervention = Intervention::create([
+            'client_id' => Client::first()->id,
+            'closed_at' => now(),
+        ]);
+
+        Livewire::test(Facturation::class)
+            ->call('ignore', $intervention->id)
+            ->assertDontSee($intervention->reference)
+            ->set('filtre', 'ignorees')
+            ->assertSee($intervention->reference)
+            ->call('restoreIgnored', $intervention->id)
+            ->assertDontSee($intervention->reference);
+
+        $this->assertNull($intervention->fresh()->invoice_ignored_at);
+    }
+
     public function test_staff_chat_and_public_chat_share_the_same_thread(): void
     {
         $intervention = Intervention::first();

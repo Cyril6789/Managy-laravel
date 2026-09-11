@@ -67,6 +67,24 @@ class Facturation extends Component
         $this->pdfUrl = null;
     }
 
+    public function ignore(int $id): void
+    {
+        Gate::authorize(Permissions::INTERVENTIONS_FACTURATION);
+        abort_unless($this->invoiceEnabled, 404);
+        $intervention = Intervention::cloturees()->whereDoesntHave('invoice')->findOrFail($id);
+        $intervention->update(['invoice_ignored_at' => now(), 'invoice_ignored_by' => Auth::id()]);
+        $this->logLegacy($intervention, 'a ignoré l’intervention de la facturation');
+    }
+
+    public function restoreIgnored(int $id): void
+    {
+        Gate::authorize(Permissions::INTERVENTIONS_FACTURATION);
+        abort_unless($this->invoiceEnabled, 404);
+        $intervention = Intervention::cloturees()->whereNotNull('invoice_ignored_at')->findOrFail($id);
+        $intervention->update(['invoice_ignored_at' => null, 'invoice_ignored_by' => null]);
+        $this->logLegacy($intervention, 'a réintégré l’intervention à la facturation');
+    }
+
     public function markInvoiced(int $id): void
     {
         Gate::authorize(Permissions::INTERVENTIONS_FACTURATION);
@@ -114,6 +132,7 @@ class Facturation extends Component
                 ->paginate(20);
         } elseif ($this->filtre === 'a_facturer') {
             $interventions = Intervention::cloturees()
+                ->whereNull('invoice_ignored_at')
                 ->whereDoesntHave('invoice')
                 ->when($this->q !== '', fn ($query) => $query->where(fn ($w) => $w
                     ->where('reference', 'like', $term)
@@ -121,7 +140,7 @@ class Facturation extends Component
                 ->with(['client', 'prestations'])
                 ->latest('closed_at')
                 ->paginate(20);
-        } else {
+        } elseif ($this->filtre === 'facturees') {
             $invoices = Invoice::query()
                 ->when($this->q !== '', fn ($query) => $query->where(fn ($w) => $w
                     ->where('number', 'like', $term)
@@ -130,13 +149,22 @@ class Facturation extends Component
                 ->with(['intervention.client'])
                 ->latest('issued_at')->latest('id')
                 ->paginate(20);
+        } else {
+            $interventions = Intervention::cloturees()
+                ->whereNotNull('invoice_ignored_at')
+                ->when($this->q !== '', fn ($query) => $query->where(fn ($w) => $w
+                    ->where('reference', 'like', $term)
+                    ->orWhereHas('client', fn ($c) => $c->where('nom', 'like', $term)->orWhere('prenom', 'like', $term))))
+                ->with(['client', 'invoiceIgnoredBy'])
+                ->latest('invoice_ignored_at')
+                ->paginate(20);
         }
 
         return view('livewire.facturation', [
             'interventions' => $interventions,
             'invoices' => $invoices,
             'totalAFacturer' => $this->invoiceEnabled
-                ? Intervention::cloturees()->whereDoesntHave('invoice')->count()
+                ? Intervention::cloturees()->whereNull('invoice_ignored_at')->whereDoesntHave('invoice')->count()
                 : Intervention::cloturees()->where('facturee', false)->count(),
         ]);
     }

@@ -36,6 +36,7 @@ class Intervention extends Model
         'rdv_debut', 'rdv_fin', 'rdv_annule', 'priorite', 'urgente', 'garantie',
         'materiel_depose', 'panne', 'diagnostic', 'materiel_ajoute', 'message_client',
         'message_interne', 'mdp', 'tarif_estimatif', 'note', 'facturee', 'payee',
+        'invoice_ignored_at', 'invoice_ignored_by',
         'montant_prestations', 'montant_pieces', 'montant_deplacement', 'deplacement_km',
         'montant_total', 'remise_type', 'remise_valeur', 'remise_montant', 'montant_paye', 'paiement_mode',
         'maintenance_heures', 'montant_maintenance',
@@ -52,6 +53,7 @@ class Intervention extends Model
             'urgente' => 'boolean',
             'garantie' => 'boolean',
             'facturee' => 'boolean',
+            'invoice_ignored_at' => 'datetime',
             'payee' => 'boolean',
             'tarif_estimatif' => 'decimal:2',
             'montant_prestations' => 'decimal:2',
@@ -140,6 +142,11 @@ class Intervention extends Model
     public function invoice(): HasOne
     {
         return $this->hasOne(Invoice::class);
+    }
+
+    public function invoiceIgnoredBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'invoice_ignored_by');
     }
 
     public function commandes(): HasMany
