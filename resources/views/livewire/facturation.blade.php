@@ -10,6 +10,7 @@
                     À générer @if ($totalAFacturer)<span class="ml-1 rounded-full bg-white/20 px-1.5 text-xs">{{ $totalAFacturer }}</span>@endif
                 </button>
                 <button wire:click="$set('filtre', 'facturees')" class="rounded-md px-3 py-1.5 {{ $filtre === 'facturees' ? 'bg-brand-600 text-white' : 'text-gray-600 dark:text-gray-300' }}">Historique des factures</button>
+                <button wire:click="$set('filtre', 'brouillons')" class="rounded-md px-3 py-1.5 {{ $filtre === 'brouillons' ? 'bg-brand-600 text-white' : 'text-gray-600 dark:text-gray-300' }}">Brouillons</button>
                 <button wire:click="$set('filtre', 'ignorees')" class="rounded-md px-3 py-1.5 {{ $filtre === 'ignorees' ? 'bg-brand-600 text-white' : 'text-gray-600 dark:text-gray-300' }}">Ignorées</button>
             </div>
             <div class="relative min-w-48 flex-1">
@@ -72,7 +73,7 @@
                         @endforelse
                     </tbody>
                 </table>
-            @else
+            @elseif ($filtre === 'ignorees')
                 <table class="min-w-full divide-y divide-gray-100 text-sm dark:divide-gray-800">
                     <thead class="bg-gray-50 text-left text-xs uppercase tracking-wide text-gray-500 dark:bg-gray-800/50"><tr>
                         <th class="px-5 py-3 font-medium">Intervention</th><th class="px-5 py-3 font-medium">Client</th><th class="px-5 py-3 font-medium">Ignorée le</th><th class="px-5 py-3 font-medium">Par</th><th class="px-5 py-3"></th>
@@ -91,10 +92,21 @@
                         @endforelse
                     </tbody>
                 </table>
+            @else
+                <table class="min-w-full divide-y divide-gray-100 text-sm dark:divide-gray-800">
+                    <thead class="bg-gray-50 text-left text-xs uppercase tracking-wide text-gray-500 dark:bg-gray-800/50"><tr><th class="px-5 py-3">Statut</th><th class="px-5 py-3">Client</th><th class="px-5 py-3">Intervention</th><th class="px-5 py-3">Dernière modification</th><th></th></tr></thead>
+                    <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
+                    @forelse($drafts as $draft)
+                        <tr wire:key="invoice-draft-{{ $draft->id }}"><td class="px-5 py-3"><span class="rounded-full bg-amber-100 px-2 py-1 text-xs font-medium text-amber-700">Brouillon</span></td><td class="px-5 py-3">{{ $draft->client->nomComplet() }}</td><td class="px-5 py-3">{{ $draft->intervention?->reference ?: 'Facture libre' }}</td><td class="px-5 py-3 text-gray-500">{{ $draft->updated_at->format('d/m/Y H:i') }}</td><td class="px-5 py-3 text-right"><x-button type="button" variant="secondary" wire:click="$dispatch('open-invoice-draft', { draftId: {{ $draft->id }} })">Reprendre</x-button></td></tr>
+                    @empty
+                        <tr><td colspan="5"><x-empty-state icon="list" title="Aucun brouillon" /></td></tr>
+                    @endforelse
+                    </tbody>
+                </table>
             @endif
         </div>
 
-        @php($paginator = $filtre === 'facturees' ? $invoices : $interventions)
+        @php($paginator = $filtre === 'facturees' ? $invoices : ($filtre === 'brouillons' ? $drafts : $interventions))
         @if ($paginator->hasPages())<div class="border-t border-gray-100 p-4 dark:border-gray-800">{{ $paginator->links() }}</div>@endif
     </x-card>
 

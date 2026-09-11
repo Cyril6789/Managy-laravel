@@ -6,6 +6,7 @@ use App\Livewire\ManualInvoice;
 use App\Models\Client;
 use App\Models\Intervention;
 use App\Models\Invoice;
+use App\Models\InvoiceDraft;
 use App\Models\Prestation;
 use App\Models\Setting;
 use App\Models\User;
@@ -267,5 +268,35 @@ class InvoiceTest extends TestCase
             ->assertSeeHtml('name="manual_invoice_client"')
             ->assertSeeHtml('x-ref="trigger"')
             ->assertDontSeeHtml('x-ref="trigger" disabled');
+    }
+
+    public function test_invoice_draft_has_no_number_and_can_be_resumed_then_issued(): void
+    {
+        $client = Client::firstOrFail();
+        $component = Livewire::test(ManualInvoice::class)
+            ->call('open')
+            ->set('clientId', $client->id)
+            ->set('draft.description', 'Conseil')
+            ->set('draft.unit_price', 80)
+            ->call('addLine')
+            ->call('saveDraft')
+            ->assertHasNoErrors()
+            ->assertSet('show', false);
+
+        $draft = InvoiceDraft::sole();
+        $this->assertDatabaseCount('invoices', 0);
+        $this->assertArrayNotHasKey('number', $draft->getAttributes());
+
+        $component->call('openDraft', $draft->id)
+            ->assertSet('show', true)
+            ->set('lines.0.description', 'Conseil personnalisé')
+            ->call('saveDraft');
+
+        $this->assertSame('Conseil personnalisé', InvoiceDraft::sole()->lines[0]['description']);
+        $this->assertSame(1, InvoiceDraft::count());
+
+        $component->call('openDraft', $draft->id)->call('generate')->assertHasNoErrors();
+        $this->assertDatabaseCount('invoice_drafts', 0);
+        $this->assertSame('Conseil personnalisé', Invoice::sole()->lines[0]['description']);
     }
 }

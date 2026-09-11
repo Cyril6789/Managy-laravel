@@ -5,6 +5,7 @@ namespace App\Livewire;
 use App\Models\Client;
 use App\Models\Intervention;
 use App\Models\InterventionLog;
+use App\Models\InvoiceDraft;
 use App\Models\Prestation;
 use App\Models\Setting;
 use App\Services\InvoiceGenerator;
@@ -21,6 +22,8 @@ class ManualInvoice extends Component
     public ?int $clientId = null;
 
     public ?int $interventionId = null;
+
+    public ?int $draftId = null;
 
     public bool $launcher = true;
 
@@ -56,11 +59,24 @@ class ManualInvoice extends Component
         abort_unless(auth()->user()->society?->invoice_enabled, 404);
         $intervention = Intervention::cloturees()->whereDoesntHave('invoice')->findOrFail($interventionId);
 
+        if ($draft = InvoiceDraft::where('intervention_id', $intervention->id)->first()) {
+            $this->loadDraft($draft);
+
+            return;
+        }
+
         $this->resetEditor();
         $this->interventionId = $intervention->id;
         $this->clientId = $intervention->client_id;
         $this->lines = $generator->draftLinesForIntervention($intervention);
         $this->show = true;
+    }
+
+    #[On('open-invoice-draft')]
+    public function openDraft(int $draftId): void
+    {
+        Gate::authorize(Permissions::INTERVENTIONS_FACTURATION);
+        $this->loadDraft(InvoiceDraft::findOrFail($draftId));
     }
 
     public function selectCatalogue(): void
@@ -130,6 +146,31 @@ class ManualInvoice extends Component
     public function generate(InvoiceGenerator $generator): void
     {
         Gate::authorize(Permissions::INTERVENTIONS_FACTURATION);
+        $this->validateEditor();
+
+        $invoice = $this->interventionId
+            ? $generator->generateFromIntervention(Intervention::findOrFail($this->interventionId), $this->lines, $this->totalDiscountType, (float) ($this->totalDiscountValue ?: 0))
+            : $generator->generateManual(Client::findOrFail($this->clientId), $this->lines, $this->totalDiscountType, (float) ($this->totalDiscountValue ?: 0));
+        if ($this->interventionId) {
+            InterventionLog::create([
+                'intervention_id' => $this->interventionId,
+                'user_id' => Auth::id(),
+                'texte' => 'a généré la facture '.$invoice->number,
+                'created_at' => now(),
+            ]);
+        }
+        if ($this->draftId) {
+            InvoiceDraft::whereKey($this->draftId)->delete();
+        }
+        $this->show = false;
+        $this->pdfUrl = route('invoices.pdf', $invoice);
+        $this->generatedInvoiceId = $invoice->id;
+        $this->dispatch('invoice-created');
+        $this->resetEditor();
+    }
+
+    private function validateEditor(): void
+    {
         $this->validate([
             'clientId' => ['required', 'exists:clients,id'],
             'lines' => ['required', 'array', 'min:1'],
@@ -143,23 +184,28 @@ class ManualInvoice extends Component
             'totalDiscountType' => ['required', 'in:euro,pourcent'],
             'totalDiscountValue' => ['nullable', 'numeric', 'min:0'],
         ]);
+    }
 
-        $invoice = $this->interventionId
-            ? $generator->generateFromIntervention(Intervention::findOrFail($this->interventionId), $this->lines, $this->totalDiscountType, (float) ($this->totalDiscountValue ?: 0))
-            : $generator->generateManual(Client::findOrFail($this->clientId), $this->lines, $this->totalDiscountType, (float) ($this->totalDiscountValue ?: 0));
-        if ($this->interventionId) {
-            InterventionLog::create([
+    public function saveDraft(): void
+    {
+        Gate::authorize(Permissions::INTERVENTIONS_FACTURATION);
+        $this->validateEditor();
+
+        $draft = InvoiceDraft::updateOrCreate(
+            ['id' => $this->draftId],
+            [
+                'society_id' => auth()->user()->society_id,
                 'intervention_id' => $this->interventionId,
-                'user_id' => Auth::id(),
-                'texte' => 'a généré la facture '.$invoice->number,
-                'created_at' => now(),
-            ]);
-        }
+                'client_id' => $this->clientId,
+                'created_by' => Auth::id(),
+                'lines' => array_values($this->lines),
+                'total_discount_type' => $this->totalDiscountType,
+                'total_discount_value' => (float) ($this->totalDiscountValue ?: 0),
+            ],
+        );
+        $this->draftId = $draft->id;
         $this->show = false;
-        $this->pdfUrl = route('invoices.pdf', $invoice);
-        $this->generatedInvoiceId = $invoice->id;
-        $this->dispatch('invoice-created');
-        $this->resetEditor();
+        $this->dispatch('invoice-draft-saved');
     }
 
     public function closePdf(): void
@@ -189,10 +235,23 @@ class ManualInvoice extends Component
     {
         $this->clientId = null;
         $this->interventionId = null;
+        $this->draftId = null;
         $this->lines = [];
         $this->totalDiscountType = 'euro';
         $this->totalDiscountValue = '';
         $this->resetDraft();
+    }
+
+    private function loadDraft(InvoiceDraft $draft): void
+    {
+        $this->resetEditor();
+        $this->draftId = $draft->id;
+        $this->interventionId = $draft->intervention_id;
+        $this->clientId = $draft->client_id;
+        $this->lines = $draft->lines;
+        $this->totalDiscountType = $draft->total_discount_type;
+        $this->totalDiscountValue = (string) $draft->total_discount_value;
+        $this->show = true;
     }
 
     public function render()

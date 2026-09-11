@@ -5,6 +5,7 @@ namespace App\Livewire;
 use App\Models\Intervention;
 use App\Models\InterventionLog;
 use App\Models\Invoice;
+use App\Models\InvoiceDraft;
 use App\Services\InvoiceGenerator;
 use App\Support\Permissions;
 use Illuminate\Support\Facades\Auth;
@@ -89,6 +90,13 @@ class Facturation extends Component
         $this->resetPage();
     }
 
+    #[On('invoice-draft-saved')]
+    public function draftSaved(): void
+    {
+        $this->filtre = 'brouillons';
+        $this->resetPage();
+    }
+
     public function ignore(int $id): void
     {
         Gate::authorize(Permissions::INTERVENTIONS_FACTURATION);
@@ -142,6 +150,7 @@ class Facturation extends Component
         $term = '%'.trim($this->q).'%';
         $interventions = null;
         $invoices = null;
+        $drafts = null;
 
         if (! $this->invoiceEnabled) {
             $interventions = Intervention::cloturees()
@@ -172,7 +181,7 @@ class Facturation extends Component
                 ->with(['intervention.client', 'client', 'payments'])
                 ->latest('issued_at')->latest('id')
                 ->paginate(20);
-        } else {
+        } elseif ($this->filtre === 'ignorees') {
             $interventions = Intervention::cloturees()
                 ->whereNotNull('invoice_ignored_at')
                 ->when($this->q !== '', fn ($query) => $query->where(fn ($w) => $w
@@ -181,11 +190,18 @@ class Facturation extends Component
                 ->with(['client', 'invoiceIgnoredBy'])
                 ->latest('invoice_ignored_at')
                 ->paginate(20);
+        } else {
+            $drafts = InvoiceDraft::query()
+                ->when($this->q !== '', fn ($query) => $query->whereHas('client', fn ($client) => $client->where('nom', 'like', $term)->orWhere('prenom', 'like', $term)))
+                ->with(['client', 'intervention'])
+                ->latest('updated_at')
+                ->paginate(20);
         }
 
         return view('livewire.facturation', [
             'interventions' => $interventions,
             'invoices' => $invoices,
+            'drafts' => $drafts,
             'totalAFacturer' => $this->invoiceEnabled
                 ? Intervention::cloturees()->whereNull('invoice_ignored_at')->whereDoesntHave('invoice')->count()
                 : Intervention::cloturees()->where('facturee', false)->count(),

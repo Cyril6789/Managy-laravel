@@ -7,7 +7,7 @@
         <div class="fixed inset-0 z-[90] flex items-start justify-center overflow-y-auto bg-black/60 p-4 py-8" wire:key="manual-invoice-modal" x-on:keydown.escape.window="$wire.set('show', false)">
             <div class="max-h-[94vh] w-full max-w-[95rem] overflow-y-auto rounded-xl bg-white p-6 shadow-2xl dark:bg-gray-900">
                 <div class="mb-6 flex items-center justify-between">
-                    <div><h2 class="text-lg font-semibold">Préparer la facture</h2><p class="text-sm text-gray-500">{{ $interventionId ? 'Lignes préremplies depuis l’intervention. Vérifiez-les avant émission.' : 'Facture libre, sans intervention associée.' }}</p></div>
+                    <div><div class="flex items-center gap-2"><h2 class="text-lg font-semibold">Préparer la facture</h2>@if($draftId)<span class="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-700">Brouillon</span>@endif</div><p class="text-sm text-gray-500">{{ $interventionId ? 'Lignes préremplies depuis l’intervention. Vérifiez-les avant émission.' : 'Facture libre, sans intervention associée.' }}</p></div>
                     <button type="button" wire:click="$set('show', false)" class="text-2xl text-gray-400">×</button>
                 </div>
 
@@ -114,6 +114,7 @@
 
                 <div class="mt-6 flex justify-end gap-2">
                     <x-button type="button" variant="secondary" wire:click="$set('show', false)">Annuler</x-button>
+                    <x-button type="button" variant="secondary" wire:click="saveDraft" wire:loading.attr="disabled">Enregistrer le brouillon</x-button>
                     <x-button type="button" wire:click="generate" wire:loading.attr="disabled" wire:confirm="Après génération, cette facture sera définitive et non modifiable. Continuer ?">Générer la facture PDF définitive</x-button>
                 </div>
             </div>
