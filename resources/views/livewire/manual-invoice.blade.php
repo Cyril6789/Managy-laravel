@@ -4,7 +4,7 @@
     @endif
 
     @if ($show)
-        <div class="fixed inset-0 z-[90] flex items-start justify-center overflow-y-auto bg-black/60 p-4 py-8" wire:key="manual-invoice-modal" wire:click.self="$set('show', false)" x-on:keydown.escape.window="$wire.set('show', false)">
+        <div class="fixed inset-0 z-[90] flex items-start justify-center overflow-y-auto bg-black/60 p-4 py-8" wire:key="manual-invoice-modal" x-on:keydown.escape.window="$wire.set('show', false)">
             <div class="max-h-[94vh] w-full max-w-[95rem] overflow-y-auto rounded-xl bg-white p-6 shadow-2xl dark:bg-gray-900">
                 <div class="mb-6 flex items-center justify-between">
                     <div><h2 class="text-lg font-semibold">Préparer la facture</h2><p class="text-sm text-gray-500">{{ $interventionId ? 'Lignes préremplies depuis l’intervention. Vérifiez-les avant émission.' : 'Facture libre, sans intervention associée.' }}</p></div>

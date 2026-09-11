@@ -251,4 +251,12 @@ class InvoiceTest extends TestCase
         $this->assertSame('130.50', $invoice->total_ht);
         $this->assertSame('Remise globale (10 %)', $invoice->lines[2]['description']);
     }
+
+    public function test_invoice_editor_does_not_close_when_clicking_its_backdrop(): void
+    {
+        Livewire::test(ManualInvoice::class)
+            ->call('open')
+            ->assertSeeHtml('wire:key="manual-invoice-modal"')
+            ->assertDontSeeHtml('wire:click.self="$set(\'show\', false)"');
+    }
 }
