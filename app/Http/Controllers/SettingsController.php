@@ -124,6 +124,8 @@ class SettingsController extends Controller
             'deplacement_villes_gratuites' => ['nullable', 'string'],
             'invoice_number_format' => ['sometimes', 'required', 'string', 'max:60', 'regex:/#+/'],
             'invoice_next_number' => ['sometimes', 'required', 'integer', 'min:1'],
+            'invoice_vat_enabled' => ['sometimes', 'required', 'boolean'],
+            'invoice_vat_rate' => ['sometimes', 'required', 'numeric', 'min:0', 'max:100'],
         ]);
 
         foreach ($data as $key => $value) {

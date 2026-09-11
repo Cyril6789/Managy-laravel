@@ -12,7 +12,8 @@ class Invoice extends Model
 
     protected $fillable = [
         'society_id', 'intervention_id', 'created_by', 'number', 'issued_at',
-        'issuer', 'customer', 'lines', 'subtotal_ht', 'total_ht', 'currency',
+        'issuer', 'customer', 'lines', 'subtotal_ht', 'total_ht', 'vat_enabled',
+        'vat_rate', 'vat_amount', 'total_ttc', 'currency',
         'legal_notice', 'pdf_path',
     ];
 
@@ -25,6 +26,10 @@ class Invoice extends Model
             'lines' => 'array',
             'subtotal_ht' => 'decimal:2',
             'total_ht' => 'decimal:2',
+            'vat_enabled' => 'boolean',
+            'vat_rate' => 'decimal:2',
+            'vat_amount' => 'decimal:2',
+            'total_ttc' => 'decimal:2',
         ];
     }
 

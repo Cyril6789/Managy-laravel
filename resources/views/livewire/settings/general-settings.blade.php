@@ -122,6 +122,23 @@
             <p class="mt-3 text-xs text-gray-400">Exemple : <code>FAC-{YYYY}-{MM}-###</code> avec le prochain numéro à <code>42</code> produira <code>FAC-{{ now()->format('Y-m') }}-042</code>.</p>
             @include('livewire.settings._save-bar')
         </x-card>
+
+        <x-card title="Taxe sur la valeur ajoutée (TVA)">
+            <div class="grid grid-cols-1 gap-5 md:grid-cols-2" x-data="{ enabled: @entangle('data.invoice_vat_enabled').live }">
+                <div>
+                    <label class="flex items-center gap-3 text-sm font-medium">
+                        <input type="checkbox" wire:model.live="data.invoice_vat_enabled" class="rounded border-gray-300 text-brand-600 focus:ring-brand-500 dark:border-gray-700 dark:bg-gray-800">
+                        La société facture la TVA
+                    </label>
+                    <p class="mt-2 text-xs text-gray-400">Décochez pour le régime de franchise en base (notamment micro-entreprise). La mention de l’article 293 B du CGI sera alors ajoutée.</p>
+                </div>
+                <x-field label="Taux de TVA (%)" hint="Le taux est figé dans chaque facture lors de sa génération.">
+                    <x-input type="number" min="0" max="100" step="0.01" wire:model="data.invoice_vat_rate" x-bind:disabled="!enabled" />
+                    @error('data.invoice_vat_rate')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
+                </x-field>
+            </div>
+            @include('livewire.settings._save-bar')
+        </x-card>
         @endif
 
         <x-card title="Frais de déplacement (interventions à domicile)">

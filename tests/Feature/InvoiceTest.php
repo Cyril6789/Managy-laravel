@@ -83,6 +83,8 @@ class InvoiceTest extends TestCase
         $this->assertSame('Dépannage Martin', $invoice->issuer['name']);
         $this->assertSame('Alice', explode(' ', $invoice->customer['name'])[1]);
         $this->assertSame('175.00', $invoice->total_ht);
+        $this->assertSame('175.00', $invoice->total_ttc);
+        $this->assertFalse($invoice->vat_enabled);
         $this->assertStringContainsString('293 B', $invoice->legal_notice);
         $this->assertTrue($intervention->fresh()->facturee);
         $this->assertSame('43', Setting::get('invoice_next_number'));
@@ -104,5 +106,22 @@ class InvoiceTest extends TestCase
         $this->get(route('invoices.pdf', $invoice))
             ->assertOk()
             ->assertHeader('content-type', 'application/pdf');
+    }
+
+    public function test_invoice_applies_configured_vat_and_removes_franchise_notice(): void
+    {
+        Setting::put('invoice_vat_enabled', true);
+        Setting::put('invoice_vat_rate', 20);
+        $intervention = Intervention::cloturees()->firstOrFail();
+        $intervention->update(['montant_total' => 100, 'facturee' => false]);
+
+        $this->post(route('invoices.store', $intervention));
+
+        $invoice = Invoice::sole();
+        $this->assertTrue($invoice->vat_enabled);
+        $this->assertSame('20.00', $invoice->vat_rate);
+        $this->assertSame('20.00', $invoice->vat_amount);
+        $this->assertSame('120.00', $invoice->total_ttc);
+        $this->assertSame('', $invoice->legal_notice);
     }
 }

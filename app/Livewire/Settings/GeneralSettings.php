@@ -52,6 +52,7 @@ class GeneralSettings extends Component
         'billing' => [
             'deplacement_mode', 'deplacement_forfait', 'deplacement_prix_km', 'deplacement_villes_gratuites',
             'invoice_number_format', 'invoice_next_number',
+            'invoice_vat_enabled', 'invoice_vat_rate',
         ],
     ];
 
@@ -75,6 +76,8 @@ class GeneralSettings extends Component
         $this->data['invoice_next_number'] ??= max(1, Invoice::query()->pluck('number')
             ->map(fn (string $number) => preg_match('/-(\d+)$/', $number, $match) ? (int) $match[1] : 0)
             ->max() + 1);
+        $this->data['invoice_vat_enabled'] ??= false;
+        $this->data['invoice_vat_rate'] ??= 20;
     }
 
     protected function rules(): array
@@ -115,6 +118,8 @@ class GeneralSettings extends Component
                 'data.deplacement_villes_gratuites' => ['nullable', 'string'],
                 'data.invoice_number_format' => ['required', 'string', 'max:60', 'regex:/#+/'],
                 'data.invoice_next_number' => ['required', 'integer', 'min:1'],
+                'data.invoice_vat_enabled' => ['required', 'boolean'],
+                'data.invoice_vat_rate' => ['required', 'numeric', 'min:0', 'max:100'],
             ],
             default => [],
         };

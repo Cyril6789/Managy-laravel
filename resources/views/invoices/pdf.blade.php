@@ -86,11 +86,15 @@
 
     <table class="totals">
         <tr><td>Sous-total HT</td><td class="num">{{ number_format($invoice->subtotal_ht, 2, ',', ' ') }} €</td></tr>
-        <tr class="grand"><td>Total HT</td><td class="num">{{ number_format($invoice->total_ht, 2, ',', ' ') }} €</td></tr>
+        <tr><td>Total HT</td><td class="num">{{ number_format($invoice->total_ht, 2, ',', ' ') }} €</td></tr>
+        @if ($invoice->vat_enabled)
+            <tr><td>TVA ({{ number_format($invoice->vat_rate, 2, ',', ' ') }} %)</td><td class="num">{{ number_format($invoice->vat_amount, 2, ',', ' ') }} €</td></tr>
+        @endif
+        <tr class="grand"><td>Total TTC</td><td class="num">{{ number_format($invoice->total_ttc, 2, ',', ' ') }} €</td></tr>
     </table>
 
     <div class="footer">
-        {{ $invoice->legal_notice }}
+        @if ($invoice->legal_notice){{ $invoice->legal_notice }}@endif
         @if($issuer['siret'] ?? null) — SIRET {{ $issuer['siret'] }}@endif
     </div>
 </body>

@@ -45,7 +45,7 @@
             @else
                 <table class="min-w-full divide-y divide-gray-100 text-sm dark:divide-gray-800">
                     <thead class="bg-gray-50 text-left text-xs uppercase tracking-wide text-gray-500 dark:bg-gray-800/50"><tr>
-                        <th class="px-5 py-3 font-medium">N° facture</th><th class="px-5 py-3 font-medium">Date</th><th class="px-5 py-3 font-medium">Client</th><th class="px-5 py-3 font-medium">Intervention</th><th class="px-5 py-3 text-right font-medium">Total HT</th><th class="px-5 py-3"></th>
+                        <th class="px-5 py-3 font-medium">N° facture</th><th class="px-5 py-3 font-medium">Date</th><th class="px-5 py-3 font-medium">Client</th><th class="px-5 py-3 font-medium">Intervention</th><th class="px-5 py-3 text-right font-medium">Total</th><th class="px-5 py-3"></th>
                     </tr></thead>
                     <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
                         @forelse ($invoices as $invoice)
@@ -54,7 +54,7 @@
                                 <td class="whitespace-nowrap px-5 py-3 text-gray-500">{{ $invoice->issued_at->format('d/m/Y') }}</td>
                                 <td class="px-5 py-3">{{ $invoice->customer['name'] ?? '—' }}</td>
                                 <td class="px-5 py-3"><a href="{{ route('interventions.show', $invoice->intervention) }}" class="text-brand-600 hover:underline">{{ $invoice->intervention?->reference }}</a></td>
-                                <td class="px-5 py-3 text-right font-medium">{{ number_format($invoice->total_ht, 2, ',', ' ') }} €</td>
+                                <td class="px-5 py-3 text-right font-medium">{{ number_format($invoice->vat_enabled ? $invoice->total_ttc : $invoice->total_ht, 2, ',', ' ') }} € {{ $invoice->vat_enabled ? 'TTC' : 'HT' }}</td>
                                 <td class="px-5 py-3 text-right"><button type="button" wire:click="openPdf({{ $invoice->id }})" class="font-medium text-brand-600 hover:underline">Voir le PDF</button></td>
                             </tr>
                         @empty

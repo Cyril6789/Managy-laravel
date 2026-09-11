@@ -54,6 +54,10 @@ class InvoiceGenerator
             $lines = $this->lineSnapshots($intervention);
             $subtotal = round(collect($lines)->where('total_ht', '>', 0)->sum('total_ht'), 2);
             $total = round(collect($lines)->sum('total_ht'), 2);
+            $vatEnabled = filter_var(Setting::get('invoice_vat_enabled', false), FILTER_VALIDATE_BOOLEAN);
+            $vatRate = $vatEnabled ? max(0, (float) Setting::get('invoice_vat_rate', 20)) : 0.0;
+            $vatAmount = round($total * $vatRate / 100, 2);
+            $totalTtc = round($total + $vatAmount, 2);
 
             $fileNumber = trim(preg_replace('/[^A-Za-z0-9._-]+/', '-', $number), '-');
             $invoice = Invoice::create([
@@ -67,8 +71,12 @@ class InvoiceGenerator
                 'lines' => $lines,
                 'subtotal_ht' => $subtotal,
                 'total_ht' => $total,
+                'vat_enabled' => $vatEnabled,
+                'vat_rate' => $vatRate,
+                'vat_amount' => $vatAmount,
+                'total_ttc' => $totalTtc,
                 'currency' => 'EUR',
-                'legal_notice' => self::LEGAL_NOTICE,
+                'legal_notice' => $vatEnabled ? '' : self::LEGAL_NOTICE,
                 'pdf_path' => "invoices/{$intervention->society_id}/{$year}/{$fileNumber}.pdf",
             ]);
 
