@@ -19,8 +19,7 @@
                 </x-field>
 
                 <div class="mt-6 rounded-xl border border-gray-200 p-4 dark:border-gray-700">
-                    <div class="overflow-x-auto pb-1">
-                    <div class="grid min-w-[1380px] grid-cols-[minmax(190px,1.4fr)_minmax(210px,1.6fr)_75px_120px_90px_120px_90px_minmax(250px,auto)] gap-3">
+                    <div class="grid grid-cols-1 gap-3 md:grid-cols-4 xl:grid-cols-[minmax(165px,1.25fr)_minmax(190px,1.5fr)_64px_105px_70px_105px_80px_188px]">
                         <x-field label="Catalogue">
                             <x-searchable-select name="manual_catalogue" wire:model.change="draft.catalogue_id" wire:change="selectCatalogue"
                                 :selected="$draft['catalogue_id']" :options="$catalogue->pluck('designation', 'id')"
@@ -34,11 +33,10 @@
                             <x-searchable-select name="manual_price_mode" wire:model.change="draft.price_mode" :selected="$draft['price_mode']" :allow-empty="false" :options="['ht' => 'HT', 'ttc' => 'TTC']" />
                         </x-field>
                         <x-field label="TVA (%)"><x-input type="number" min="0" max="100" step="0.01" wire:model="draft.vat_rate" :disabled="! $vatEnabled" /></x-field>
-                        <div class="flex items-end justify-end gap-2">
-                            <x-button type="button" variant="secondary" wire:click="addTravel">Frais de déplacement</x-button>
-                            <x-button type="button" wire:click="addLine">Ajouter la ligne</x-button>
+                        <div class="flex items-end justify-end gap-1.5 md:col-span-2 xl:col-span-1">
+                            <x-button type="button" variant="secondary" wire:click="addTravel" title="Préremplir une ligne de frais de déplacement">Déplacement</x-button>
+                            <x-button type="button" wire:click="addLine">+ Ajouter</x-button>
                         </div>
-                    </div>
                     </div>
                     @error('draft.description')<p class="mt-2 text-xs text-red-600">{{ $message }}</p>@enderror
                     @error('draft.unit_price')<p class="mt-2 text-xs text-red-600">{{ $message }}</p>@enderror

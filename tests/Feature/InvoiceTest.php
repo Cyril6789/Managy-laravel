@@ -270,6 +270,16 @@ class InvoiceTest extends TestCase
             ->assertDontSeeHtml('x-ref="trigger" disabled');
     }
 
+    public function test_invoice_add_line_toolbar_does_not_clip_dropdowns_or_force_horizontal_scroll(): void
+    {
+        Livewire::test(ManualInvoice::class)
+            ->call('open')
+            ->assertSeeHtml('xl:grid-cols-[minmax(165px,1.25fr)')
+            ->assertDontSeeHtml('min-w-[1380px]')
+            ->assertDontSeeHtml('overflow-x-auto pb-1')
+            ->assertSee('+ Ajouter');
+    }
+
     public function test_invoice_draft_has_no_number_and_can_be_resumed_then_issued(): void
     {
         $client = Client::firstOrFail();
