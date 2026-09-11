@@ -11,7 +11,6 @@
                 </button>
                 <button wire:click="$set('filtre', 'facturees')" class="rounded-md px-3 py-1.5 {{ $filtre === 'facturees' ? 'bg-brand-600 text-white' : 'text-gray-600 dark:text-gray-300' }}">Historique des factures</button>
                 <button wire:click="$set('filtre', 'brouillons')" class="rounded-md px-3 py-1.5 {{ $filtre === 'brouillons' ? 'bg-brand-600 text-white' : 'text-gray-600 dark:text-gray-300' }}">Brouillons</button>
-                <button wire:click="$set('filtre', 'ignorees')" class="rounded-md px-3 py-1.5 {{ $filtre === 'ignorees' ? 'bg-brand-600 text-white' : 'text-gray-600 dark:text-gray-300' }}">Ignorées</button>
             </div>
             <div class="relative min-w-48 flex-1">
                 <x-icon name="search" class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
@@ -70,25 +69,6 @@
                             </tr>
                         @empty
                             <tr><td colspan="7"><x-empty-state icon="list" title="Aucune facture générée" /></td></tr>
-                        @endforelse
-                    </tbody>
-                </table>
-            @elseif ($filtre === 'ignorees')
-                <table class="min-w-full divide-y divide-gray-100 text-sm dark:divide-gray-800">
-                    <thead class="bg-gray-50 text-left text-xs uppercase tracking-wide text-gray-500 dark:bg-gray-800/50"><tr>
-                        <th class="px-5 py-3 font-medium">Intervention</th><th class="px-5 py-3 font-medium">Client</th><th class="px-5 py-3 font-medium">Ignorée le</th><th class="px-5 py-3 font-medium">Par</th><th class="px-5 py-3"></th>
-                    </tr></thead>
-                    <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
-                        @forelse ($interventions as $i)
-                            <tr wire:key="ignored-invoice-{{ $i->id }}">
-                                <td class="px-5 py-3"><a href="{{ route('interventions.show', $i) }}" class="font-medium text-brand-600 hover:underline">{{ $i->reference }}</a></td>
-                                <td class="px-5 py-3">{{ $i->client?->nomComplet() }}</td>
-                                <td class="px-5 py-3 text-gray-500">{{ $i->invoice_ignored_at?->format('d/m/Y à H:i') }}</td>
-                                <td class="px-5 py-3 text-gray-500">{{ $i->invoiceIgnoredBy?->fullName() ?: '—' }}</td>
-                                <td class="px-5 py-3 text-right"><button type="button" wire:click="restoreIgnored({{ $i->id }})" class="font-medium text-brand-600 hover:underline">Réintégrer</button></td>
-                            </tr>
-                        @empty
-                            <tr><td colspan="5"><x-empty-state icon="check" title="Aucune intervention ignorée" /></td></tr>
                         @endforelse
                     </tbody>
                 </table>

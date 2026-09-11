@@ -106,15 +106,6 @@ class Facturation extends Component
         $this->logLegacy($intervention, 'a ignoré l’intervention de la facturation');
     }
 
-    public function restoreIgnored(int $id): void
-    {
-        Gate::authorize(Permissions::INTERVENTIONS_FACTURATION);
-        abort_unless($this->invoiceEnabled, 404);
-        $intervention = Intervention::cloturees()->whereNotNull('invoice_ignored_at')->findOrFail($id);
-        $intervention->update(['invoice_ignored_at' => null, 'invoice_ignored_by' => null]);
-        $this->logLegacy($intervention, 'a réintégré l’intervention à la facturation');
-    }
-
     public function markInvoiced(int $id): void
     {
         Gate::authorize(Permissions::INTERVENTIONS_FACTURATION);
@@ -146,6 +137,10 @@ class Facturation extends Component
     public function render()
     {
         Gate::authorize(Permissions::INTERVENTIONS_FACTURATION);
+
+        if ($this->invoiceEnabled && ! in_array($this->filtre, ['a_facturer', 'facturees', 'brouillons'], true)) {
+            $this->filtre = 'a_facturer';
+        }
 
         $term = '%'.trim($this->q).'%';
         $interventions = null;
@@ -180,15 +175,6 @@ class Facturation extends Component
                     ->orWhereHas('client', fn ($c) => $c->where('nom', 'like', $term)->orWhere('prenom', 'like', $term))))
                 ->with(['intervention.client', 'client', 'payments'])
                 ->latest('issued_at')->latest('id')
-                ->paginate(20);
-        } elseif ($this->filtre === 'ignorees') {
-            $interventions = Intervention::cloturees()
-                ->whereNotNull('invoice_ignored_at')
-                ->when($this->q !== '', fn ($query) => $query->where(fn ($w) => $w
-                    ->where('reference', 'like', $term)
-                    ->orWhereHas('client', fn ($c) => $c->where('nom', 'like', $term)->orWhere('prenom', 'like', $term))))
-                ->with(['client', 'invoiceIgnoredBy'])
-                ->latest('invoice_ignored_at')
                 ->paginate(20);
         } else {
             $drafts = InvoiceDraft::query()
