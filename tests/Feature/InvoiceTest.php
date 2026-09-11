@@ -330,4 +330,23 @@ class InvoiceTest extends TestCase
             ->assertSet('pdfUrl', route('invoices.pdf', $invoice))
             ->assertSet('generatedInvoiceId', $invoice->id);
     }
+
+    public function test_vat_exempt_pdf_only_displays_ht_columns_and_totals(): void
+    {
+        $intervention = Intervention::cloturees()->firstOrFail();
+        $this->post(route('invoices.store', $intervention));
+        $invoice = Invoice::sole();
+
+        $html = view('invoices.pdf', [
+            'invoice' => $invoice,
+            'logoDataUri' => null,
+            'payments' => null,
+            'paymentStatus' => null,
+        ])->render();
+
+        $this->assertStringContainsString('P.U. HT', $html);
+        $this->assertStringContainsString('Total HT', $html);
+        $this->assertStringNotContainsString('<th class="num">TVA</th>', $html);
+        $this->assertStringNotContainsString('Total TTC', $html);
+    }
 }

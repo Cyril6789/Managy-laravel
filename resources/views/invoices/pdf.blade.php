@@ -84,7 +84,7 @@
 
     @if ($invoice->intervention)<div class="reference">Intervention : <strong>{{ $invoice->intervention->reference }}</strong></div>@endif
     <table class="lines">
-        <thead><tr><th>Désignation</th><th class="num">Qté</th><th>Unité</th><th class="num">P.U. HT</th><th class="num">TVA</th><th class="num">Total HT</th><th class="num">Total TTC</th></tr></thead>
+        <thead><tr><th>Désignation</th><th class="num">Qté</th><th>Unité</th><th class="num">P.U. HT</th>@if($invoice->vat_enabled)<th class="num">TVA</th>@endif<th class="num">Total HT</th>@if($invoice->vat_enabled)<th class="num">Total TTC</th>@endif</tr></thead>
         <tbody>
         @foreach($invoice->lines as $line)
             <tr>
@@ -97,9 +97,9 @@
                 <td class="num">{{ number_format($line['quantity'], 2, ',', ' ') }}</td>
                 <td>{{ $line['unit'] }}</td>
                 <td class="num">{{ number_format($line['unit_price_ht'], 2, ',', ' ') }} €</td>
-                <td class="num">{{ number_format($line['vat_rate'] ?? 0, 2, ',', ' ') }} %</td>
+                @if($invoice->vat_enabled)<td class="num">{{ number_format($line['vat_rate'] ?? 0, 2, ',', ' ') }} %</td>@endif
                 <td class="num">{{ number_format($line['total_ht'], 2, ',', ' ') }} €</td>
-                <td class="num">{{ number_format($line['total_ttc'] ?? $line['total_ht'], 2, ',', ' ') }} €</td>
+                @if($invoice->vat_enabled)<td class="num">{{ number_format($line['total_ttc'] ?? $line['total_ht'], 2, ',', ' ') }} €</td>@endif
             </tr>
         @endforeach
         </tbody>
@@ -124,11 +124,13 @@
             <td class="totals-cell">
                 <table class="totals">
                     <tr><td>Sous-total HT</td><td class="num">{{ number_format($invoice->subtotal_ht, 2, ',', ' ') }} €</td></tr>
-                    <tr><td>Total HT</td><td class="num">{{ number_format($invoice->total_ht, 2, ',', ' ') }} €</td></tr>
                     @if ($invoice->vat_enabled)
+                        <tr><td>Total HT</td><td class="num">{{ number_format($invoice->total_ht, 2, ',', ' ') }} €</td></tr>
                         <tr><td>TVA ({{ number_format($invoice->vat_rate, 2, ',', ' ') }} %)</td><td class="num">{{ number_format($invoice->vat_amount, 2, ',', ' ') }} €</td></tr>
+                        <tr class="grand"><td>Total TTC</td><td class="num">{{ number_format($invoice->total_ttc, 2, ',', ' ') }} €</td></tr>
+                    @else
+                        <tr class="grand"><td>Total HT</td><td class="num">{{ number_format($invoice->total_ht, 2, ',', ' ') }} €</td></tr>
                     @endif
-                    <tr class="grand"><td>Total TTC</td><td class="num">{{ number_format($invoice->total_ttc, 2, ',', ' ') }} €</td></tr>
                 </table>
             </td>
         </tr>
