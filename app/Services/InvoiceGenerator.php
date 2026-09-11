@@ -20,6 +20,50 @@ class InvoiceGenerator
 
     public function generate(Intervention $intervention): Invoice
     {
+        if ($existing = $intervention->invoice()->first()) {
+            return $existing;
+        }
+
+        return $this->generateFromIntervention($intervention, $this->draftLinesForIntervention($intervention));
+    }
+
+    public function generateFromIntervention(Intervention $intervention, array $lines, ?string $discountType = null, float $discountValue = 0): Invoice
+    {
+        $this->assertInterventionCanBeInvoiced($intervention);
+        $intervention->loadMissing(['client', 'contact']);
+
+        return $this->issue($intervention->client, $lines, $intervention, $discountType, $discountValue);
+    }
+
+    public function generateManual(Client $client, array $lines, ?string $discountType = null, float $discountValue = 0): Invoice
+    {
+        if (! $client->society?->invoice_enabled) {
+            throw ValidationException::withMessages(['invoice' => 'Le module de facturation PDF n’est pas activé pour cette société.']);
+        }
+
+        return $this->issue($client, $lines, null, $discountType, $discountValue);
+    }
+
+    public function draftLinesForIntervention(Intervention $intervention): array
+    {
+        $this->assertInterventionCanBeInvoiced($intervention);
+        $intervention->loadMissing(['client', 'contact', 'prestations', 'pieces']);
+
+        return collect($this->lineSnapshots($intervention))->map(fn (array $line) => [
+            'description' => $line['description'],
+            'quantity' => (float) $line['quantity'],
+            'unit' => $line['unit'],
+            'unit_price_ht' => (float) $line['unit_price_ht'],
+            'vat_rate' => filter_var(Setting::get('invoice_vat_enabled', false), FILTER_VALIDATE_BOOLEAN)
+                ? (float) Setting::get('invoice_vat_rate', 20)
+                : 0.0,
+            'discount_type' => '',
+            'discount_value' => 0,
+        ])->all();
+    }
+
+    private function assertInterventionCanBeInvoiced(Intervention $intervention): void
+    {
         if (! $intervention->society?->invoice_enabled) {
             throw ValidationException::withMessages(['invoice' => 'Le module de facturation PDF n’est pas activé pour cette société.']);
         }
@@ -33,84 +77,39 @@ class InvoiceGenerator
         }
 
         if ($existing = $intervention->invoice()->first()) {
-            return $existing;
+            throw ValidationException::withMessages(['invoice' => 'Cette intervention possède déjà une facture définitive.']);
         }
-
-        $intervention->loadMissing(['client', 'contact', 'prestations', 'pieces']);
-
-        return DB::transaction(function () use ($intervention) {
-            Society::query()->whereKey($intervention->society_id)->lockForUpdate()->firstOrFail();
-
-            if ($existing = Invoice::query()->where('intervention_id', $intervention->id)->first()) {
-                return $existing;
-            }
-
-            [$number, $sequence, $year] = $this->reserveNumber();
-
-            $issuer = $this->issuerSnapshot();
-            $customer = $this->customerSnapshot($intervention);
-            $lines = $this->lineSnapshots($intervention);
-            $vatEnabled = filter_var(Setting::get('invoice_vat_enabled', false), FILTER_VALIDATE_BOOLEAN);
-            $vatRate = $vatEnabled ? max(0, (float) Setting::get('invoice_vat_rate', 20)) : 0.0;
-            $lines = $this->applyVat($lines, $vatRate);
-            $subtotal = round(collect($lines)->where('total_ht', '>', 0)->sum('total_ht'), 2);
-            $total = round(collect($lines)->sum('total_ht'), 2);
-            $vatAmount = round(collect($lines)->sum('vat_amount'), 2);
-            $totalTtc = round(collect($lines)->sum('total_ttc'), 2);
-
-            $fileNumber = trim(preg_replace('/[^A-Za-z0-9._-]+/', '-', $number), '-');
-            $invoice = Invoice::create([
-                'society_id' => $intervention->society_id,
-                'intervention_id' => $intervention->id,
-                'created_by' => Auth::id(),
-                'number' => $number,
-                'issued_at' => today(),
-                'issuer' => $issuer,
-                'customer' => $customer,
-                'lines' => $lines,
-                'subtotal_ht' => $subtotal,
-                'total_ht' => $total,
-                'vat_enabled' => $vatEnabled,
-                'vat_rate' => $vatRate,
-                'vat_amount' => $vatAmount,
-                'total_ttc' => $totalTtc,
-                'currency' => 'EUR',
-                'legal_notice' => $vatEnabled ? '' : self::LEGAL_NOTICE,
-                'terms' => Setting::get('invoice_terms'),
-                'payment_terms' => Setting::get('invoice_payment_terms'),
-                'pdf_path' => "invoices/{$intervention->society_id}/{$year}/{$fileNumber}.pdf",
-            ]);
-
-            Storage::disk('local')->put($invoice->pdf_path, $this->renderPdf($invoice));
-            $intervention->update(['facturee' => true]);
-            Setting::put('invoice_next_number', $sequence + 1);
-
-            return $invoice;
-        });
     }
 
-    public function generateManual(Client $client, array $lines): Invoice
+    private function issue(Client $client, array $lines, ?Intervention $intervention, ?string $discountType, float $discountValue): Invoice
     {
-        if (! $client->society?->invoice_enabled) {
-            throw ValidationException::withMessages(['invoice' => 'Le module de facturation PDF n’est pas activé pour cette société.']);
-        }
-
         if ($lines === []) {
             throw ValidationException::withMessages(['lines' => 'Ajoutez au moins une ligne à la facture.']);
         }
 
-        return DB::transaction(function () use ($client, $lines) {
+        return DB::transaction(function () use ($client, $lines, $intervention, $discountType, $discountValue) {
             Society::query()->whereKey($client->society_id)->lockForUpdate()->firstOrFail();
+            if ($intervention && Invoice::query()->where('intervention_id', $intervention->id)->exists()) {
+                throw ValidationException::withMessages(['invoice' => 'Cette intervention possède déjà une facture définitive.']);
+            }
             [$number, $sequence, $year] = $this->reserveNumber();
             $vatEnabled = filter_var(Setting::get('invoice_vat_enabled', false), FILTER_VALIDATE_BOOLEAN);
             $normalized = collect($lines)->map(function (array $line) use ($vatEnabled) {
                 $quantity = max(0.01, (float) $line['quantity']);
                 $unitPrice = round((float) $line['unit_price_ht'], 2);
-                $total = round($quantity * $unitPrice, 2);
+                $gross = round($quantity * $unitPrice, 2);
+                $lineDiscount = $this->discountAmount($gross, $line['discount_type'] ?? null, (float) ($line['discount_value'] ?? 0));
+                $total = round($gross - $lineDiscount, 2);
                 $rate = $vatEnabled ? max(0, (float) ($line['vat_rate'] ?? Setting::get('invoice_vat_rate', 20))) : 0.0;
 
-                return $this->line((string) $line['description'], $quantity, (string) ($line['unit'] ?? 'u'), $unitPrice, $total) + ['vat_rate' => $rate];
+                return $this->line((string) $line['description'], $quantity, (string) ($line['unit'] ?? 'u'), $unitPrice, $total) + [
+                    'vat_rate' => $rate,
+                    'discount_type' => $lineDiscount > 0 ? ($line['discount_type'] ?? null) : null,
+                    'discount_value' => $lineDiscount > 0 ? (float) ($line['discount_value'] ?? 0) : 0,
+                    'discount_amount' => $lineDiscount,
+                ];
             })->all();
+            $normalized = $this->applyTotalDiscount($normalized, $discountType, $discountValue);
             $normalized = $this->applyVat($normalized);
             $totalHt = round(collect($normalized)->sum('total_ht'), 2);
             $vatAmount = round(collect($normalized)->sum('vat_amount'), 2);
@@ -120,12 +119,13 @@ class InvoiceGenerator
 
             $invoice = Invoice::create([
                 'society_id' => $client->society_id,
+                'intervention_id' => $intervention?->id,
                 'client_id' => $client->id,
                 'created_by' => Auth::id(),
                 'number' => $number,
                 'issued_at' => today(),
                 'issuer' => $this->issuerSnapshot(),
-                'customer' => $this->clientSnapshot($client),
+                'customer' => $intervention ? $this->customerSnapshot($intervention) : $this->clientSnapshot($client),
                 'lines' => $normalized,
                 'subtotal_ht' => round(collect($normalized)->where('total_ht', '>', 0)->sum('total_ht'), 2),
                 'total_ht' => $totalHt,
@@ -141,10 +141,45 @@ class InvoiceGenerator
             ]);
 
             Storage::disk('local')->put($invoice->pdf_path, $this->renderPdf($invoice));
+            $intervention?->update(['facturee' => true]);
             Setting::put('invoice_next_number', $sequence + 1);
 
             return $invoice;
         });
+    }
+
+    private function discountAmount(float $base, ?string $type, float $value): float
+    {
+        if ($base <= 0 || $value <= 0) {
+            return 0.0;
+        }
+
+        return $type === 'pourcent'
+            ? min($base, round($base * min($value, 100) / 100, 2))
+            : ($type === 'euro' ? min($base, round($value, 2)) : 0.0);
+    }
+
+    private function applyTotalDiscount(array $lines, ?string $type, float $value): array
+    {
+        $base = round(collect($lines)->where('total_ht', '>', 0)->sum('total_ht'), 2);
+        $discount = $this->discountAmount($base, $type, $value);
+        if ($discount <= 0) {
+            return $lines;
+        }
+
+        $remaining = $discount;
+        $groups = collect($lines)->where('total_ht', '>', 0)->groupBy('vat_rate');
+        foreach ($groups as $rate => $group) {
+            $groupBase = (float) $group->sum('total_ht');
+            $amount = $rate === $groups->keys()->last()
+                ? $remaining
+                : round($discount * $groupBase / $base, 2);
+            $remaining = round($remaining - $amount, 2);
+            $label = $type === 'pourcent' ? "Remise globale ({$value} %)" : 'Remise globale';
+            $lines[] = $this->line($label, 1, '', -$amount, -$amount) + ['vat_rate' => (float) $rate];
+        }
+
+        return $lines;
     }
 
     private function reserveNumber(): array
@@ -275,6 +310,10 @@ class InvoiceGenerator
         if (($adjustment = round($expected - $actual, 2)) !== 0.0) {
             $label = $intervention->garantie ? 'Prise en charge sous garantie' : 'Ajustement de facturation';
             $lines[] = $this->line($label, 1, '', $adjustment, $adjustment);
+        }
+
+        if ($lines === []) {
+            $lines[] = $this->line('Intervention '.$intervention->reference, 1, 'forfait', 0, 0);
         }
 
         return $lines;

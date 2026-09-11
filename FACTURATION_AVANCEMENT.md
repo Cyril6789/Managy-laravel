@@ -1,0 +1,54 @@
+# Facturation — suivi d’implémentation
+
+## Éditeur de facture professionnel
+
+- [x] Utiliser la même grande modale pour une facture libre et une facture issue d’une intervention.
+- [ ] La modale ne doit pas pouvoir se fermer en cliquant ailleur
+- [ ] les élements de création d'une ligne faturable, doivent visuellement se trouver une seule ligne (Catalogue, designation, quantité, prix u, unité, prix saisi, tva) pas sur deux ligne
+- [x] Préremplir le client et toutes les lignes facturables de l’intervention sans créer de facture à l’ouverture.
+- [x] Permettre l’ajout d’une prestation du catalogue ou d’une ligne entièrement libre.
+- [x] Permettre la modification de la désignation, quantité, unité, prix HT et TVA de chaque ligne.
+- [x] Permettre la suppression et le réordonnancement des lignes par glisser-déposer.
+- [x] Permettre une remise en euros ou en pourcentage sur chaque ligne.
+- [x] Permettre une remise globale en euros ou en pourcentage, avec ventilation correcte de la TVA.
+- [x] Afficher dans la modale un récapitulatif dynamique HT, TVA et TTC avant émission.
+- [x] Ouvrir le PDF généré dans une modale et rafraîchir l’historique des factures.
+
+## Émission et immutabilité
+
+- [x] Ne réserver le numéro et ne créer la facture qu’au clic final de génération.
+- [x] Lier définitivement la facture d’intervention à son intervention et empêcher tout doublon.
+- [x] Interdire la modification et la suppression d’une facture après son émission.
+- [x] Conserver le PDF original archivé sans jamais l’écraser ni le régénérer.
+- [x] Appliquer les réglages et mentions légales uniquement aux nouvelles factures ; les archives existantes restent inchangées.
+
+## Suivi des paiements
+
+- [ ] Ajouter un historique append-only des règlements avec date, montant, mode, référence et note facultative.
+- [ ] Autoriser plusieurs règlements et plusieurs modes de paiement sur une même facture.
+- [ ] Proposer les modes espèces, carte bancaire, chèque, virement et autre.
+- [ ] Calculer automatiquement le total réglé et le solde restant.
+- [ ] Calculer automatiquement les statuts « En attente de paiement », « Partiellement payée » et « Payée ».
+- [ ] Empêcher un règlement nul, négatif ou supérieur au solde restant.
+- [ ] Afficher le statut et les montants réglé/restant dans l’historique des factures.
+- [ ] Ajouter l’interface de saisie et l’historique des règlements depuis la consultation d’une facture.
+
+## PDF acquitté sans altérer l’original
+
+- [ ] Conserver le PDF commercial original comme archive immuable.
+- [ ] Générer une copie d’état distincte après chaque règlement, sans écraser les versions précédentes.
+- [ ] Afficher un tampon « PARTIELLEMENT PAYÉE » ou « PAYÉE » sur la copie d’état.
+- [ ] Afficher sur la copie d’état les dates, montants et modes des règlements.
+- [ ] Permettre de consulter/télécharger l’original et la dernière copie d’état.
+
+## Vérifications
+
+- [ ] Tester une facture libre avec lignes catalogue et libres, remises par ligne et remise globale.
+- [x] Tester une facture d’intervention préremplie, réordonnée puis générée.
+- [x] Tester qu’une facture émise ne peut être ni modifiée, ni supprimée, ni générée deux fois.
+- [ ] Tester les trois statuts de paiement et plusieurs règlements successifs.
+- [ ] Tester que chaque copie d’état est créée séparément et que le PDF original reste byte-à-byte identique.
+- [ ] Exécuter la suite PHP complète et le build frontend.
+
+## Autre
+- [ ] Les factures doivent aussi être visible dans la fiche client, et dans la fiche inter 

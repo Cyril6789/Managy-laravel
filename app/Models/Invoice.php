@@ -33,6 +33,12 @@ class Invoice extends Model
         ];
     }
 
+    protected static function booted(): void
+    {
+        static::updating(fn () => throw new \LogicException('Une facture émise est immuable.'));
+        static::deleting(fn () => throw new \LogicException('Une facture émise ne peut pas être supprimée.'));
+    }
+
     public function intervention(): BelongsTo
     {
         return $this->belongsTo(Intervention::class);

@@ -276,7 +276,7 @@ class LivewireTest extends TestCase
 
         Livewire::test(Facturation::class)
             ->assertSee($intervention->reference)
-            ->assertSee('Générer le PDF');
+            ->assertSee('Préparer la facture');
     }
 
     public function test_facturation_generates_and_opens_pdf_in_modal(): void

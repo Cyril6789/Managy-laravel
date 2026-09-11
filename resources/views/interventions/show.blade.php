@@ -57,9 +57,7 @@
                     @if ($i->invoice)
                         <a href="{{ route('invoices.pdf', $i->invoice) }}" target="_blank" class="ml-auto font-medium underline">Facture {{ $i->invoice->number }} ↗</a>
                     @else
-                        <form action="{{ route('invoices.store', $i) }}" method="POST" target="_blank" class="ml-auto">@csrf
-                            <button class="font-medium underline" onclick="return confirm('Générer la facture définitive ?')">Générer la facture PDF</button>
-                        </form>
+                        <button type="button" class="ml-auto font-medium underline" x-on:click="Livewire.dispatch('open-invoice-editor', { interventionId: {{ $i->id }} })">Préparer la facture</button>
                     @endif
                 @else
                     <form action="{{ route('interventions.facturation', $i) }}" method="POST" class="ml-auto">@csrf
@@ -68,6 +66,10 @@
                 @endif
             @endcan
         </div>
+    @endif
+
+    @if (auth()->user()->society?->invoice_enabled && ! $i->invoice)
+        <livewire:manual-invoice :launcher="false" />
     @endif
 
     @if ($maintenance['has'])

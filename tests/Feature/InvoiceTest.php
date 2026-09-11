@@ -159,4 +159,66 @@ class InvoiceTest extends TestCase
         $this->assertSame('240.00', $invoice->total_ttc);
         $this->assertSame('100', (string) $invoice->lines[0]['unit_price_ht']);
     }
+
+    public function test_intervention_invoice_opens_as_editable_draft_with_discounts_and_ordering(): void
+    {
+        $client = Client::firstOrFail();
+        $intervention = Intervention::create([
+            'client_id' => $client->id,
+            'closed_at' => now(),
+            'montant_prestations' => 100,
+            'montant_pieces' => 20,
+            'montant_total' => 120,
+        ]);
+        $intervention->prestations()->create(['designation' => 'Diagnostic', 'duree' => 2, 'tarif' => 50]);
+        $intervention->pieces()->create(['designation' => 'Câble', 'quantite' => 1, 'prix' => 20]);
+
+        Livewire::test(ManualInvoice::class)
+            ->call('openForIntervention', $intervention->id)
+            ->assertSet('show', true)
+            ->assertSet('clientId', $client->id)
+            ->assertCount('lines', 2)
+            ->set('lines.0.description', 'Diagnostic complet')
+            ->set('lines.0.discount_type', 'pourcent')
+            ->set('lines.0.discount_value', 10)
+            ->call('moveLine', 0, 1)
+            ->set('totalDiscountType', 'euro')
+            ->set('totalDiscountValue', 10)
+            ->call('generate')
+            ->assertHasNoErrors()
+            ->assertSet('show', false);
+
+        $invoice = Invoice::sole();
+        $this->assertSame($intervention->id, $invoice->intervention_id);
+        $this->assertSame('Câble', $invoice->lines[0]['description']);
+        $this->assertSame('Diagnostic complet', $invoice->lines[1]['description']);
+        $this->assertSame(10.0, (float) $invoice->lines[1]['discount_amount']);
+        $this->assertSame('100.00', $invoice->total_ht);
+        $this->assertTrue($intervention->fresh()->facturee);
+    }
+
+    public function test_emitted_invoice_and_original_pdf_are_immutable(): void
+    {
+        $intervention = Intervention::cloturees()->firstOrFail();
+        $this->post(route('invoices.store', $intervention));
+        $invoice = Invoice::sole();
+        $originalPdf = Storage::disk('local')->get($invoice->pdf_path);
+
+        try {
+            $invoice->update(['number' => 'MODIFIED']);
+            $this->fail('La modification aurait dû être refusée.');
+        } catch (\LogicException $exception) {
+            $this->assertSame('Une facture émise est immuable.', $exception->getMessage());
+        }
+
+        try {
+            $invoice->delete();
+            $this->fail('La suppression aurait dû être refusée.');
+        } catch (\LogicException $exception) {
+            $this->assertSame('Une facture émise ne peut pas être supprimée.', $exception->getMessage());
+        }
+
+        $this->assertSame($originalPdf, Storage::disk('local')->get($invoice->pdf_path));
+        $this->assertSame(1, Invoice::count());
+    }
 }

@@ -80,7 +80,12 @@
         <tbody>
         @foreach($invoice->lines as $line)
             <tr>
-                <td>{{ $line['description'] }}</td>
+                <td>
+                    {{ $line['description'] }}
+                    @if(($line['discount_amount'] ?? 0) > 0)
+                        <div style="color:#6b7280;font-size:8px">Remise {{ ($line['discount_type'] ?? '') === 'pourcent' ? number_format($line['discount_value'], 2, ',', ' ').' %' : number_format($line['discount_amount'], 2, ',', ' ').' €' }}</div>
+                    @endif
+                </td>
                 <td class="num">{{ number_format($line['quantity'], 2, ',', ' ') }}</td>
                 <td>{{ $line['unit'] }}</td>
                 <td class="num">{{ number_format($line['unit_price_ht'], 2, ',', ' ') }} €</td>

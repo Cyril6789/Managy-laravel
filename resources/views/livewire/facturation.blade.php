@@ -35,10 +35,7 @@
                                 <td class="px-5 py-3 text-right">
                                     <div class="flex items-center justify-end gap-3">
                                         <button type="button" wire:click="ignore({{ $i->id }})" wire:confirm="Ignorer cette intervention de la facturation ?" class="text-sm text-gray-500 hover:text-amber-600">Ignorer</button>
-                                        <x-button type="button" wire:click="generate({{ $i->id }})" wire:confirm="Générer la facture définitive pour cette intervention ?" wire:loading.attr="disabled" wire:target="generate({{ $i->id }})">
-                                            <span wire:loading.remove wire:target="generate({{ $i->id }})">Générer le PDF</span>
-                                            <span wire:loading wire:target="generate({{ $i->id }})">Génération…</span>
-                                        </x-button>
+                                        <x-button type="button" wire:click="$dispatch('open-invoice-editor', { interventionId: {{ $i->id }} })">Préparer la facture</x-button>
                                     </div>
                                 </td>
                             </tr>
