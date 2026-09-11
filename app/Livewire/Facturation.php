@@ -9,6 +9,7 @@ use App\Services\InvoiceGenerator;
 use App\Support\Permissions;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
+use Livewire\Attributes\On;
 use Livewire\Component;
 use Livewire\WithPagination;
 
@@ -65,6 +66,13 @@ class Facturation extends Component
     public function closePdf(): void
     {
         $this->pdfUrl = null;
+    }
+
+    #[On('invoice-created')]
+    public function invoiceCreated(): void
+    {
+        $this->filtre = 'facturees';
+        $this->resetPage();
     }
 
     public function ignore(int $id): void
@@ -145,8 +153,9 @@ class Facturation extends Component
                 ->when($this->q !== '', fn ($query) => $query->where(fn ($w) => $w
                     ->where('number', 'like', $term)
                     ->orWhereHas('intervention', fn ($i) => $i->where('reference', 'like', $term)
-                        ->orWhereHas('client', fn ($c) => $c->where('nom', 'like', $term)->orWhere('prenom', 'like', $term)))))
-                ->with(['intervention.client'])
+                        ->orWhereHas('client', fn ($c) => $c->where('nom', 'like', $term)->orWhere('prenom', 'like', $term)))
+                    ->orWhereHas('client', fn ($c) => $c->where('nom', 'like', $term)->orWhere('prenom', 'like', $term))))
+                ->with(['intervention.client', 'client'])
                 ->latest('issued_at')->latest('id')
                 ->paginate(20);
         } else {

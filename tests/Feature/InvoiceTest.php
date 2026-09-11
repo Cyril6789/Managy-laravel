@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Livewire\ManualInvoice;
 use App\Models\Client;
 use App\Models\Intervention;
 use App\Models\Invoice;
@@ -10,6 +11,7 @@ use App\Models\User;
 use Database\Seeders\DatabaseSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Storage;
+use Livewire\Livewire;
 use Tests\TestCase;
 
 class InvoiceTest extends TestCase
@@ -123,5 +125,32 @@ class InvoiceTest extends TestCase
         $this->assertSame('20.00', $invoice->vat_amount);
         $this->assertSame('120.00', $invoice->total_ttc);
         $this->assertSame('', $invoice->legal_notice);
+    }
+
+    public function test_manual_invoice_accepts_ttc_line_without_intervention(): void
+    {
+        Setting::put('invoice_vat_enabled', true);
+        Setting::put('invoice_vat_rate', 20);
+        $client = Client::firstOrFail();
+
+        Livewire::test(ManualInvoice::class)
+            ->call('open')
+            ->set('clientId', $client->id)
+            ->set('draft.description', 'Forfait assistance')
+            ->set('draft.quantity', '2')
+            ->set('draft.unit', 'u')
+            ->set('draft.unit_price', '120')
+            ->set('draft.price_mode', 'ttc')
+            ->set('draft.vat_rate', '20')
+            ->call('addLine')
+            ->call('generate');
+
+        $invoice = Invoice::sole();
+        $this->assertNull($invoice->intervention_id);
+        $this->assertSame($client->id, $invoice->client_id);
+        $this->assertSame('200.00', $invoice->total_ht);
+        $this->assertSame('40.00', $invoice->vat_amount);
+        $this->assertSame('240.00', $invoice->total_ttc);
+        $this->assertSame('100', (string) $invoice->lines[0]['unit_price_ht']);
     }
 }

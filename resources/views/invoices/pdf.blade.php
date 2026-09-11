@@ -68,9 +68,9 @@
         </tr>
     </table>
 
-    <div class="reference">Intervention : <strong>{{ $invoice->intervention?->reference }}</strong></div>
+    @if ($invoice->intervention)<div class="reference">Intervention : <strong>{{ $invoice->intervention->reference }}</strong></div>@endif
     <table class="lines">
-        <thead><tr><th>Désignation</th><th class="num">Qté</th><th>Unité</th><th class="num">Prix unitaire HT</th><th class="num">Total HT</th></tr></thead>
+        <thead><tr><th>Désignation</th><th class="num">Qté</th><th>Unité</th><th class="num">P.U. HT</th><th class="num">TVA</th><th class="num">Total HT</th><th class="num">Total TTC</th></tr></thead>
         <tbody>
         @foreach($invoice->lines as $line)
             <tr>
@@ -78,7 +78,9 @@
                 <td class="num">{{ number_format($line['quantity'], 2, ',', ' ') }}</td>
                 <td>{{ $line['unit'] }}</td>
                 <td class="num">{{ number_format($line['unit_price_ht'], 2, ',', ' ') }} €</td>
+                <td class="num">{{ number_format($line['vat_rate'] ?? 0, 2, ',', ' ') }} %</td>
                 <td class="num">{{ number_format($line['total_ht'], 2, ',', ' ') }} €</td>
+                <td class="num">{{ number_format($line['total_ttc'] ?? $line['total_ht'], 2, ',', ' ') }} €</td>
             </tr>
         @endforeach
         </tbody>

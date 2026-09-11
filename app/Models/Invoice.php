@@ -11,7 +11,7 @@ class Invoice extends Model
     use BelongsToSociety;
 
     protected $fillable = [
-        'society_id', 'intervention_id', 'created_by', 'number', 'issued_at',
+        'society_id', 'intervention_id', 'client_id', 'created_by', 'number', 'issued_at',
         'issuer', 'customer', 'lines', 'subtotal_ht', 'total_ht', 'vat_enabled',
         'vat_rate', 'vat_amount', 'total_ttc', 'currency',
         'legal_notice', 'pdf_path',
@@ -41,5 +41,10 @@ class Invoice extends Model
     public function creator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
+    }
+
+    public function client(): BelongsTo
+    {
+        return $this->belongsTo(Client::class);
     }
 }

@@ -2,6 +2,7 @@
     @if (! $invoiceEnabled)
         @include('livewire.partials.legacy-facturation')
     @else
+    <div class="mb-4 flex justify-end"><livewire:manual-invoice /></div>
     <x-card :padding="false">
         <div class="flex flex-wrap items-center gap-2 border-b border-gray-100 p-4 dark:border-gray-800">
             <div class="inline-flex rounded-lg border border-gray-200 p-0.5 text-sm dark:border-gray-700">
@@ -57,7 +58,13 @@
                                 <td class="whitespace-nowrap px-5 py-3 font-semibold">{{ $invoice->number }}</td>
                                 <td class="whitespace-nowrap px-5 py-3 text-gray-500">{{ $invoice->issued_at->format('d/m/Y') }}</td>
                                 <td class="px-5 py-3">{{ $invoice->customer['name'] ?? '—' }}</td>
-                                <td class="px-5 py-3"><a href="{{ route('interventions.show', $invoice->intervention) }}" class="text-brand-600 hover:underline">{{ $invoice->intervention?->reference }}</a></td>
+                                <td class="px-5 py-3">
+                                    @if ($invoice->intervention)
+                                        <a href="{{ route('interventions.show', $invoice->intervention) }}" class="text-brand-600 hover:underline">{{ $invoice->intervention->reference }}</a>
+                                    @else
+                                        <span class="text-gray-400">Facture libre</span>
+                                    @endif
+                                </td>
                                 <td class="px-5 py-3 text-right font-medium">{{ number_format($invoice->vat_enabled ? $invoice->total_ttc : $invoice->total_ht, 2, ',', ' ') }} € {{ $invoice->vat_enabled ? 'TTC' : 'HT' }}</td>
                                 <td class="px-5 py-3 text-right"><button type="button" wire:click="openPdf({{ $invoice->id }})" class="font-medium text-brand-600 hover:underline">Voir le PDF</button></td>
                             </tr>

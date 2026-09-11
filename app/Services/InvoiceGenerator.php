@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\Client;
 use App\Models\Intervention;
 use App\Models\Invoice;
 use App\Models\Setting;
@@ -44,24 +45,18 @@ class InvoiceGenerator
                 return $existing;
             }
 
-            $year = now()->format('Y');
-            $format = (string) (Setting::get('invoice_number_format') ?: 'FAC-{YYYY}-####');
-            $sequence = max(1, (int) (Setting::get('invoice_next_number') ?: $this->legacyNextNumber($year)));
-            $number = $this->formatNumber($format, $sequence);
-
-            while (Invoice::query()->where('number', $number)->exists()) {
-                $number = $this->formatNumber($format, ++$sequence);
-            }
+            [$number, $sequence, $year] = $this->reserveNumber();
 
             $issuer = $this->issuerSnapshot();
             $customer = $this->customerSnapshot($intervention);
             $lines = $this->lineSnapshots($intervention);
-            $subtotal = round(collect($lines)->where('total_ht', '>', 0)->sum('total_ht'), 2);
-            $total = round(collect($lines)->sum('total_ht'), 2);
             $vatEnabled = filter_var(Setting::get('invoice_vat_enabled', false), FILTER_VALIDATE_BOOLEAN);
             $vatRate = $vatEnabled ? max(0, (float) Setting::get('invoice_vat_rate', 20)) : 0.0;
-            $vatAmount = round($total * $vatRate / 100, 2);
-            $totalTtc = round($total + $vatAmount, 2);
+            $lines = $this->applyVat($lines, $vatRate);
+            $subtotal = round(collect($lines)->where('total_ht', '>', 0)->sum('total_ht'), 2);
+            $total = round(collect($lines)->sum('total_ht'), 2);
+            $vatAmount = round(collect($lines)->sum('vat_amount'), 2);
+            $totalTtc = round(collect($lines)->sum('total_ttc'), 2);
 
             $fileNumber = trim(preg_replace('/[^A-Za-z0-9._-]+/', '-', $number), '-');
             $invoice = Invoice::create([
@@ -90,6 +85,86 @@ class InvoiceGenerator
 
             return $invoice;
         });
+    }
+
+    public function generateManual(Client $client, array $lines): Invoice
+    {
+        if (! $client->society?->invoice_enabled) {
+            throw ValidationException::withMessages(['invoice' => 'Le module de facturation PDF n’est pas activé pour cette société.']);
+        }
+
+        if ($lines === []) {
+            throw ValidationException::withMessages(['lines' => 'Ajoutez au moins une ligne à la facture.']);
+        }
+
+        return DB::transaction(function () use ($client, $lines) {
+            Society::query()->whereKey($client->society_id)->lockForUpdate()->firstOrFail();
+            [$number, $sequence, $year] = $this->reserveNumber();
+            $vatEnabled = filter_var(Setting::get('invoice_vat_enabled', false), FILTER_VALIDATE_BOOLEAN);
+            $normalized = collect($lines)->map(function (array $line) use ($vatEnabled) {
+                $quantity = max(0.01, (float) $line['quantity']);
+                $unitPrice = round((float) $line['unit_price_ht'], 2);
+                $total = round($quantity * $unitPrice, 2);
+                $rate = $vatEnabled ? max(0, (float) ($line['vat_rate'] ?? Setting::get('invoice_vat_rate', 20))) : 0.0;
+
+                return $this->line((string) $line['description'], $quantity, (string) ($line['unit'] ?? 'u'), $unitPrice, $total) + ['vat_rate' => $rate];
+            })->all();
+            $normalized = $this->applyVat($normalized);
+            $totalHt = round(collect($normalized)->sum('total_ht'), 2);
+            $vatAmount = round(collect($normalized)->sum('vat_amount'), 2);
+            $totalTtc = round(collect($normalized)->sum('total_ttc'), 2);
+            $rates = collect($normalized)->pluck('vat_rate')->unique();
+            $fileNumber = trim(preg_replace('/[^A-Za-z0-9._-]+/', '-', $number), '-');
+
+            $invoice = Invoice::create([
+                'society_id' => $client->society_id,
+                'client_id' => $client->id,
+                'created_by' => Auth::id(),
+                'number' => $number,
+                'issued_at' => today(),
+                'issuer' => $this->issuerSnapshot(),
+                'customer' => $this->clientSnapshot($client),
+                'lines' => $normalized,
+                'subtotal_ht' => round(collect($normalized)->where('total_ht', '>', 0)->sum('total_ht'), 2),
+                'total_ht' => $totalHt,
+                'vat_enabled' => $vatEnabled,
+                'vat_rate' => $rates->count() === 1 ? (float) $rates->first() : 0,
+                'vat_amount' => $vatAmount,
+                'total_ttc' => $totalTtc,
+                'currency' => 'EUR',
+                'legal_notice' => $vatEnabled ? '' : self::LEGAL_NOTICE,
+                'pdf_path' => "invoices/{$client->society_id}/{$year}/{$fileNumber}.pdf",
+            ]);
+
+            Storage::disk('local')->put($invoice->pdf_path, $this->renderPdf($invoice));
+            Setting::put('invoice_next_number', $sequence + 1);
+
+            return $invoice;
+        });
+    }
+
+    private function reserveNumber(): array
+    {
+        $year = now()->format('Y');
+        $format = (string) (Setting::get('invoice_number_format') ?: 'FAC-{YYYY}-####');
+        $sequence = max(1, (int) (Setting::get('invoice_next_number') ?: $this->legacyNextNumber($year)));
+        $number = $this->formatNumber($format, $sequence);
+
+        while (Invoice::query()->where('number', $number)->exists()) {
+            $number = $this->formatNumber($format, ++$sequence);
+        }
+
+        return [$number, $sequence, $year];
+    }
+
+    private function applyVat(array $lines, ?float $defaultRate = null): array
+    {
+        return collect($lines)->map(function (array $line) use ($defaultRate) {
+            $rate = $defaultRate ?? (float) ($line['vat_rate'] ?? 0);
+            $vat = round((float) $line['total_ht'] * $rate / 100, 2);
+
+            return $line + ['vat_rate' => $rate, 'vat_amount' => $vat, 'total_ttc' => round((float) $line['total_ht'] + $vat, 2)];
+        })->all();
     }
 
     private function formatNumber(string $format, int $sequence): string
@@ -128,8 +203,11 @@ class InvoiceGenerator
 
     private function customerSnapshot(Intervention $intervention): array
     {
-        $client = $intervention->client;
+        return $this->clientSnapshot($intervention->client, $intervention->contact?->nomComplet());
+    }
 
+    private function clientSnapshot(?Client $client, ?string $contact = null): array
+    {
         return [
             'name' => $client?->nomComplet() ?: 'Client inconnu',
             'address' => $client?->adresse,
@@ -139,7 +217,7 @@ class InvoiceGenerator
             'phone' => $client?->telephone_mobile ?: $client?->telephone_fixe,
             'email' => $client?->email,
             'siret' => $client?->siret,
-            'contact' => $intervention->contact?->nomComplet(),
+            'contact' => $contact,
         ];
     }
 
