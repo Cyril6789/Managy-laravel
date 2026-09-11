@@ -20,7 +20,7 @@
     @if ($open)
         <div class="absolute z-30 mt-1 w-full overflow-hidden rounded-lg border border-gray-200 bg-white shadow-lg dark:border-gray-700 dark:bg-gray-800">
             <div class="border-b border-gray-100 p-2 dark:border-gray-700">
-                <input type="text" wire:model.live.debounce.300ms="query" autofocus
+                <input type="text" wire:model.live.debounce.300ms="query" x-ref="clientSearch" x-init="$nextTick(() => $el.focus())"
                        placeholder="Nom, e-mail, ville… (2 caractères min.)"
                        class="w-full rounded-md border-gray-300 text-sm focus:border-brand-500 focus:ring-brand-500 dark:border-gray-600 dark:bg-gray-900">
             </div>
