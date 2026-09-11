@@ -41,6 +41,11 @@ class SmokeTest extends TestCase
     {
         $this->actingAs($this->admin());
 
+        $this->get('/tableau-de-bord')
+            ->assertOk()
+            ->assertSee('Nouvelle intervention')
+            ->assertSee(route('interventions.create'), false);
+
         foreach ([
             '/tableau-de-bord', '/clients', '/clients/create', '/interventions', '/interventions/create',
             '/calendrier', '/disponibilites', '/tasks', '/maintenance', '/statistiques', '/journaux',

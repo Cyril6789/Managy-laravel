@@ -11,3 +11,4 @@
 - [x] transformer la modale de facturation en éditeur complet commun aux factures libres et d'intervention : lignes préremplies et modifiables, ajout libre ou catalogue, suppression, glisser-déposer, remises par ligne ou globales, aperçu des totaux, puis facture PDF définitive et immuable
 - [x] ajouter un suivi complet des règlements (plusieurs dates, montants et modes), les statuts en attente / partiellement payée / payée et des copies PDF d’état tamponnées sans modifier le PDF original
 - [x] afficher l’alerte des factures en attente lors de la sélection d’un client dans la création d’intervention
+- [x] ajouter un raccourci de création d’intervention dans la barre supérieure, à gauche de la recherche

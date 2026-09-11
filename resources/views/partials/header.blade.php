@@ -10,6 +10,16 @@
         <x-icon name="menu" />
     </button>
 
+    @can(\App\Support\Permissions::INTERVENTIONS_CREATE)
+        <a href="{{ route('interventions.create') }}"
+           class="hidden shrink-0 items-center justify-center gap-1.5 rounded-lg bg-brand-600 px-3 py-2 text-sm font-medium text-white transition hover:bg-brand-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600 sm:inline-flex"
+           title="Créer une intervention">
+            <x-icon name="plus" class="h-4 w-4" />
+            <span class="hidden xl:inline">Nouvelle intervention</span>
+            <span class="xl:hidden">Intervention</span>
+        </a>
+    @endcan
+
     {{-- Search --}}
     <form action="{{ route('search') }}" method="GET" class="relative hidden flex-1 max-w-md sm:block">
         <x-icon name="search" class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
