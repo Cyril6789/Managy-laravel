@@ -5,6 +5,7 @@ namespace App\Livewire\Settings;
 use App\Models\Invoice;
 use App\Models\Setting;
 use App\Models\Statut;
+use App\Services\InvoiceGenerator;
 use App\Support\Permissions;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Storage;
@@ -82,8 +83,8 @@ class GeneralSettings extends Component
             ->max() + 1);
         $this->data['invoice_vat_enabled'] ??= false;
         $this->data['invoice_vat_rate'] ??= 20;
-        $this->data['invoice_terms'] ??= 'Aucun escompte accordé pour paiement anticipé.';
-        $this->data['invoice_payment_terms'] ??= 'Paiement à réception de la facture. Pour les clients professionnels, tout retard entraîne des pénalités au taux de trois fois le taux d’intérêt légal et une indemnité forfaitaire de 40 € pour frais de recouvrement.';
+        $this->data['invoice_terms'] ??= InvoiceGenerator::DEFAULT_TERMS;
+        $this->data['invoice_payment_terms'] ??= InvoiceGenerator::DEFAULT_PAYMENT_TERMS;
 
         if ($section === 'billing') {
             $groups = json_decode((string) Setting::get('deplacement_city_groups', '[]'), true);

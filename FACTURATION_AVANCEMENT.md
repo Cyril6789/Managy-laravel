@@ -38,6 +38,8 @@
 ## PDF acquitté sans altérer l’original
 
 - [x] Masquer les colonnes TVA et TTC et afficher uniquement les montants HT lorsque la société est dispensée de TVA.
+- [x] Masquer aussi tous les choix et champs TVA/HT-TTC dans l’éditeur lorsque la société est dispensée de TVA.
+- [x] Injecter les mentions légales par défaut dans toute nouvelle facture même si les réglages n’ont jamais été enregistrés.
 - [x] Conserver le PDF commercial original comme archive immuable.
 - [x] Générer une copie d’état distincte après chaque règlement, sans écraser les versions précédentes.
 - [x] Afficher un tampon « PARTIELLEMENT PAYÉE » ou « PAYÉE » sur la copie d’état.

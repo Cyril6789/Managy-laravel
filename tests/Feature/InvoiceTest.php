@@ -10,6 +10,7 @@ use App\Models\InvoiceDraft;
 use App\Models\Prestation;
 use App\Models\Setting;
 use App\Models\User;
+use App\Services\InvoiceGenerator;
 use Database\Seeders\DatabaseSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Storage;
@@ -333,6 +334,7 @@ class InvoiceTest extends TestCase
 
     public function test_vat_exempt_pdf_only_displays_ht_columns_and_totals(): void
     {
+        Setting::query()->whereIn('key', ['invoice_terms', 'invoice_payment_terms'])->delete();
         $intervention = Intervention::cloturees()->firstOrFail();
         $this->post(route('invoices.store', $intervention));
         $invoice = Invoice::sole();
@@ -348,5 +350,23 @@ class InvoiceTest extends TestCase
         $this->assertStringContainsString('Total HT', $html);
         $this->assertStringNotContainsString('<th class="num">TVA</th>', $html);
         $this->assertStringNotContainsString('Total TTC', $html);
+        $this->assertSame(InvoiceGenerator::DEFAULT_TERMS, $invoice->terms);
+        $this->assertSame(InvoiceGenerator::DEFAULT_PAYMENT_TERMS, $invoice->payment_terms);
+        $this->assertStringContainsString('Aucun escompte accordé', $html);
+        $this->assertStringContainsString('indemnité forfaitaire de 40 €', $html);
+        $this->assertStringContainsString('article 293 B', $html);
+    }
+
+    public function test_vat_exempt_editor_hides_all_vat_and_ttc_controls(): void
+    {
+        Setting::put('invoice_vat_enabled', false);
+
+        Livewire::test(ManualInvoice::class)
+            ->call('open')
+            ->assertDontSee('Prix saisi en')
+            ->assertDontSee('TVA (%)')
+            ->assertDontSee('Total TTC')
+            ->assertSee('Prix unitaire')
+            ->assertSee('Total HT');
     }
 }

@@ -18,6 +18,10 @@ class InvoiceGenerator
 {
     public const LEGAL_NOTICE = 'TVA non applicable, article 293 B du Code général des impôts.';
 
+    public const DEFAULT_TERMS = 'Aucun escompte accordé pour paiement anticipé.';
+
+    public const DEFAULT_PAYMENT_TERMS = 'Paiement à réception de la facture. Pour les clients professionnels, tout retard entraîne des pénalités au taux de trois fois le taux d’intérêt légal et une indemnité forfaitaire de 40 € pour frais de recouvrement.';
+
     public function generate(Intervention $intervention): Invoice
     {
         if ($existing = $intervention->invoice()->first()) {
@@ -135,8 +139,8 @@ class InvoiceGenerator
                 'total_ttc' => $totalTtc,
                 'currency' => 'EUR',
                 'legal_notice' => $vatEnabled ? '' : self::LEGAL_NOTICE,
-                'terms' => Setting::get('invoice_terms'),
-                'payment_terms' => Setting::get('invoice_payment_terms'),
+                'terms' => Setting::get('invoice_terms', self::DEFAULT_TERMS),
+                'payment_terms' => Setting::get('invoice_payment_terms', self::DEFAULT_PAYMENT_TERMS),
                 'pdf_path' => "invoices/{$client->society_id}/{$year}/{$fileNumber}.pdf",
             ]);
 
