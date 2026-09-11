@@ -357,8 +357,10 @@ class InvoiceTest extends TestCase
         $this->assertStringContainsString('Aucun escompte accordé', $html);
         $this->assertStringContainsString('indemnité forfaitaire de 40 €', $html);
         $this->assertStringContainsString('article 293 B', $html);
-        $this->assertStringContainsString('class="invoice-bottom ', $html);
-        $this->assertStringNotContainsString('class="invoice-bottom new-page"', $html);
+        $this->assertStringContainsString('class="invoice-bottom"', $html);
+        $this->assertStringNotContainsString('class="invoice-bottom-page-break"', $html);
+        $this->assertStringContainsString('bottom: 85px', $html);
+        $this->assertStringContainsString('vertical-align: bottom', $html);
         $this->assertLessThan(strpos($html, 'class="totals"'), strpos($html, 'class="conditions"'));
     }
 
@@ -390,7 +392,7 @@ class InvoiceTest extends TestCase
             'paymentStatus' => null,
         ])->render();
 
-        $this->assertStringContainsString('class="invoice-bottom new-page"', $html);
+        $this->assertStringContainsString('class="invoice-bottom-page-break"', $html);
         $this->assertStringContainsString('page-break-inside: avoid', $html);
         $this->assertStringContainsString('page-break-before: always', $html);
     }

@@ -21,7 +21,7 @@
         .lines td { border-bottom: 1px solid #e5e7eb; padding: 8px 7px; }
         .lines .num { text-align: right; white-space: nowrap; }
         .summary { margin-top: 18px; width: 100%; }
-        .summary > tbody > tr > td { vertical-align: top; }
+        .summary > tbody > tr > td { vertical-align: bottom; }
         .conditions { color: #4b5563; font-size: 8px; line-height: 1.45; padding-right: 24px; width: 55%; }
         .conditions-title { color: #172033; font-size: 8px; font-weight: bold; margin: 0 0 4px; text-transform: uppercase; }
         .conditions-section + .conditions-section { margin-top: 10px; }
@@ -36,8 +36,8 @@
         .payment-stamp.partial { border-color: #d97706; color: #d97706; }
         .payment-history { border-collapse: collapse; font-size: 8px; margin-top: 14px; width: 55%; }
         .payment-history th, .payment-history td { border-bottom: 1px solid #e5e7eb; padding: 4px; text-align: left; }
-        .invoice-bottom { page-break-inside: avoid; }
-        .invoice-bottom.new-page { page-break-before: always; }
+        .invoice-bottom { bottom: 85px; left: 0; page-break-inside: avoid; position: absolute; right: 0; }
+        .invoice-bottom-page-break { page-break-before: always; }
     </style>
 </head>
 <body>
@@ -56,10 +56,7 @@
         $usablePageHeight = 940;
         $usedHeight = 245 + 34 + $lineHeight;
         $remainingHeight = $usablePageHeight - fmod($usedHeight, $usablePageHeight);
-        $bottomOnNewPage = count($invoice->lines) > 12 || $remainingHeight < $bottomHeight + 35;
-        $bottomSpacer = $bottomOnNewPage
-            ? max(20, $usablePageHeight - $bottomHeight - 25)
-            : max(20, $remainingHeight - $bottomHeight - 25);
+        $bottomOnNewPage = count($invoice->lines) > 12 || $remainingHeight < $bottomHeight + 120;
     @endphp
     @if($paymentStatus)
         <div class="payment-stamp {{ $paymentStatus }}">{{ $paymentStatus === 'paid' ? 'PAYÉE' : 'PARTIELLEMENT PAYÉE' }}</div>
@@ -125,7 +122,8 @@
         </tbody>
     </table>
 
-    <div class="invoice-bottom {{ $bottomOnNewPage ? 'new-page' : '' }}" style="padding-top: {{ $bottomSpacer }}px">
+    @if($bottomOnNewPage)<div class="invoice-bottom-page-break"></div>@endif
+    <div class="invoice-bottom">
     @if($payments && $payments->isNotEmpty())
         <table class="payment-history">
             <thead><tr><th>Date</th><th>Mode</th><th>Référence</th><th style="text-align:right">Montant</th></tr></thead>

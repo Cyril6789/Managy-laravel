@@ -45,6 +45,7 @@
 - [x] Afficher un tampon « PARTIELLEMENT PAYÉE » ou « PAYÉE » sur la copie d’état.
 - [x] Positionner les tampons de paiement sous le bloc d’adresses, dans une zone blanche du PDF.
 - [x] Ancrer les conditions et totaux en bas de la dernière page, avec le détail des règlements juste au-dessus et un passage de page sûr pour les factures longues.
+- [x] Aligner par le bas les conditions et le total, à environ 1,5 cm de la séparation du pied de page.
 - [x] Afficher sur la copie d’état les dates, montants et modes des règlements.
 - [x] Permettre de consulter/télécharger l’original et la dernière copie d’état.
 
