@@ -83,7 +83,7 @@ class SmokeTest extends TestCase
 
         $client = Client::first();
         $this->getJson(route('interventions.client_context', $client))
-            ->assertOk()->assertJsonStructure(['maintenance' => ['has', 'balance', 'threshold', 'low'], 'materiels', 'pannes', 'notes']);
+            ->assertOk()->assertJsonStructure(['maintenance' => ['has', 'balance', 'threshold', 'low'], 'invoices' => ['has_outstanding', 'count', 'balance'], 'materiels', 'pannes', 'notes']);
     }
 
     public function test_save_report_and_assign(): void

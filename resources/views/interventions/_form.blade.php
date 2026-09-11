@@ -43,6 +43,16 @@
 
                 <livewire:contact-picker :client-id="$clientId ? (int) $clientId : null" :contact-id="$val('contact_id') ? (int) $val('contact_id') : null" />
 
+                <template x-if="invoices && invoices.has_outstanding">
+                    <div class="md:col-span-2 flex items-start gap-3 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-950 dark:border-amber-700 dark:bg-amber-950/40 dark:text-amber-100" role="status">
+                        <x-icon name="clock" class="mt-0.5 h-5 w-5 shrink-0 text-amber-600 dark:text-amber-400" />
+                        <div>
+                            <p class="font-semibold"><span x-text="invoices.count"></span> <span x-text="invoices.count > 1 ? 'factures sont en attente de règlement' : 'facture est en attente de règlement'"></span></p>
+                            <p class="mt-0.5 text-amber-800 dark:text-amber-200">Solde total restant : <span x-text="Number(invoices.balance).toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })"></span> €</p>
+                        </div>
+                    </div>
+                </template>
+
                 {{-- Maintenance pack banner (after a client is selected) --}}
                 <template x-if="maintenance && maintenance.has">
                     <div class="md:col-span-2 rounded-lg px-4 py-2.5 text-sm"

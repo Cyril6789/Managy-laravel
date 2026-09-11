@@ -98,6 +98,7 @@ document.addEventListener('alpine:init', () => {
         contextUrl: cfg.contextUrl,
         lieu: cfg.lieu || 'atelier',
         maintenance: null,
+        invoices: null,
         hist: { materiels: [], pannes: [], notes: [] },
         init() {
             if (cfg.clientId) this.onClient(cfg.clientId);
@@ -105,6 +106,7 @@ document.addEventListener('alpine:init', () => {
         async onClient(id) {
             if (!id) {
                 this.maintenance = null;
+                this.invoices = null;
                 this.hist = { materiels: [], pannes: [], notes: [] };
                 return;
             }
@@ -112,6 +114,7 @@ document.addEventListener('alpine:init', () => {
             if (!r.ok) return;
             const d = await r.json();
             this.maintenance = d.maintenance;
+            this.invoices = d.invoices;
             this.hist = { materiels: d.materiels, pannes: d.pannes, notes: d.notes };
         },
     }));

@@ -6,6 +6,7 @@ use App\Models\Antivirus;
 use App\Models\Client;
 use App\Models\Intervention;
 use App\Models\InterventionLog;
+use App\Models\Invoice;
 use App\Models\Materiel;
 use App\Models\MessageType;
 use App\Models\Setting;
@@ -108,6 +109,12 @@ class InterventionController extends Controller
         $hasPack = $client->maintenanceMovements()->exists();
         $balance = $client->soldeMaintenance();
         $threshold = (float) Setting::get('maintenance_alert_threshold', 2);
+        $outstandingInvoices = Invoice::query()
+            ->where(fn ($query) => $query->where('client_id', $client->id)
+                ->orWhereHas('intervention', fn ($intervention) => $intervention->where('client_id', $client->id)))
+            ->with('payments')
+            ->get()
+            ->filter(fn (Invoice $invoice) => $invoice->balanceDue() > 0.001);
 
         $distinct = fn (string $col) => Intervention::where('client_id', $client->id)
             ->whereNotNull($col)->where($col, '!=', '')
@@ -119,6 +126,11 @@ class InterventionController extends Controller
                 'balance' => $balance,
                 'threshold' => $threshold,
                 'low' => $hasPack && $balance < $threshold,
+            ],
+            'invoices' => [
+                'has_outstanding' => $outstandingInvoices->isNotEmpty(),
+                'count' => $outstandingInvoices->count(),
+                'balance' => round($outstandingInvoices->sum(fn (Invoice $invoice) => $invoice->balanceDue()), 2),
             ],
             'materiels' => $distinct('materiel_depose'),
             'pannes' => $distinct('panne'),

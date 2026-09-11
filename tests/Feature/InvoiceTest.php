@@ -349,6 +349,14 @@ class InvoiceTest extends TestCase
             ->assertSee('Solde total restant')
             ->assertSee('En attente de paiement')
             ->assertSee('#d97706', false);
+        $this->getJson(route('interventions.client_context', $intervention->client))
+            ->assertOk()
+            ->assertJsonPath('invoices.has_outstanding', true)
+            ->assertJsonPath('invoices.count', 1)
+            ->assertJsonPath('invoices.balance', 100);
+        $this->get(route('interventions.create'))
+            ->assertOk()
+            ->assertSee('facture est en attente de règlement');
 
         $paymentService = app(InvoicePaymentService::class);
         $paymentService->record($invoice, (float) $invoice->total_ttc / 2, 'cb', now());
@@ -364,6 +372,11 @@ class InvoiceTest extends TestCase
             ->assertSee('Payée')
             ->assertSee('#16a34a', false)
             ->assertDontSee('facture est en attente de règlement');
+        $this->getJson(route('interventions.client_context', $intervention->client))
+            ->assertOk()
+            ->assertJsonPath('invoices.has_outstanding', false)
+            ->assertJsonPath('invoices.count', 0)
+            ->assertJsonPath('invoices.balance', 0);
     }
 
     public function test_vat_exempt_pdf_only_displays_ht_columns_and_totals(): void
