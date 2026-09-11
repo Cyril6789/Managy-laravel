@@ -7,6 +7,7 @@ use App\Models\Notification;
 use App\Services\Notifier;
 use App\Support\ChatPresence;
 use App\Support\Permissions;
+use App\Support\Tenancy;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
 use Livewire\Attributes\Locked;
@@ -57,12 +58,17 @@ class ClientChat extends Component
             Gate::authorize(Permissions::INTERVENTIONS_VIEW);
         }
 
-        $intervention->publicMessages()->create([
-            'author' => $this->author,
-            'user_id' => $this->author === 'staff' ? Auth::id() : null,
-            'message' => $data['body'],
-            'created_at' => now(),
-        ]);
+        // A public visitor has no authenticated tenant context. Run the write in
+        // the intervention's society so the message remains visible to staff's
+        // tenant-scoped query (and cannot leak into another society).
+        app(Tenancy::class)->forSociety($intervention->society_id, function () use ($data, $intervention): void {
+            $intervention->publicMessages()->create([
+                'author' => $this->author,
+                'user_id' => $this->author === 'staff' ? Auth::id() : null,
+                'message' => $data['body'],
+                'created_at' => now(),
+            ]);
+        });
 
         if ($this->author === 'client') {
             // Staff members currently watching this chat are not notified
@@ -76,7 +82,7 @@ class ClientChat extends Component
 
     public function render()
     {
-        // The staff side refreshes every 10s (wire:poll): keep presence alive and
+        // The staff side refreshes while visible (wire:poll): keep presence alive and
         // clear this intervention's chat notifications while the user is watching.
         if ($this->author === 'staff' && Auth::id()) {
             ChatPresence::mark($this->interventionId, Auth::id());

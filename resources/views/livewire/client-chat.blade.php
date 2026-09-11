@@ -1,4 +1,4 @@
-<div wire:poll.10s class="flex flex-col" x-data x-init="$nextTick(() => $refs.feed && ($refs.feed.scrollTop = $refs.feed.scrollHeight))">
+<div wire:poll.5s.visible class="flex flex-col" x-data x-init="$nextTick(() => $refs.feed && ($refs.feed.scrollTop = $refs.feed.scrollHeight))">
     <div x-ref="feed" class="max-h-80 space-y-3 overflow-y-auto px-1 py-2">
         @forelse ($messages as $m)
             @php $mine = $m->author === $author; @endphp

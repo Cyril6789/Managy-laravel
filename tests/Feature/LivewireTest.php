@@ -344,22 +344,33 @@ class LivewireTest extends TestCase
 
         $this->assertCount(1, $publicMessages);
         $this->assertSame('staff', $publicMessages->first()->author);
+        Livewire::test(ClientChat::class, ['intervention' => $intervention])
+            ->assertSeeHtml('wire:poll.5s.visible');
     }
 
     public function test_public_chat_lets_customer_post(): void
     {
         $intervention = Intervention::first();
+        $societyId = $intervention->society_id;
+
+        auth()->logout();
 
         Livewire::test(ClientChat::class, ['token' => $intervention->public_token])
             ->set('body', 'Bonjour, est-ce prêt ?')
             ->call('send')
-            ->assertSet('body', '');
+            ->assertSet('body', '')
+            ->assertSeeHtml('wire:poll.5s.visible');
 
         $this->assertDatabaseHas('public_messages', [
             'intervention_id' => $intervention->id,
+            'society_id' => $societyId,
             'author' => 'client',
             'message' => 'Bonjour, est-ce prêt ?',
         ]);
+
+        $this->actingAs(User::where('pseudo', 'admin')->firstOrFail());
+        Livewire::test(ClientChat::class, ['intervention' => $intervention])
+            ->assertSee('Bonjour, est-ce prêt ?');
     }
 
     public function test_tasks_component_creates_toggles_and_deletes(): void
